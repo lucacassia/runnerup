@@ -49,6 +49,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import android.content.res.ColorStateList;
@@ -80,6 +82,16 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Workout workout = null;
   private Tracker mTracker = null;
   private final Handler handler = new Handler();
+
+  private final ActivityResultLauncher<Intent> resumeLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> onWorkoutResult(result.getResultCode(), result.getData(), true));
+
+  private final ActivityResultLauncher<Intent> pausedLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> onWorkoutResult(result.getResultCode(), result.getData(), false));
 
   private Button pauseButton = null;
   private Button newLapButton = null;
@@ -337,9 +349,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
   }
 
-  @Override
-  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
+  private void onWorkoutResult(int resultCode, Intent data, boolean wasRunning) {
     if (workout == null) {
       // "should not happen"
       finish();
@@ -369,7 +379,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       finish();
     } else if (resultCode == AppCompatActivity.RESULT_FIRST_USER) {
       startTimer();
-      if (requestCode == 0) {
+      if (wasRunning) {
         workout.onResume(workout);
         // else: we were paused before stopButtonClick...don't resume
       }
@@ -428,7 +438,11 @@ public class RunActivity extends AppCompatActivity implements TickListener {
        */
       intent.putExtra("mode", "save");
       intent.putExtra("ID", mTracker.getActivityId());
-      RunActivity.this.startActivityForResult(intent, workout.isPaused() ? 1 : 0);
+      if (workout.isPaused()) {
+        pausedLauncher.launch(intent);
+      } else {
+        resumeLauncher.launch(intent);
+      }
     }
   }
 

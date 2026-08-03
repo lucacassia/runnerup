@@ -52,6 +52,8 @@ import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -132,7 +134,22 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
   private long mStartTime = 0; // activity start time in unix timestamp
   private ContentValues headerData = new ContentValues();
-  private static final int EDIT_ACCOUNT_REQUEST = 2;
+
+  private final ActivityResultLauncher<Intent> editAccountLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> requery());
+
+  private final ActivityResultLauncher<Intent> configureLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> {
+            if (syncManager != null) {
+              syncManager.onActivityResult(
+                  SyncManager.CONFIGURE_REQUEST, result.getResultCode(), result.getData());
+            }
+            requery();
+          });
 
   /** Called when the activity is first created. */
   @Override
@@ -159,6 +176,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
     mDB = DBHelper.getReadableDatabase(this);
     syncManager = new SyncManager(this);
+    syncManager.setConfigureLauncher(configureLauncher);
     formatter = new Formatter(this);
 
     if (intentMode.contentEquals("save")) {
@@ -819,7 +837,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
         b.setOnClickListener(
             v -> {
               Intent i = new Intent(DetailActivity.this, AccountListActivity.class);
-              DetailActivity.this.startActivityForResult(i, EDIT_ACCOUNT_REQUEST);
+              editAccountLauncher.launch(i);
             });
         return b;
       }
@@ -1037,15 +1055,6 @@ public class DetailActivity extends AppCompatActivity implements Constants {
                   // Do nothing but close the dialog
                   (dialog, which) -> dialog.dismiss())
               .show();
-
-  @Override
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (requestCode == SyncManager.CONFIGURE_REQUEST) {
-      syncManager.onActivityResult(requestCode, resultCode, data);
-    }
-    requery();
-  }
 
   private void shareActivity() {
     final int[] which = {

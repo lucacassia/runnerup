@@ -297,7 +297,7 @@ public class AccountActivity extends AppCompatActivity implements Constants {
         final Intent intent = new Intent(AccountActivity.this, UploadActivity.class);
         intent.putExtra("synchronizer", mSynchronizerName);
         intent.putExtra("mode", SyncManager.SyncMode.UPLOAD.name());
-        AccountActivity.this.startActivityForResult(intent, 113);
+        startActivity(intent);
       };
 
   private final OnClickListener downloadButtonClick =
@@ -305,7 +305,7 @@ public class AccountActivity extends AppCompatActivity implements Constants {
         final Intent intent = new Intent(AccountActivity.this, UploadActivity.class);
         intent.putExtra("synchronizer", mSynchronizerName);
         intent.putExtra("mode", SyncManager.SyncMode.DOWNLOAD.name());
-        AccountActivity.this.startActivityForResult(intent, 113);
+        startActivity(intent);
       };
 
   private final OnClickListener urlButtonClick =

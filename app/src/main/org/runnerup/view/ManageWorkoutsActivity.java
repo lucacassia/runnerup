@@ -44,6 +44,8 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
@@ -98,6 +100,17 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
   private SyncManager syncManager = null;
 
+  private final ActivityResultLauncher<Intent> configureLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> {
+            if (syncManager != null) {
+              syncManager.onActivityResult(
+                  SyncManager.CONFIGURE_REQUEST, result.getResultCode(), result.getData());
+            }
+            requery();
+          });
+
   /** Called when the activity is first created. */
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -109,6 +122,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
     mDB = DBHelper.getReadableDatabase(this);
     syncManager = new SyncManager(this);
+    syncManager.setConfigureLauncher(configureLauncher);
     adapter = new WorkoutAccountListAdapter(this);
     ExpandableListView list = findViewById(R.id.expandable_list_view);
     list.setAdapter(adapter);
@@ -517,15 +531,6 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
         intent.putExtra(WORKOUT_EDIT_MODE, true);
         startActivity(intent);
       };
-
-  @Override
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (requestCode == SyncManager.CONFIGURE_REQUEST) {
-      syncManager.onActivityResult(requestCode, resultCode, data);
-    }
-    requery();
-  }
 
   class WorkoutAccountListAdapter extends BaseExpandableListAdapter {
 

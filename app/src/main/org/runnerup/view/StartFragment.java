@@ -53,6 +53,8 @@ import android.widget.TabHost;
 import android.widget.TabHost.OnTabChangeListener;
 import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
@@ -176,7 +178,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
   // Note that the result is not used, the user is dropped back to initial view when a request is
   // done.
   private static final int REQUEST_LOCATION = 3000;
-  private static final int START_ACTIVITY = 112;
 
   private final SharedPreferences.OnSharedPreferenceChangeListener prefChangeListener =
       (sharedPrefs, key) -> {
@@ -735,8 +736,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
 
     runActivityPending = true;
     Intent intent = new Intent(requireContext(), RunActivity.class);
-    // TODO: Use the Activity Result API
-    StartFragment.this.startActivityForResult(intent, START_ACTIVITY);
+    runLauncher.launch(intent);
     notificationStateManager.cancelNotification(); // will be added by RunActivity
   }
 
@@ -1249,6 +1249,37 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
   }
 
   private boolean mIsBound = false;
+
+  private final ActivityResultLauncher<Intent> runLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> {
+            Intent data = result.getData();
+            registerStartEventListener();
+
+            if (data != null) {
+              if (data.getStringExtra("url") != null)
+                Log.d(
+                    getClass().getName(),
+                    "data.getStringExtra(\"url\") => " + data.getStringExtra("url"));
+              if (data.getStringExtra("ex") != null)
+                Log.d(
+                    getClass().getName(),
+                    "data.getStringExtra(\"ex\") => " + data.getStringExtra("ex"));
+              if (data.getStringExtra("obj") != null)
+                Log.d(
+                    getClass().getName(),
+                    "data.getStringExtra(\"obj\") => " + data.getStringExtra("obj"));
+            }
+            runActivityPending = false;
+            if (!mIsBound || mTracker == null) {
+              bindGpsTracker();
+            } else {
+              onGpsTrackerBound();
+            }
+            updateView();
+          });
+
   private final ServiceConnection mConnection =
       new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
@@ -1299,35 +1330,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
       mTracker.unregisterTrackerStateListener(trackerStateListener);
     }
     mTracker = null;
-  }
-
-  // TODO: Use Activity Result API
-  @Override
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    registerStartEventListener();
-
-    if (data != null) {
-      if (data.getStringExtra("url") != null)
-        Log.d(
-            getClass().getName(), "data.getStringExtra(\"url\") => " + data.getStringExtra("url"));
-      if (data.getStringExtra("ex") != null)
-        Log.d(getClass().getName(), "data.getStringExtra(\"ex\") => " + data.getStringExtra("ex"));
-      if (data.getStringExtra("obj") != null)
-        Log.d(
-            getClass().getName(), "data.getStringExtra(\"obj\") => " + data.getStringExtra("obj"));
-    }
-    if (requestCode == START_ACTIVITY) {
-      runActivityPending = false;
-      if (!mIsBound || mTracker == null) {
-        bindGpsTracker();
-      } else {
-        onGpsTrackerBound();
-      }
-    } else {
-      advancedWorkoutListAdapter.reload();
-    }
-    updateView();
   }
 
   @Override

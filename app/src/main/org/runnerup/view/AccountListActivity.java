@@ -40,6 +40,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -67,7 +69,25 @@ public class AccountListActivity extends AppCompatActivity
   private SyncManager mSyncManager = null;
   private boolean mShowDisabled = false;
   private CursorAdapter mCursorAdapter;
-  private static final int EDIT_REQUEST = 1001;
+
+  private final ActivityResultLauncher<Intent> editLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> {
+            mSyncManager.clear();
+            getSupportLoaderManager().restartLoader(0, null, this);
+          });
+
+  private final ActivityResultLauncher<Intent> configureLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> {
+            if (mSyncManager != null) {
+              mSyncManager.onActivityResult(
+                  SyncManager.CONFIGURE_REQUEST, result.getResultCode(), result.getData());
+              this.mCursorAdapter.notifyDataSetChanged();
+            }
+          });
 
   /** Called when the activity is first created. */
   @Override
@@ -80,6 +100,7 @@ public class AccountListActivity extends AppCompatActivity
 
     mDB = DBHelper.getReadableDatabase(this);
     mSyncManager = new SyncManager(this);
+    mSyncManager.setConfigureLauncher(configureLauncher);
     ListView listView = findViewById(R.id.account_list_list);
 
     // button footer
@@ -352,18 +373,6 @@ public class AccountListActivity extends AppCompatActivity
     Intent intent = new Intent(AccountListActivity.this, AccountActivity.class);
     intent.putExtra("synchronizer", synchronizerName);
     // intent.putExtra("edit", edit);
-    AccountListActivity.this.startActivityForResult(intent, EDIT_REQUEST);
-  }
-
-  @Override
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (requestCode == SyncManager.CONFIGURE_REQUEST) {
-      mSyncManager.onActivityResult(requestCode, resultCode, data);
-      this.mCursorAdapter.notifyDataSetChanged();
-    } else if (requestCode == EDIT_REQUEST) {
-      mSyncManager.clear();
-      getSupportLoaderManager().restartLoader(0, null, this);
-    }
+    editLauncher.launch(intent);
   }
 }

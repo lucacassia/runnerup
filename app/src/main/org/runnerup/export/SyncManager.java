@@ -40,6 +40,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.TableRow;
 import android.widget.TextView;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
@@ -88,6 +89,7 @@ public class SyncManager {
   private AppCompatActivity mActivity = null;
   private Context mContext = null;
   private M3ProgressDialog mSpinner = null;
+  private ActivityResultLauncher<Intent> configureLauncher = null;
   private Synchronizer authSynchronizer = null;
   private Callback authCallback = null;
   private long mID = 0;
@@ -115,6 +117,10 @@ public class SyncManager {
 
   public SyncManager(Context context, M3ProgressDialog spinner) {
     init(null, context, spinner);
+  }
+
+  public void setConfigureLauncher(ActivityResultLauncher<Intent> launcher) {
+    configureLauncher = launcher;
   }
 
   private static void externalIdCompleted(
@@ -339,7 +345,11 @@ public class SyncManager {
     authCallback = callback;
     switch (authMethod) {
       case OAUTH2:
-        mActivity.startActivityForResult(l.getAuthIntent(mActivity), CONFIGURE_REQUEST);
+        if (configureLauncher != null) {
+          configureLauncher.launch(l.getAuthIntent(mActivity));
+        } else {
+          mActivity.startActivityForResult(l.getAuthIntent(mActivity), CONFIGURE_REQUEST);
+        }
         return;
       case USER_PASS:
       case USER_PASS_URL:
