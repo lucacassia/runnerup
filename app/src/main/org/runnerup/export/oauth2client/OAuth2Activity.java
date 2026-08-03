@@ -18,7 +18,7 @@
 package org.runnerup.export.oauth2client;
 
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
+import org.runnerup.util.M3ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -70,7 +70,7 @@ public class OAuth2Activity extends AppCompatActivity {
 
   private boolean mFinished = false;
   private String mRedirectUri = null;
-  private ProgressDialog mSpinner = null;
+  private M3ProgressDialog mSpinner = null;
   private Bundle mArgs = null;
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -91,7 +91,7 @@ public class OAuth2Activity extends AppCompatActivity {
     if (b.containsKey(OAuth2ServerCredentials.AUTH_EXTRA))
       auth_extra = b.getString(OAuth2ServerCredentials.AUTH_EXTRA);
 
-    mSpinner = new ProgressDialog(this);
+    mSpinner = new M3ProgressDialog(this);
     mSpinner.requestWindowFeature(Window.FEATURE_NO_TITLE);
     mSpinner.setMessage(getString(org.runnerup.common.R.string.Loading));
 

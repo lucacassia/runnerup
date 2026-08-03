@@ -18,6 +18,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.view.WindowCompat;
@@ -231,7 +232,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
           final StepButton stepButton = row.findViewById(R.id.workout_step_button);
 
           if (!dontAskAgain) {
-            new AlertDialog.Builder(CreateAdvancedWorkout.this)
+            new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
                 .setMultiChoiceItems(
                     new String[] {"Don't ask again"},
                     new boolean[] {dontAskAgain},
@@ -281,7 +282,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
           try {
             WorkoutSerializer.writeFile(ctx, advWorkoutName, advancedWorkout);
           } catch (Exception ex) {
-            new AlertDialog.Builder(CreateAdvancedWorkout.this)
+            new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
                 .setTitle(org.runnerup.common.R.string.Failed_to_load_workout)
                 .setMessage("" + ex)
                 .setPositiveButton(
@@ -317,7 +318,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
       };
 
   private void handleWorkoutFileException(Exception e) {
-    new AlertDialog.Builder(CreateAdvancedWorkout.this)
+    new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
         .setTitle(getString(org.runnerup.common.R.string.Failed_to_create_workout))
         .setMessage(e.toString())
         .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
@@ -326,7 +327,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
   private final View.OnClickListener discardWorkoutButtonClick =
       view ->
-          new AlertDialog.Builder(CreateAdvancedWorkout.this)
+          new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
               .setTitle(org.runnerup.common.R.string.Delete_workout)
               .setMessage(org.runnerup.common.R.string.Are_you_sure)
               .setPositiveButton(
@@ -352,7 +353,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
         newWorkoutNameEditText.setMaxLines(1);
         newWorkoutNameEditText.setText(advancedWorkoutSpinner.getValue().toString());
 
-        new AlertDialog.Builder(CreateAdvancedWorkout.this)
+        new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
             .setView(newWorkoutNameEditText)
             .setPositiveButton(
                 org.runnerup.common.R.string.OK,

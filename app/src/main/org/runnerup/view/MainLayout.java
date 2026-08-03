@@ -44,6 +44,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 import androidx.fragment.app.Fragment;
@@ -51,8 +52,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
-import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.tabs.TabLayoutMediator;
+import com.google.android.material.navigation.NavigationBarView;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -154,17 +154,28 @@ public class MainLayout extends AppCompatActivity {
     // Allows swiping between tabs
     pager.setUserInputEnabled(true);
 
-    // Attach the TabLayout to the ViewPager2 using a TabLayoutMediator.
-    // The mediator synchronizes the selected tab with the displayed page in the ViewPager2,
-    // and allows for configuring the appearance of each tab (e.g., setting icons/titles).
-    TabLayout tabLayout = findViewById(R.id.tab_layout);
-    new TabLayoutMediator(
-            tabLayout,
-            pager,
-            false,
-            true, // Uses animation when switching tabs
-            (tab, position) -> tab.setIcon(adapter.getIcon(position)))
-        .attach();
+    // Attach the NavigationBarView to the ViewPager2. The NavigationBarView mirrors the
+    // currently displayed page and selecting an item switches the pager to that page.
+    NavigationBarView bottomNavigation = findViewById(R.id.bottom_navigation);
+    bottomNavigation.setOnItemSelectedListener(
+        item -> {
+          int position =
+              item.getItemId() == R.id.tab_history
+                  ? 1
+                  : item.getItemId() == R.id.tab_settings ? 2 : 0;
+          pager.setCurrentItem(position);
+          return true;
+        });
+    pager.registerOnPageChangeCallback(
+        new ViewPager2.OnPageChangeCallback() {
+          @Override
+          public void onPageSelected(int position) {
+            bottomNavigation.setSelectedItemId(
+                position == 1
+                    ? R.id.tab_history
+                    : position == 2 ? R.id.tab_settings : R.id.tab_start);
+          }
+        });
 
     if (upgradeState == UpgradeState.UPGRADE) {
       whatsNew();
@@ -394,7 +405,7 @@ public class MainLayout extends AppCompatActivity {
     View view = inflater.inflate(R.layout.whatsnew, null);
     WebView wv = view.findViewById(R.id.web_view1);
     AlertDialog.Builder builder =
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
             .setTitle(org.runnerup.common.R.string.Whats_new)
             .setView(view)
             .setNegativeButton(

@@ -15,6 +15,7 @@
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/upload_rootview"
     android:layout_width="fill_parent"
@@ -90,20 +91,20 @@
         android:layout_alignParentBottom="true"
         android:orientation="vertical">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/upload_account_button"
             style="@style/ButtonText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/btn_blue"
+            app:backgroundTint="?attr/colorPrimary"
             android:text="@string/Upload" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/upload_account_download_button"
             style="@style/ButtonText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/btn_blue"
+            app:backgroundTint="?attr/colorPrimary"
             android:text="@string/Download" />
     </LinearLayout>
 

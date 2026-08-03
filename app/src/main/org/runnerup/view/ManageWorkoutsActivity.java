@@ -45,6 +45,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 import androidx.preference.PreferenceManager;
@@ -140,7 +141,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
       try {
         importData(fileName, data);
       } catch (Exception e) {
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
             .setTitle(org.runnerup.common.R.string.Error)
             .setMessage(getString(org.runnerup.common.R.string.Failed_to_import) + ": " + fileName)
             .setPositiveButton(
@@ -199,7 +200,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
     final String workoutName = fileName;
     AlertDialog.Builder builder =
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
             .setTitle(getString(org.runnerup.common.R.string.Import_workout) + ": " + workoutName)
             .setPositiveButton(
                 org.runnerup.common.R.string.Yes,
@@ -393,7 +394,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
         // Set an EditText view to get user input
         final EditText input = new EditText(ManageWorkoutsActivity.this);
 
-        new AlertDialog.Builder(ManageWorkoutsActivity.this)
+        new MaterialAlertDialogBuilder(ManageWorkoutsActivity.this)
             .setTitle(org.runnerup.common.R.string.Create_new_workout)
             .setMessage(org.runnerup.common.R.string.Set_workout_name)
             .setView(input)
@@ -435,7 +436,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
         if (currentlySelectedWorkout == null) return;
 
         final WorkoutRef selected = (WorkoutRef) currentlySelectedWorkout.getTag();
-        new AlertDialog.Builder(ManageWorkoutsActivity.this)
+        new MaterialAlertDialogBuilder(ManageWorkoutsActivity.this)
             .setTitle(
                 getString(org.runnerup.common.R.string.Delete_workout)
                     + " "

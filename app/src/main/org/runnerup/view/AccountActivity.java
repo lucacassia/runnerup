@@ -45,6 +45,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.view.WindowCompat;
@@ -277,7 +278,7 @@ public class AccountActivity extends AppCompatActivity implements Constants {
       new OnClickListener() {
         @Override
         public void onClick(View v) {
-          new AlertDialog.Builder(AccountActivity.this)
+          new MaterialAlertDialogBuilder(AccountActivity.this)
               .setTitle(org.runnerup.common.R.string.Clear_uploads)
               .setMessage(org.runnerup.common.R.string.Clear_uploads_from_phone)
               .setPositiveButton(
@@ -384,7 +385,7 @@ public class AccountActivity extends AppCompatActivity implements Constants {
             getString(org.runnerup.common.R.string.Clear_uploads_from_phone)
           };
           final boolean[] selected = {true};
-          new AlertDialog.Builder(AccountActivity.this)
+          new MaterialAlertDialogBuilder(AccountActivity.this)
               .setTitle(org.runnerup.common.R.string.Disconnect_account)
               .setPositiveButton(
                   org.runnerup.common.R.string.OK,

@@ -15,6 +15,7 @@
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/account_rootview"
     android:layout_width="fill_parent"
@@ -67,47 +68,47 @@
 
     </TableLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/disconnect_account_button"
         style="@style/ButtonText"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/account_upload_button"
-        android:background="@drawable/btn_red"
+        app:backgroundTint="?attr/colorError"
         android:minWidth="48dp"
         android:minHeight="48dp"
         android:text="@string/Disconnect" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/account_upload_button"
         style="@style/ButtonText"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/account_download_button"
-        android:background="@drawable/btn_blue"
+        app:backgroundTint="?attr/colorPrimary"
         android:minWidth="48dp"
         android:minHeight="48dp"
         android:text="@string/Upload" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/account_download_button"
         style="@style/ButtonText"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/ok_account_button"
         android:layout_alignParentBottom="false"
-        android:background="@drawable/btn_blue"
+        app:backgroundTint="?attr/colorPrimary"
         android:minWidth="48dp"
         android:minHeight="48dp"
         android:text="@string/Download" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/ok_account_button"
         style="@style/ButtonText"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@drawable/btn_green"
+        app:backgroundTint="@color/btn_green"
         android:minWidth="48dp"
         android:minHeight="48dp"
         android:text="@string/OK" />

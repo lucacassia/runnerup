@@ -31,7 +31,7 @@
         android:orientation="vertical"
         tools:ignore="UnusedAttribute">
 
-        <androidx.appcompat.widget.Toolbar
+        <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/actionbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
@@ -58,7 +58,7 @@
             <View
                 android:layout_width="1dp"
                 android:layout_height="16dp"
-                android:background="@android:color/white" />
+                android:background="?attr/colorOutlineVariant" />
 
             <TextView
                 android:id="@+id/activity_time"
@@ -73,7 +73,7 @@
                 android:id="@+id/activity_pace_separator"
                 android:layout_width="1dp"
                 android:layout_height="16dp"
-                android:background="@android:color/white"
+                android:background="?attr/colorOutlineVariant"
                 android:gravity="center" />
 
             <TextView
@@ -229,39 +229,39 @@
         android:layout_alignParentBottom="true"
         android:orientation="vertical">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/resume_button"
             style="@style/ButtonText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/btn_blue"
+            runnerup:backgroundTint="?attr/colorPrimary"
             android:drawableEnd="@drawable/ic_av_play_arrow"
             android:drawablePadding="-32dp"
             android:text="@string/Resume" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/upload_button"
             style="@style/ButtonText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/btn_blue"
+            runnerup:backgroundTint="?attr/colorPrimary"
             android:singleLine="false"
             android:text="@string/Upload" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/save_button"
             style="@style/ButtonText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/btn_green"
+            runnerup:backgroundTint="@color/btn_green"
             android:text="@string/Save" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/discard_button"
             style="@style/ButtonText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/btn_red"
+            runnerup:backgroundTint="?attr/colorError"
             android:text="@string/Discard" />
     </LinearLayout>
 

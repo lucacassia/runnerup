@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-  ~ Copyright (C) 2013 jonas.oreland@gmail.com
+  ~ Copyright (C) 2026
   ~
   ~  This program is free software: you can redistribute it and/or modify
   ~  it under the terms of the GNU General Public License as published by
@@ -13,16 +13,20 @@
   ~
   ~  You should have received a copy of the GNU General Public License
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
--->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <stroke
-        android:width="2dp"
-        android:color="#FFFFFFFF" />
-    <solid android:color="#FF073642" />
-    <corners
-        android:bottomLeftRadius="7dp"
-        android:bottomRightRadius="7dp"
-        android:topLeftRadius="7dp"
-        android:topRightRadius="7dp" />
-</shape>
+  -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/tab_start"
+        android:icon="@drawable/ic_tab_main_24dp"
+        android:title="@string/Start" />
+
+    <item
+        android:id="@+id/tab_history"
+        android:icon="@drawable/ic_tab_history_24dp"
+        android:title="@string/History" />
+
+    <item
+        android:id="@+id/tab_settings"
+        android:icon="@drawable/ic_tab_settings_24dp"
+        android:title="@string/Settings" />
+</menu>

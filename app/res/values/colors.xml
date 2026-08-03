@@ -18,6 +18,7 @@
     <!-- Stock Material 3 light color roles -->
     <color name="colorPrimary">#6750A4</color>
     <color name="colorText">#1D1B20</color>
+    <color name="btn_green">#2E7D32</color>
 
     <color name="serviceDefault">#073642</color>
     <color name="serviceDropbox">#0D2481</color>

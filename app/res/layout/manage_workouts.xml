@@ -15,6 +15,7 @@
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/manage_workouts_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -39,23 +40,23 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/share_workout_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/btn_blue"
+                app:backgroundTint="?attr/colorPrimary"
                 android:text="@string/Share"
                 android:textSize="16sp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/edit_workout_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/btn_blue"
+                app:backgroundTint="?attr/colorPrimary"
                 android:text="@string/Edit"
                 android:textSize="16sp" />
         </TableRow>
@@ -64,24 +65,24 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/create_workout_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/btn_green"
+                app:backgroundTint="@color/btn_green"
                 android:clickable="false"
                 android:text="@string/Create"
                 android:textSize="16sp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/delete_workout_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:background="@drawable/btn_red"
+                app:backgroundTint="?attr/colorError"
                 android:text="@string/Delete"
                 android:textSize="16sp" />
 

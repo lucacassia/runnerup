@@ -27,17 +27,13 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tab_layout"
+    <com.google.android.material.navigation.NavigationBarView
+        android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginTop="0px"
-        android:layout_marginBottom="0px"
-        android:background="?attr/colorSurface"
-        android:elevation="8dp"
-        android:padding="0px"
-        app:tabIconTint="@color/bottom_tabs"
-        app:tabIndicatorHeight="0dp"
-        app:tabRippleColor="@null" />
+        android:layout_height="wrap_content"
+        app:itemIconTint="@color/bottom_tabs"
+        app:itemTextColor="@color/bottom_tabs"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/bottom_nav_menu" />
 
 </LinearLayout>

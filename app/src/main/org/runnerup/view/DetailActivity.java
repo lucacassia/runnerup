@@ -37,6 +37,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
+import android.content.res.ColorStateList;
 import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
@@ -53,13 +54,14 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -409,7 +411,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
         requery();
       }
     } else if (id == R.id.menu_recompute_activity) {
-      new AlertDialog.Builder(this)
+      new MaterialAlertDialogBuilder(this)
           .setTitle(org.runnerup.common.R.string.Recompute_activity)
           .setMessage(org.runnerup.common.R.string.Are_you_sure)
           .setPositiveButton(
@@ -424,7 +426,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
           .setNegativeButton(org.runnerup.common.R.string.No, (dialog, which) -> dialog.dismiss())
           .show();
     } else if (id == R.id.menu_simplify_path) {
-      new AlertDialog.Builder(this)
+      new MaterialAlertDialogBuilder(this)
           .setTitle(org.runnerup.common.R.string.path_simplification_menu)
           .setMessage(org.runnerup.common.R.string.Are_you_sure)
           .setPositiveButton(
@@ -807,9 +809,11 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
       if (position == reports.size()) {
-        Button b = new Button(DetailActivity.this);
+        com.google.android.material.button.MaterialButton b =
+            new com.google.android.material.button.MaterialButton(DetailActivity.this);
         b.setText(org.runnerup.common.R.string.Configure_accounts);
-        b.setBackgroundResource(R.drawable.btn_blue);
+        b.setBackgroundTintList(
+            ColorStateList.valueOf(ContextCompat.getColor(DetailActivity.this, R.color.colorPrimary)));
         b.setTextColor(
             AppCompatResources.getColorStateList(DetailActivity.this, R.color.btn_text_color));
         b.setOnClickListener(
@@ -898,7 +902,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   private final OnLongClickListener clearUploadClick =
       arg0 -> {
         final String name = (String) arg0.getTag();
-        new AlertDialog.Builder(DetailActivity.this)
+        new MaterialAlertDialogBuilder(DetailActivity.this)
             .setTitle("Clear upload for " + name)
             .setMessage(org.runnerup.common.R.string.Are_you_sure)
             .setPositiveButton(
@@ -958,7 +962,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
   private final OnClickListener discardButtonClick =
       v ->
-          new AlertDialog.Builder(DetailActivity.this)
+          new MaterialAlertDialogBuilder(DetailActivity.this)
               .setTitle(org.runnerup.common.R.string.Discard)
               .setMessage(org.runnerup.common.R.string.Are_you_sure)
               .setPositiveButton(
@@ -1017,7 +1021,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
   private final OnClickListener deleteButtonClick =
       v ->
-          new AlertDialog.Builder(DetailActivity.this)
+          new MaterialAlertDialogBuilder(DetailActivity.this)
               .setTitle(org.runnerup.common.R.string.Delete_activity)
               .setMessage(org.runnerup.common.R.string.Are_you_sure)
               .setPositiveButton(
@@ -1048,7 +1052,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
       1 // TODO preselect tcx - choice should be remembered
     };
     final CharSequence[] items = {"gpx", "tcx"};
-    new AlertDialog.Builder(this)
+    new MaterialAlertDialogBuilder(this)
         .setTitle(getString(org.runnerup.common.R.string.Share_activity))
         .setPositiveButton(
             org.runnerup.common.R.string.OK,

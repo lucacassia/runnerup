@@ -29,6 +29,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.core.content.ContextCompat;
 import java.util.Locale;
 import org.runnerup.R;
@@ -179,7 +180,7 @@ public class StepButton extends LinearLayout {
           layout.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL);
           layout.addView(numberPicker);
 
-          new AlertDialog.Builder(mContext)
+          new MaterialAlertDialogBuilder(mContext)
               .setTitle(org.runnerup.common.R.string.repeat)
               .setView(layout)
               .setPositiveButton(
@@ -209,7 +210,7 @@ public class StepButton extends LinearLayout {
 
           final Runnable save = setupEditStep(inflater, layout);
 
-          new AlertDialog.Builder(mContext)
+          new MaterialAlertDialogBuilder(mContext)
               .setTitle(org.runnerup.common.R.string.Edit_step)
               .setView(layout)
               .setPositiveButton(

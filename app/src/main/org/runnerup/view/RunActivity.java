@@ -51,8 +51,8 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
-import androidx.core.view.ViewCompat;
+import android.content.res.ColorStateList;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.preference.PreferenceManager;
 import java.util.ArrayList;
@@ -389,14 +389,14 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private void setPauseButtonEnabled(boolean enabled) {
     if (enabled) {
       pauseButton.setText(org.runnerup.common.R.string.Pause);
-      ViewCompat.setBackground(
-          pauseButton, AppCompatResources.getDrawable(this, R.drawable.btn_blue));
+      pauseButton.setBackgroundTintList(
+          ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimary)));
       pauseButton.setCompoundDrawablesWithIntrinsicBounds(
           0, 0, org.runnerup.common.R.drawable.ic_av_pause, 0);
     } else {
       pauseButton.setText(org.runnerup.common.R.string.Resume);
-      ViewCompat.setBackground(
-          pauseButton, AppCompatResources.getDrawable(this, R.drawable.btn_green));
+      pauseButton.setBackgroundTintList(
+          ColorStateList.valueOf(ContextCompat.getColor(this, R.color.btn_green)));
       pauseButton.setCompoundDrawablesWithIntrinsicBounds(
           0, 0, org.runnerup.common.R.drawable.ic_av_play_arrow, 0);
     }

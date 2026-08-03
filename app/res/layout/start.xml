@@ -23,7 +23,7 @@
     android:orientation="vertical"
     tools:context=".view.StartFragment">
 
-    <androidx.appcompat.widget.Toolbar
+    <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/start_actionbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -39,7 +39,7 @@
             android:minHeight="48dp"
             android:spinnerMode="dropdown" />
 
-    </androidx.appcompat.widget.Toolbar>
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <TabHost
         android:id="@+id/tabhost_start"

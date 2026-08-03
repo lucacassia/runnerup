@@ -37,6 +37,7 @@ import android.widget.LinearLayout;
 import android.widget.SpinnerAdapter;
 import android.widget.TimePicker;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.preference.PreferenceManager;
 import java.text.DateFormat;
 import java.util.Calendar;
@@ -156,7 +157,7 @@ public class SpinnerPresenter {
           final LinearLayout layout = createLayout(context);
           layout.addView(edit);
 
-          new AlertDialog.Builder(context)
+          new MaterialAlertDialogBuilder(context)
               .setTitle(mLabel)
               .setView(layout)
               .setPositiveButton(
@@ -250,7 +251,7 @@ public class SpinnerPresenter {
           final LinearLayout layout = createLayout(context);
           layout.addView(datePicker);
 
-          new AlertDialog.Builder(context)
+          new MaterialAlertDialogBuilder(context)
               .setTitle(mLabel)
               .setView(layout)
               .setPositiveButton(
@@ -301,7 +302,7 @@ public class SpinnerPresenter {
           final LinearLayout layout = createLayout(context);
           layout.addView(timePicker);
 
-          new AlertDialog.Builder(context)
+          new MaterialAlertDialogBuilder(context)
               .setTitle(mLabel)
               .setView(layout)
               .setPositiveButton(
@@ -347,7 +348,7 @@ public class SpinnerPresenter {
           final LinearLayout layout = createLayout(context);
           layout.addView(picker);
 
-          new AlertDialog.Builder(context)
+          new MaterialAlertDialogBuilder(context)
               .setTitle(mLabel)
               .setView(layout)
               .setPositiveButton(
@@ -391,7 +392,7 @@ public class SpinnerPresenter {
           final LinearLayout layout = createLayout(context);
           layout.addView(distancePicker);
 
-          new AlertDialog.Builder(context)
+          new MaterialAlertDialogBuilder(context)
               .setTitle(mLabel)
               .setView(layout)
               .setPositiveButton(
@@ -436,7 +437,7 @@ public class SpinnerPresenter {
           final LinearLayout layout = createLayout(context);
           layout.addView(numberPicker);
 
-          new AlertDialog.Builder(context)
+          new MaterialAlertDialogBuilder(context)
               .setTitle(mLabel)
               .setView(layout)
               .setPositiveButton(

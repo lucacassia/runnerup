@@ -37,6 +37,7 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 import java.util.Locale;
@@ -310,7 +311,7 @@ public class HRZonesActivity extends AppCompatActivity implements Constants {
   }
 
   private void clearHRSettings() {
-    new AlertDialog.Builder(this)
+    new MaterialAlertDialogBuilder(this)
         .setTitle(org.runnerup.common.R.string.Clear_heart_rate_zone_settings)
         .setMessage(org.runnerup.common.R.string.Are_you_sure)
         .setPositiveButton(

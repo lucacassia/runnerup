@@ -15,6 +15,7 @@
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/start_view"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
@@ -58,7 +59,7 @@
         <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/countdown_background"
+            android:background="?attr/colorSurfaceContainer"
             android:orientation="vertical">
 
             <LinearLayout
@@ -98,7 +99,7 @@
             android:id="@+id/table_row_interval"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/countdown_background"
+            android:background="?attr/colorSurfaceContainer"
             android:orientation="vertical">
 
             <LinearLayout
@@ -137,7 +138,7 @@
         <LinearLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/countdown_background"
+            android:background="?attr/colorSurfaceContainer"
             android:orientation="vertical">
 
             <LinearLayout
@@ -178,7 +179,7 @@
             android:id="@+id/table_row_current"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/countdown_background"
+            android:background="?attr/colorSurfaceContainer"
             android:orientation="vertical">
 
             <LinearLayout
@@ -231,10 +232,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="20dp"
-            android:background="@drawable/countdown_background"
+            android:background="?attr/colorSurfaceContainer"
             android:padding="20dp"
             android:text=""
-            android:textColor="@android:color/white"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="30sp"
             android:textStyle="bold"
             android:visibility="invisible" />
@@ -260,24 +261,24 @@
         android:layout_height="wrap_content"
         android:layout_above="@id/run_table_row2">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/new_lap_button"
             style="@style/ButtonText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/btn_blue"
+            app:backgroundTint="?attr/colorPrimary"
             android:drawableEnd="@drawable/ic_av_newlap"
             android:drawablePadding="-32dp"
             android:text="@string/Lap" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/pause_button"
             style="@style/ButtonText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/btn_blue"
+            app:backgroundTint="?attr/colorPrimary"
             android:drawableEnd="@drawable/ic_av_pause"
             android:drawablePadding="-32dp"
             android:text="@string/Pause" />
@@ -289,13 +290,13 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true">
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/stop_button"
             style="@style/ButtonText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:background="@drawable/btn_red"
+            app:backgroundTint="?attr/colorError"
             android:drawableEnd="@drawable/ic_av_stop"
             android:drawablePadding="-32dp"
             android:text="@string/Stop" />

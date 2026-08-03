@@ -33,22 +33,22 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/add_step_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/btn_blue"
+                runnerup:backgroundTint="?attr/colorPrimary"
                 android:text="@string/Add_step" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/add_repeat_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/btn_blue"
+                runnerup:backgroundTint="?attr/colorPrimary"
                 android:text="@string/Add_repeat" />
         </TableRow>
 
@@ -56,31 +56,31 @@
             android:layout_width="fill_parent"
             android:layout_height="fill_parent">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/workout_save_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/btn_green"
+                runnerup:backgroundTint="@color/btn_green"
                 android:text="@string/Save" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/workout_discard_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/btn_red"
+                runnerup:backgroundTint="?attr/colorError"
                 android:text="@string/Discard" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/workout_rename_button"
                 style="@style/ButtonText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:background="@drawable/btn_blue"
+                runnerup:backgroundTint="?attr/colorPrimary"
                 android:text="@string/Rename" />
         </TableRow>
     </TableLayout>

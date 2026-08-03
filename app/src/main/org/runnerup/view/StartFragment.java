@@ -56,6 +56,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -663,7 +664,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     final CheckBox dontShowAgain = new CheckBox(context);
     dontShowAgain.setText(getResources().getText(org.runnerup.common.R.string.Do_not_show_again));
 
-    new AlertDialog.Builder(context)
+    new MaterialAlertDialogBuilder(context)
         .setView(dontShowAgain)
         .setCancelable(false)
         .setTitle(org.runnerup.common.R.string.Warning)
@@ -848,7 +849,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
                     : getString(org.runnerup.common.R.string.GPS_permission_text_pre_Android10);
 
         AlertDialog.Builder builder =
-            new AlertDialog.Builder(ctx)
+            new MaterialAlertDialogBuilder(ctx)
                 .setTitle(org.runnerup.common.R.string.GPS_permission_required)
                 .setNegativeButton(
                     org.runnerup.common.R.string.Cancel, (dialog, which) -> dialog.dismiss());
@@ -909,7 +910,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
         msgId = org.runnerup.common.R.string.Battery_optimization_check_text;
       }
 
-      new AlertDialog.Builder(ctx)
+      new MaterialAlertDialogBuilder(ctx)
           .setTitle(org.runnerup.common.R.string.Battery_optimization_check)
           .setMessage(msgId)
           .setPositiveButton(
@@ -1409,7 +1410,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
       advancedWorkoutStepsAdapter.notifyDataSetChanged();
     } catch (Exception ex) {
       ex.printStackTrace();
-      new AlertDialog.Builder(requireActivity())
+      new MaterialAlertDialogBuilder(requireActivity())
           .setTitle(getString(org.runnerup.common.R.string.Failed_to_load_workout))
           .setMessage(ex.toString())
           .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
@@ -1470,7 +1471,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
           try {
             WorkoutSerializer.writeFile(ctx, name, advancedWorkout);
           } catch (Exception ex) {
-            new AlertDialog.Builder(requireContext())
+            new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(org.runnerup.common.R.string.Failed_to_load_workout)
                 .setMessage(ex.toString())
                 .setPositiveButton(

@@ -1,7 +1,7 @@
 package org.runnerup.view;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
+import org.runnerup.util.M3ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -98,7 +98,7 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
       };
   private final Preference.OnPreferenceClickListener onPruneClick =
       preference -> {
-        final ProgressDialog dialog = new ProgressDialog(requireContext());
+        final M3ProgressDialog dialog = new M3ProgressDialog(requireContext());
         dialog.setTitle(org.runnerup.common.R.string.Pruning_deleted_activities_from_database);
         dialog.show();
         DBHelper.purgeDeletedActivities(requireContext(), dialog, dialog::dismiss);

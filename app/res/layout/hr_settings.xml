@@ -1,4 +1,5 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/hr_settings_view"
     android:layout_width="match_parent"
@@ -35,7 +36,7 @@
         android:layout_below="@id/linear_layout0"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
-        android:background="@drawable/countdown_background"
+        android:background="?attr/colorSurfaceContainer"
         android:orientation="vertical">
 
         <LinearLayout
@@ -98,22 +99,22 @@
             android:scrollbars="vertical" />
     </LinearLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/scan_button"
         style="@style/ButtonText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_above="@id/connect_button"
-        android:background="@drawable/btn_blue"
+        app:backgroundTint="?attr/colorPrimary"
         android:text="@string/Scan" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/connect_button"
         style="@style/ButtonText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@drawable/btn_green"
+        app:backgroundTint="@color/btn_green"
         android:text="@string/Connect" />
 
 </RelativeLayout>

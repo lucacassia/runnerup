@@ -46,6 +46,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -268,7 +269,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   }
 
   private void clearHRSettings() {
-    new AlertDialog.Builder(this)
+    new MaterialAlertDialogBuilder(this)
         .setTitle(org.runnerup.common.R.string.Clear_HR_settings)
         .setMessage(org.runnerup.common.R.string.Are_you_sure)
         .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> doClear())
@@ -328,7 +329,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   private void notSupported() {
     DialogInterface.OnClickListener listener = (dialog, which) -> dialog.dismiss();
 
-    new AlertDialog.Builder(this)
+    new MaterialAlertDialogBuilder(this)
         .setTitle(org.runnerup.common.R.string.Heart_rate_monitor_is_not_supported_for_your_device)
         .setNegativeButton(org.runnerup.common.R.string.Cancel, listener)
         .show();
@@ -396,7 +397,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
     }
 
     hrProvider = null;
-    new AlertDialog.Builder(this)
+    new MaterialAlertDialogBuilder(this)
         .setTitle(org.runnerup.common.R.string.Select_type_of_Bluetooth_device)
         .setPositiveButton(
             org.runnerup.common.R.string.OK,
@@ -460,7 +461,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
     requestPerms.toArray(permissions);
 
     AlertDialog.Builder builder =
-        new AlertDialog.Builder(HRSettingsActivity.this)
+        new MaterialAlertDialogBuilder(HRSettingsActivity.this)
             .setTitle(org.runnerup.common.R.string.Bluetooth_permission_required)
             .setMessage(getString(org.runnerup.common.R.string.Request_permission_text))
             .setNegativeButton(
@@ -506,7 +507,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
     hrProvider.startScan();
 
     AlertDialog.Builder builder =
-        new AlertDialog.Builder(this)
+        new MaterialAlertDialogBuilder(this)
             .setTitle(org.runnerup.common.R.string.Scanning)
             .setPositiveButton(
                 org.runnerup.common.R.string.Connect,

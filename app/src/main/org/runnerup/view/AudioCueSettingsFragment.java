@@ -21,6 +21,7 @@ import android.widget.EditText;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.preference.Preference;
 import androidx.preference.Preference.OnPreferenceClickListener;
 import androidx.preference.PreferenceFragmentCompat;
@@ -182,7 +183,7 @@ public class AudioCueSettingsFragment extends PreferenceFragmentCompat {
       createNewAudioSchemeDialog();
       return true;
     }
-    new AlertDialog.Builder(requireContext())
+    new MaterialAlertDialogBuilder(requireContext())
         .setMessage(org.runnerup.common.R.string.Are_you_sure)
         .setPositiveButton(
             org.runnerup.common.R.string.Yes,
@@ -312,7 +313,7 @@ public class AudioCueSettingsFragment extends PreferenceFragmentCompat {
     editText.setMinimumHeight(48);
     editText.setMinimumWidth(48);
 
-    new AlertDialog.Builder(requireContext())
+    new MaterialAlertDialogBuilder(requireContext())
         .setTitle(org.runnerup.common.R.string.Create_new_audio_cue_scheme)
         // Get the layout inflater
         .setView(editText)
@@ -331,7 +332,7 @@ public class AudioCueSettingsFragment extends PreferenceFragmentCompat {
   }
 
   private void CreateNewNoTtsAvailableDialog() {
-    new AlertDialog.Builder(requireContext())
+    new MaterialAlertDialogBuilder(requireContext())
         .setTitle(org.runnerup.common.R.string.tts_not_available_title)
         .setMessage(org.runnerup.common.R.string.tts_not_available)
         .setPositiveButton(org.runnerup.common.R.string.OK, null)

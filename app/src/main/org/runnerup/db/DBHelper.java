@@ -17,7 +17,7 @@
 
 package org.runnerup.db;
 
-import android.app.ProgressDialog;
+import org.runnerup.util.M3ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -29,6 +29,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -614,7 +615,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
   }
 
   public static void purgeDeletedActivities(
-      Context ctx, final ProgressDialog dialog, final Runnable onComplete) {
+      Context ctx, final M3ProgressDialog dialog, final Runnable onComplete) {
 
     final DBHelper mDBHelper = DBHelper.getHelper(ctx);
     final SQLiteDatabase db = mDBHelper.getWritableDatabase();
@@ -700,7 +701,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
 
     if (!isValidRunnerUpDatabase(ctx, from)) {
       Log.e(TAG, "Selected Uri is not a valid RunnerUp database: " + from);
-      new AlertDialog.Builder(ctx)
+      new MaterialAlertDialogBuilder(ctx)
           .setTitle("Import " + DBNAME)
           .setMessage(org.runnerup.common.R.string.import_error_invalid_database)
           .setPositiveButton(org.runnerup.common.R.string.OK, listener)
@@ -708,7 +709,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
       return;
     }
 
-    new AlertDialog.Builder(ctx)
+    new MaterialAlertDialogBuilder(ctx)
         .setTitle("Overwrite database")
         .setMessage("This will overwrite your current database. Are you sure?")
         .setPositiveButton(
@@ -717,7 +718,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
               try {
                 Uri to = getDbUri(ctx);
                 int cnt = FileUtil.copyFile(ctx, to, from);
-                new AlertDialog.Builder(ctx)
+                new MaterialAlertDialogBuilder(ctx)
                     .setTitle("Import " + DBNAME)
                     .setMessage(
                         "Copied "
@@ -728,7 +729,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
                     .setPositiveButton(org.runnerup.common.R.string.OK, listener)
                     .show();
               } catch (IOException | NullPointerException e) {
-                new AlertDialog.Builder(ctx)
+                new MaterialAlertDialogBuilder(ctx)
                     .setTitle("Import " + DBNAME)
                     .setMessage("Exception: " + e + " for " + from)
                     .setNegativeButton(org.runnerup.common.R.string.Cancel, listener)
@@ -747,7 +748,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
       return;
     }
 
-    AlertDialog.Builder builder = new AlertDialog.Builder(ctx).setTitle("Export " + DBNAME);
+    AlertDialog.Builder builder = new MaterialAlertDialogBuilder(ctx).setTitle("Export " + DBNAME);
     try {
       Uri from = getDbUri(ctx);
       int cnt = FileUtil.copyFile(ctx, to, from);

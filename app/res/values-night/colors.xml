@@ -3,4 +3,5 @@
     <!-- Stock Material 3 dark color roles (override light values/colors.xml) -->
     <color name="colorPrimary">#D0BCFF</color>
     <color name="colorText">#E6E0E9</color>
+    <color name="btn_green">#81C995</color>
 </resources>

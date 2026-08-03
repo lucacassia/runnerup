@@ -18,7 +18,7 @@
 package org.runnerup.export;
 
 import android.Manifest;
-import android.app.ProgressDialog;
+import org.runnerup.util.M3ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -41,6 +41,7 @@ import android.widget.CheckBox;
 import android.widget.TableRow;
 import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.collection.LongSparseArray;
 import androidx.core.app.ActivityCompat;
@@ -86,7 +87,7 @@ public class SyncManager {
   private SQLiteDatabase mDB = null;
   private AppCompatActivity mActivity = null;
   private Context mContext = null;
-  private ProgressDialog mSpinner = null;
+  private M3ProgressDialog mSpinner = null;
   private Synchronizer authSynchronizer = null;
   private Callback authCallback = null;
   private long mID = 0;
@@ -105,14 +106,14 @@ public class SyncManager {
   private StringBuffer cancelSync = null;
 
   public SyncManager(AppCompatActivity activity) {
-    init(activity, activity, new ProgressDialog(activity));
+    init(activity, activity, new M3ProgressDialog(activity));
   }
 
   public SyncManager(Context context) {
-    init(null, context, new ProgressDialog(context));
+    init(null, context, new M3ProgressDialog(context));
   }
 
-  public SyncManager(Context context, ProgressDialog spinner) {
+  public SyncManager(Context context, M3ProgressDialog spinner) {
     init(null, context, spinner);
   }
 
@@ -170,7 +171,7 @@ public class SyncManager {
     return cmp;
   }
 
-  private void init(AppCompatActivity activity, Context context, ProgressDialog spinner) {
+  private void init(AppCompatActivity activity, Context context, M3ProgressDialog spinner) {
     this.mActivity = activity;
     this.mContext = context;
     mDB = DBHelper.getWritableDatabase(context);
@@ -418,7 +419,7 @@ public class SyncManager {
       rowUrl.setVisibility(View.GONE);
     }
 
-    new AlertDialog.Builder(mActivity)
+    new MaterialAlertDialogBuilder(mActivity)
         .setTitle(sync.getName())
 
         // Inflate and set the layout for the dialog
@@ -505,7 +506,7 @@ public class SyncManager {
     }
 
     AlertDialog.Builder builder =
-        new AlertDialog.Builder(mActivity)
+        new MaterialAlertDialogBuilder(mActivity)
             .setTitle(sync.getName())
 
             // Inflate and set the layout for the dialog
@@ -598,7 +599,7 @@ public class SyncManager {
   }
 
   private void doUpload(final Synchronizer synchronizer) {
-    final ProgressDialog copySpinner = mSpinner;
+    final M3ProgressDialog copySpinner = mSpinner;
     final SQLiteDatabase copyDB = DBHelper.getWritableDatabase(mContext);
 
     copySpinner.setMessage(
@@ -682,7 +683,7 @@ public class SyncManager {
 
   private void syncOK(
       Synchronizer synchronizer,
-      ProgressDialog copySpinner,
+      M3ProgressDialog copySpinner,
       SQLiteDatabase copyDB,
       Synchronizer.Status status) {
     copySpinner.setMessage(getResources().getString(org.runnerup.common.R.string.Saving));
@@ -833,7 +834,7 @@ public class SyncManager {
   }
 
   private void doListWorkout(final Synchronizer synchronizer) {
-    final ProgressDialog copySpinner = mSpinner;
+    final M3ProgressDialog copySpinner = mSpinner;
     copySpinner.setMessage("Listing from " + synchronizer.getName());
 
     executor.execute(
@@ -1062,7 +1063,7 @@ public class SyncManager {
 
   private void doSyncMulti(
       final Synchronizer synchronizer, final SyncMode mode, final SyncActivityItem activityItem) {
-    final ProgressDialog copySpinner = mSpinner;
+    final M3ProgressDialog copySpinner = mSpinner;
     final SQLiteDatabase copyDB = DBHelper.getWritableDatabase(mContext);
 
     copySpinner.setMessage((1 + syncActivitiesList.size()) + " remaining");
