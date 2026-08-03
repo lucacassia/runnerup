@@ -16,24 +16,6 @@
   -->
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="AppTheme" parent="Theme.AppCompat">
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorAccent">@color/colorAccent</item>
-        <item name="android:windowBackground">@color/colorPrimaryDark</item>
-        <item name="android:fontFamily" tools:ignore="NewApi">@font/space_mono</item>
-        <item name="fontFamily" tools:ignore="NewApi">@font/space_mono</item>
-    </style>
-
-    <style name="AppTheme.NoActionBar" parent="AppTheme">
-        <item name="windowNoTitle">true</item>
-        <item name="windowActionBar">false</item>
-    </style>
-
-    <style name="MainLayoutTheme" parent="AppTheme.NoActionBar">
-        <item name="android:tabWidgetStyle">@style/BottomNavigationTabWidget</item>
-    </style>
-
     <style name="ButtonText" parent="Widget.AppCompat.Button.Colored">
         <item name="android:textColor">@color/btn_text_color</item>
         <item name="android:layout_margin">3dp</item>
@@ -44,8 +26,8 @@
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:textColor">@android:color/white</item>
-        <item name="android:textSize">15sp</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
         <item name="android:textStyle">italic</item>
     </style>
 
@@ -54,8 +36,8 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:layout_weight">1</item>
         <item name="android:gravity">right</item>
-        <item name="android:textColor">@android:color/white</item>
-        <item name="android:textSize">20sp</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="BottomNavigationTabWidget" parent="android:Widget.TabWidget">
@@ -76,30 +58,28 @@
     </style>
 
     <style name="AppBarStatisticsText">
-        <item name="fontFamily" tools:ignore="NewApi">@font/space_mono_bold</item>
-        <item name="android:textSize">16sp</item>
-        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="ListItem">
-        <item name="android:textSize">16sp</item>
-        <item name="android:textColor">@color/colorText</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <style name="ListDescription">
-        <item name="android:textSize">14sp</item>
-        <item name="android:textColor">@color/colorTextSecondary</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyMedium</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <style name="ListCategoryHeading">
-        <item name="fontFamily" tools:ignore="NewApi">@font/space_mono_bold</item>
-        <item name="android:textColor">@color/colorAccent</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
     </style>
 
     <style name="StatusText">
-        <item name="android:textSize">12sp</item>
-        <item name="android:textColor">@color/colorText</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelMedium</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
 </resources>

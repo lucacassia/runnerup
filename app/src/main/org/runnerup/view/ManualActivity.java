@@ -63,9 +63,6 @@ public class ManualActivity extends AppCompatActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
-    Window window = getWindow();
-    WindowCompat.getInsetsController(window, window.getDecorView())
-        .setAppearanceLightStatusBars(false);
     super.onCreate(savedInstanceState);
 
     mDB = DBHelper.getWritableDatabase(this);

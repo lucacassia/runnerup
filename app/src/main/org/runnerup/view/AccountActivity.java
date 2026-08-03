@@ -77,8 +77,6 @@ public class AccountActivity extends AppCompatActivity implements Constants {
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
     Window window = getWindow();
-    WindowCompat.getInsetsController(window, window.getDecorView())
-        .setAppearanceLightStatusBars(false);
     super.onCreate(savedInstanceState);
     setContentView(R.layout.account);
 

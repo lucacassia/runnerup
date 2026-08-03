@@ -120,8 +120,6 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
     Window window = getWindow();
-    WindowCompat.getInsetsController(window, window.getDecorView())
-        .setAppearanceLightStatusBars(false);
     super.onCreate(savedInstanceState);
     setContentView(R.layout.hr_settings);
     WidgetUtil.addLegacyOverflowButton(window);

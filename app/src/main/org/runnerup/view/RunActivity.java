@@ -120,8 +120,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
     Window window = getWindow();
-    WindowCompat.getInsetsController(window, window.getDecorView())
-        .setAppearanceLightStatusBars(false);
     super.onCreate(savedInstanceState);
     if (!isLargeScreen()) {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);

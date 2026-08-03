@@ -45,9 +45,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
-    Window window = getWindow();
-    WindowCompat.getInsetsController(window, window.getDecorView())
-        .setAppearanceLightStatusBars(false);
     super.onCreate(savedInstanceState);
 
     AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);

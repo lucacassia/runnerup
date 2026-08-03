@@ -29,8 +29,6 @@
         android:id="@+id/history_actionbar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
-        android:elevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -56,11 +54,12 @@
         android:layout_margin="16dp"
         android:contentDescription="@string/Add_manual_entry"
         android:tooltipText="@string/Add_manual_entry"
-        app:backgroundTint="@color/colorPrimaryFab"
+        app:backgroundTint="?attr/colorPrimaryContainer"
         app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:srcCompat="@drawable/ic_add_white_24dp"
+        app:tint="?attr/colorOnPrimaryContainer"
         tools:ignore="UnusedAttribute" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

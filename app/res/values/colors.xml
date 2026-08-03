@@ -15,15 +15,9 @@
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 <resources>
-    <color name="subsectionBg">#073642</color>
-    <color name="colorPrimaryDark">#002b36</color>
-    <color name="colorPrimary">#073642</color>
-    <color name="colorAccent">#268bd2</color>
-    <color name="colorText">#93a1a1</color>
-    <color name="colorTextSecondary">#586e75</color>
-
-    <color name="colorPrimaryFab">#268bd2</color>
-    <color name="colorBottomNav">#002b36</color>
+    <!-- Stock Material 3 light color roles -->
+    <color name="colorPrimary">#6750A4</color>
+    <color name="colorText">#1D1B20</color>
 
     <color name="serviceDefault">#073642</color>
     <color name="serviceDropbox">#0D2481</color>

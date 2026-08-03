@@ -27,8 +27,6 @@
         android:id="@+id/start_actionbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
-        android:elevation="4dp"
         tools:ignore="UnusedAttribute">
 
         <org.runnerup.widget.ClassicSpinner
@@ -80,7 +78,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:animateLayoutChanges="true"
-                android:background="@color/subsectionBg"
+                android:background="?attr/colorSurfaceContainer"
                 android:clickable="true"
                 android:focusable="true"
                 android:orientation="vertical"

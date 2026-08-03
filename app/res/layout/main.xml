@@ -33,7 +33,7 @@
         android:layout_height="56dp"
         android:layout_marginTop="0px"
         android:layout_marginBottom="0px"
-        android:background="@color/colorBottomNav"
+        android:background="?attr/colorSurface"
         android:elevation="8dp"
         android:padding="0px"
         app:tabIconTint="@color/bottom_tabs"

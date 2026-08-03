@@ -81,9 +81,6 @@ public class OAuth2Activity extends AppCompatActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
-    Window window = getWindow();
-    WindowCompat.getInsetsController(window, window.getDecorView())
-        .setAppearanceLightStatusBars(false);
     super.onCreate(savedInstanceState);
     Intent intent = getIntent();
     Bundle b = mArgs = intent.getBundleExtra(OAuth2ServerCredentials.AUTH_ARGUMENTS);

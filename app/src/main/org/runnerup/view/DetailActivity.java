@@ -137,8 +137,6 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
     Window window = getWindow();
-    WindowCompat.getInsetsController(window, window.getDecorView())
-        .setAppearanceLightStatusBars(false);
     super.onCreate(savedInstanceState);
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       // MapBox or Osmdroid, set mapWrapper.
