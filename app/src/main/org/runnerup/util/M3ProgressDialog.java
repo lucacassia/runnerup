@@ -19,6 +19,7 @@ package org.runnerup.util;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.view.ContextThemeWrapper;
 import android.view.Gravity;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -39,21 +40,24 @@ public class M3ProgressDialog extends AlertDialog {
   private final LinearProgressIndicator progressView;
 
   public M3ProgressDialog(@NonNull Context context) {
-    super(context);
+    // Material components require an AppCompat theme. The caller may pass a non-activity context
+    // (e.g. getApplicationContext()), so wrap it to guarantee a compliant theme.
+    super(new ContextThemeWrapper(context, org.runnerup.R.style.AppTheme));
+    Context themedContext = getContext();
     setCanceledOnTouchOutside(false);
 
-    float density = context.getResources().getDisplayMetrics().density;
+    float density = themedContext.getResources().getDisplayMetrics().density;
 
-    LinearLayout content = new LinearLayout(context);
+    LinearLayout content = new LinearLayout(themedContext);
     content.setOrientation(LinearLayout.VERTICAL);
     content.setGravity(Gravity.CENTER_HORIZONTAL);
 
-    messageView = new TextView(context);
-    messageView.setTextAppearance(context, com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
+    messageView = new TextView(themedContext);
+    messageView.setTextAppearance(themedContext, com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
     content.addView(
         messageView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
-    progressView = new LinearProgressIndicator(context);
+    progressView = new LinearProgressIndicator(themedContext);
     progressView.setIndeterminate(true);
     LinearLayout.LayoutParams progressLp =
         new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
