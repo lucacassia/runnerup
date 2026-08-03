@@ -17,19 +17,19 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_pressed="true">
         <shape>
-            <gradient android:angle="270" android:endColor="#1b5934" android:startColor="#15743C" />
+            <solid android:color="#073642" />
             <corners android:radius="5dp" />
         </shape>
     </item>
     <item android:state_enabled="false">
         <shape>
-            <gradient android:angle="270" android:endColor="#171717" android:startColor="#777777" />
+            <solid android:color="#586e75" />
             <corners android:radius="5dp" />
         </shape>
     </item>
     <item>
         <shape>
-            <gradient android:angle="270" android:endColor="#1b5934" android:startColor="#7fb883" />
+            <solid android:color="#859900" />
             <corners android:radius="5dp" />
         </shape>
     </item>

@@ -19,10 +19,7 @@
     <stroke
         android:width="2dp"
         android:color="#FFFFFFFF" />
-    <gradient
-        android:angle="225"
-        android:endColor="#DD2ECCFA"
-        android:startColor="#DD000000" />
+    <solid android:color="#FF073642" />
     <corners
         android:bottomLeftRadius="7dp"
         android:bottomRightRadius="7dp"

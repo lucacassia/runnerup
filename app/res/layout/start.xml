@@ -80,7 +80,7 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:animateLayoutChanges="true"
-                android:background="#424242"
+                android:background="@color/subsectionBg"
                 android:clickable="true"
                 android:focusable="true"
                 android:orientation="vertical"

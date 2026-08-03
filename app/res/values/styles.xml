@@ -20,6 +20,9 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/colorPrimaryDark</item>
+        <item name="android:fontFamily" tools:ignore="NewApi">@font/space_mono</item>
+        <item name="fontFamily" tools:ignore="NewApi">@font/space_mono</item>
     </style>
 
     <style name="AppTheme.NoActionBar" parent="AppTheme">
@@ -73,7 +76,7 @@
     </style>
 
     <style name="AppBarStatisticsText">
-        <item name="fontFamily" tools:ignore="NewApi">@string/fontFamily_medium</item>
+        <item name="fontFamily" tools:ignore="NewApi">@font/space_mono_bold</item>
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">@android:color/white</item>
     </style>
@@ -89,7 +92,7 @@
     </style>
 
     <style name="ListCategoryHeading">
-        <item name="fontFamily" tools:ignore="NewApi">@string/fontFamily_medium</item>
+        <item name="fontFamily" tools:ignore="NewApi">@font/space_mono_bold</item>
         <item name="android:textColor">@color/colorAccent</item>
         <item name="android:textSize">14sp</item>
     </style>
