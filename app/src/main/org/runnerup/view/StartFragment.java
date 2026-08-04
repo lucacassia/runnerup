@@ -792,8 +792,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
 
     Context ctx = requireContext();
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      requiredPerms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
-
       final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
       boolean enabled =
           prefs.getBoolean(
