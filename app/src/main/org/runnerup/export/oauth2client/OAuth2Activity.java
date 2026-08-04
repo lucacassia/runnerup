@@ -18,7 +18,6 @@
 package org.runnerup.export.oauth2client;
 
 import android.annotation.SuppressLint;
-import org.runnerup.util.M3ProgressDialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -34,7 +33,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.WindowCompat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +45,7 @@ import org.runnerup.common.util.Constants.DB;
 import org.runnerup.export.Synchronizer;
 import org.runnerup.export.util.FormValues;
 import org.runnerup.export.util.SyncHelper;
+import org.runnerup.util.M3ProgressDialog;
 import org.runnerup.util.ViewUtil;
 
 @SuppressLint("SetJavaScriptEnabled")

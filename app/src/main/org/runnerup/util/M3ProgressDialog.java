@@ -28,10 +28,9 @@ import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 /**
- * A Material 3 styled progress dialog replacing the deprecated {@link
- * android.app.ProgressDialog}. It shows an indeterminate progress indicator by default and switches
- * to a determinate (max/progress) indicator once {@link #setMax(int)} or {@link #setProgress(int)}
- * is called.
+ * A Material 3 styled progress dialog replacing the deprecated {@link android.app.ProgressDialog}.
+ * It shows an indeterminate progress indicator by default and switches to a determinate
+ * (max/progress) indicator once {@link #setMax(int)} or {@link #setProgress(int)} is called.
  */
 @SuppressLint("SetTextI18n")
 public class M3ProgressDialog extends AlertDialog {
@@ -53,14 +52,18 @@ public class M3ProgressDialog extends AlertDialog {
     content.setGravity(Gravity.CENTER_HORIZONTAL);
 
     messageView = new TextView(themedContext);
-    messageView.setTextAppearance(themedContext, com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
+    messageView.setTextAppearance(
+        themedContext, com.google.android.material.R.style.TextAppearance_Material3_BodyMedium);
     content.addView(
-        messageView, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        messageView,
+        new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
 
     progressView = new LinearProgressIndicator(themedContext);
     progressView.setIndeterminate(true);
     LinearLayout.LayoutParams progressLp =
-        new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
     progressLp.topMargin = (int) (8 * density);
     content.addView(progressView, progressLp);
 

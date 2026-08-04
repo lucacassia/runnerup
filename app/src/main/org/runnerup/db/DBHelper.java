@@ -17,7 +17,6 @@
 
 package org.runnerup.db;
 
-import org.runnerup.util.M3ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -50,6 +49,7 @@ import org.runnerup.export.RunningAHEADSynchronizer;
 import org.runnerup.export.StravaSynchronizer;
 import org.runnerup.export.WebDavSynchronizer;
 import org.runnerup.util.FileUtil;
+import org.runnerup.util.M3ProgressDialog;
 import org.runnerup.workout.FileFormats;
 
 public class DBHelper extends SQLiteOpenHelper implements Constants {

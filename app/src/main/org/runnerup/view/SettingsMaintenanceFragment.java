@@ -1,7 +1,6 @@
 package org.runnerup.view;
 
 import android.app.Activity;
-import org.runnerup.util.M3ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -17,6 +16,7 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import org.runnerup.R;
 import org.runnerup.db.DBHelper;
+import org.runnerup.util.M3ProgressDialog;
 
 public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
 

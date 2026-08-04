@@ -27,7 +27,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -41,7 +40,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
-import androidx.core.view.WindowCompat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -78,8 +76,7 @@ public class UploadActivity extends AppCompatActivity implements Constants {
 
   private final ActivityResultLauncher<Intent> detailLauncher =
       registerForActivityResult(
-          new ActivityResultContracts.StartActivityForResult(),
-          result -> fillData());
+          new ActivityResultContracts.StartActivityForResult(), result -> fillData());
 
   /** Called when the activity is first created. */
   @Override
