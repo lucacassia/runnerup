@@ -24,12 +24,12 @@
     android:padding="16dp">
 
     <TextView
+        style="@style/ListCategoryHeading"
         android:id="@+id/account_row_section_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="24dp"
-        android:textAppearance="@style/ListCategoryHeading"
         android:visibility="visible" />
 
     <LinearLayout

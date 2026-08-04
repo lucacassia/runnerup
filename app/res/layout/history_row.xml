@@ -21,12 +21,12 @@
     android:padding="16dp">
 
     <TextView
+        style="@style/ListCategoryHeading"
         android:id="@+id/history_section_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginBottom="24dp"
-        android:textAppearance="@style/ListCategoryHeading"
         android:visibility="visible" />
 
     <LinearLayout
@@ -43,19 +43,19 @@
             android:contentDescription="@string/Sport" />
 
         <TextView
+            style="@style/ListItem"
             android:id="@+id/history_list_distance"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textAppearance="@style/ListItem" />
+            android:layout_weight="1" />
 
         <TextView
+            style="@style/ListItem"
             android:id="@+id/history_list_date"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:gravity="end"
-            android:textAppearance="@style/ListItem" />
+            android:gravity="end" />
     </LinearLayout>
 
     <LinearLayout
@@ -64,24 +64,24 @@
         android:orientation="horizontal">
 
         <TextView
+            style="@style/ListDescription"
             android:id="@+id/history_list_duration"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textAppearance="@style/ListDescription" />
+            android:layout_weight="1" />
 
         <TextView
+            style="@style/ListDescription"
             android:id="@+id/history_list_pace"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textAppearance="@style/ListDescription" />
+            android:layout_weight="1" />
 
         <TextView
+            style="@style/ListDescription"
             android:id="@+id/history_list_additional"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textAppearance="@style/ListDescription" />
+            android:layout_weight="1" />
     </LinearLayout>
 </LinearLayout>
