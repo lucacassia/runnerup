@@ -29,7 +29,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.core.app.ActivityCompat;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,13 +52,14 @@ public abstract class Bt20Base extends BtHRBase {
   private int hrValue = 0;
   private long hrTimestamp = 0;
   private long hrElapsedRealtime = 0;
+  private final Context context;
   private BluetoothAdapter btAdapter = null;
   private boolean mIsConnecting;
   private boolean mIsConnected;
   private boolean mIsScanning;
 
-  Bt20Base(@SuppressWarnings("UnusedParameters") Context ctx) {
-    // context = ctx;
+  Bt20Base(Context ctx) {
+    context = ctx;
   }
 
   public static boolean isEnabledImpl() {
@@ -66,18 +67,16 @@ public abstract class Bt20Base extends BtHRBase {
         && BluetoothAdapter.getDefaultAdapter().isEnabled();
   }
 
-  // private Context context = null;
-
   @SuppressWarnings("SameReturnValue")
-  public static boolean startEnableIntentImpl(AppCompatActivity activity, int requestCode) {
+  public static boolean startEnableIntentImpl(
+      Context context, ActivityResultLauncher<Intent> launcher) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-        && ActivityCompat.checkSelfPermission(activity, Manifest.permission.BLUETOOTH_CONNECT)
+        && ActivityCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT)
             != PackageManager.PERMISSION_GRANTED) {
       Log.d(Bt20Base.class.getName(), "No BLUETOOTH_CONNECT permission in startEnableIntentImpl");
       return false;
     }
-    activity.startActivityForResult(
-        new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), requestCode);
+    launcher.launch(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE));
     return true;
   }
 
@@ -166,8 +165,8 @@ public abstract class Bt20Base extends BtHRBase {
     return isEnabledImpl();
   }
 
-  public boolean startEnableIntent(AppCompatActivity activity, int requestCode) {
-    return startEnableIntentImpl(activity, requestCode);
+  public boolean startEnableIntent(ActivityResultLauncher<Intent> launcher) {
+    return startEnableIntentImpl(context, launcher);
   }
 
   @Override

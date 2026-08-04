@@ -32,6 +32,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -39,7 +40,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.os.SystemClock;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
 import androidx.core.app.ActivityCompat;
 import androidx.preference.PreferenceManager;
 import java.util.Collections;
@@ -414,8 +415,8 @@ public class AndroidBLEHRProvider extends BtHRBase implements HRProvider {
     return Bt20Base.isEnabledImpl();
   }
 
-  public boolean startEnableIntent(AppCompatActivity activity, int requestCode) {
-    return Bt20Base.startEnableIntentImpl(activity, requestCode);
+  public boolean startEnableIntent(ActivityResultLauncher<Intent> launcher) {
+    return Bt20Base.startEnableIntentImpl(context, launcher);
   }
 
   @Override

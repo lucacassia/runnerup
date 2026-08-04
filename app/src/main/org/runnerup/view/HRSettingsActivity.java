@@ -97,12 +97,23 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   private static final int GRAPH_HISTORY_SIZE = 180;
   private static final double xInterval = 60;
 
-  private static final int REQUEST_BLUETOOTH_SETTINGS = 123;
-  private static final int REQUEST_BLUETOOTH_ENABLE = 3002;
-
   private final ActivityResultLauncher<String[]> permissionLauncher =
       registerForActivityResult(
           new ActivityResultContracts.RequestMultiplePermissions(), result -> {});
+
+  private final ActivityResultLauncher<Intent> bluetoothEnableLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> {
+            if (!hrProvider.isEnabled()) {
+              log("Bluetooth not enabled!");
+              scanButton.setEnabled(false);
+              connectButton.setEnabled(false);
+              return;
+            }
+            load();
+            open();
+          });
 
   private DeviceAdapter deviceAdapter = null;
   private boolean mIsScanning = false;
@@ -243,25 +254,6 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
     return super.onOptionsItemSelected(item);
   }
 
-  @Override
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
-    if (requestCode == REQUEST_BLUETOOTH_ENABLE) {
-      if (!hrProvider.isEnabled()) {
-        log("Bluetooth not enabled!");
-        scanButton.setEnabled(false);
-        connectButton.setEnabled(false);
-        return;
-      }
-      load();
-      open();
-      return;
-    }
-    if (requestCode == REQUEST_BLUETOOTH_SETTINGS) {
-      startScan();
-    }
-  }
-
   private int lineNo = 0;
 
   private void log(String msg) {
@@ -308,7 +300,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
         return;
       }
 
-      if (hrProvider.startEnableIntent(this, REQUEST_BLUETOOTH_ENABLE)) {
+      if (hrProvider.startEnableIntent(bluetoothEnableLauncher)) {
         return;
       }
       hrProvider = null;

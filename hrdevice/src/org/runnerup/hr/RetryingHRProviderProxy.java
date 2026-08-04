@@ -1,9 +1,10 @@
 package org.runnerup.hr;
 
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
 
 /**
  * Created by jonas on 11/9/14.
@@ -53,8 +54,8 @@ public class RetryingHRProviderProxy implements HRProvider, HRProvider.HRClient 
   }
 
   @Override
-  public boolean startEnableIntent(AppCompatActivity activity, int requestCode) {
-    return provider.startEnableIntent(activity, requestCode);
+  public boolean startEnableIntent(ActivityResultLauncher<Intent> launcher) {
+    return provider.startEnableIntent(launcher);
   }
 
   @Override
