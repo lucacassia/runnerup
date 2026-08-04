@@ -55,13 +55,13 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.tabs.TabLayout;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -176,10 +176,11 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
   private NotificationStateManager notificationStateManager;
   private GpsSearchingState gpsSearchingState;
   private GpsBoundState gpsBoundState;
-  // Id to identify a permission request.
   // Note that the result is not used, the user is dropped back to initial view when a request is
   // done.
-  private static final int REQUEST_LOCATION = 3000;
+  private final ActivityResultLauncher<String[]> permissionLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.RequestMultiplePermissions(), result -> {});
 
   private final SharedPreferences.OnSharedPreferenceChangeListener prefChangeListener =
       (sharedPrefs, key) -> {
@@ -255,12 +256,9 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     view.findViewById(R.id.status_layout).setOnClickListener(v -> toggleStatusDetails());
 
     tabLayout = view.findViewById(R.id.tab_layout);
-    tabLayout.addTab(
-        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Basic)));
-    tabLayout.addTab(
-        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Interval)));
-    tabLayout.addTab(
-        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Advanced)));
+    tabLayout.addTab(tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Basic)));
+    tabLayout.addTab(tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Interval)));
+    tabLayout.addTab(tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Advanced)));
     tabLayout.addOnTabSelectedListener(onTabSelectedListener);
     setTabContentVisibility();
 
@@ -883,9 +881,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
           builder
               .setPositiveButton(
                   org.runnerup.common.R.string.OK,
-                  (dialog, id) ->
-                      ActivityCompat.requestPermissions(
-                          requireActivity(), permissions, REQUEST_LOCATION))
+                  (dialog, id) -> permissionLauncher.launch(permissions))
               .setMessage(
                   baseMessage
                       + "\n"
@@ -1027,8 +1023,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
         break;
       }
 
-      if (getCurrentTabTag().contentEquals(TAB_ADVANCED)
-          && advancedWorkout == null) {
+      if (getCurrentTabTag().contentEquals(TAB_ADVANCED) && advancedWorkout == null) {
         break;
       }
 

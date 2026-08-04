@@ -32,7 +32,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.CompoundButton;
@@ -47,10 +46,9 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.WindowCompat;
 import androidx.preference.PreferenceManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -105,8 +103,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
           new ActivityResultContracts.StartActivityForResult(),
           result -> {
             if (syncManager != null) {
-              syncManager.onActivityResult(
-                  SyncManager.CONFIGURE_REQUEST, result.getResultCode(), result.getData());
+              syncManager.handleAuthResult(result.getResultCode(), result.getData());
             }
             requery();
           });

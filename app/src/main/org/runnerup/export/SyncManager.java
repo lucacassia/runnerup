@@ -18,7 +18,6 @@
 package org.runnerup.export;
 
 import android.Manifest;
-import org.runnerup.util.M3ProgressDialog;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -41,13 +40,13 @@ import android.widget.CheckBox;
 import android.widget.TableRow;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.collection.LongSparseArray;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,15 +70,12 @@ import org.runnerup.export.Synchronizer.AuthMethod;
 import org.runnerup.export.Synchronizer.Status;
 import org.runnerup.tracker.WorkoutObserver;
 import org.runnerup.util.Encryption;
+import org.runnerup.util.M3ProgressDialog;
 import org.runnerup.util.SyncActivityItem;
 import org.runnerup.workout.WorkoutSerializer;
 
 public class SyncManager {
-  // Used by several activities
-  public static final int CONFIGURE_REQUEST = 1;
   public static final long ERROR_ACTIVITY_ID = -1L;
-  // Id to identify a permission request.
-  private static final int REQUEST_STORAGE = 3003;
   private final Map<String, Synchronizer> synchronizers = new HashMap<>();
   private final LongSparseArray<Synchronizer> synchronizersById = new LongSparseArray<>();
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -90,6 +86,7 @@ public class SyncManager {
   private Context mContext = null;
   private M3ProgressDialog mSpinner = null;
   private ActivityResultLauncher<Intent> configureLauncher = null;
+  private ActivityResultLauncher<String[]> permissionLauncher = null;
   private Synchronizer authSynchronizer = null;
   private Callback authCallback = null;
   private long mID = 0;
@@ -184,6 +181,11 @@ public class SyncManager {
     mSpinner = spinner;
     mSpinner.setCancelable(false);
     simplifier = PathSimplifier.getPathSimplifierForExport(context);
+    if (mActivity != null) {
+      permissionLauncher =
+          mActivity.registerForActivityResult(
+              new ActivityResultContracts.RequestMultiplePermissions(), result -> {});
+    }
   }
 
   public synchronized void close() {
@@ -345,10 +347,13 @@ public class SyncManager {
     authCallback = callback;
     switch (authMethod) {
       case OAUTH2:
-        if (configureLauncher != null) {
-          configureLauncher.launch(l.getAuthIntent(mActivity));
+        if (configureLauncher == null) {
+          Log.e(
+              getClass().getName(),
+              "OAUTH2 auth requested but no ActivityResultLauncher registered");
+          handleAuthComplete(l, Status.ERROR);
         } else {
-          mActivity.startActivityForResult(l.getAuthIntent(mActivity), CONFIGURE_REQUEST);
+          configureLauncher.launch(l.getAuthIntent(mActivity));
         }
         return;
       case USER_PASS:
@@ -356,7 +361,7 @@ public class SyncManager {
         askUsernamePassword(l, authMethod);
         return;
       case FILEPERMISSION:
-        checkStoragePermissions(mActivity);
+        checkStoragePermissions();
         askFileUrl(l);
     }
   }
@@ -561,7 +566,7 @@ public class SyncManager {
   }
 
   @SuppressWarnings("UnusedReturnValue")
-  private boolean checkStoragePermissions(final AppCompatActivity activity) {
+  private boolean checkStoragePermissions() {
     boolean result = true;
     String[] requiredPerms;
     requiredPerms =
@@ -570,8 +575,8 @@ public class SyncManager {
         };
     List<String> defaultPerms = new ArrayList<>();
     for (final String perm : requiredPerms) {
-      if (ContextCompat.checkSelfPermission(activity, perm) != PackageManager.PERMISSION_GRANTED) {
-        // Normally, ActivityCompat.shouldShowRequestPermissionRationale(activity, perm)
+      if (ContextCompat.checkSelfPermission(mActivity, perm) != PackageManager.PERMISSION_GRANTED) {
+        // Normally, ActivityCompat.shouldShowRequestPermissionRationale(mActivity, perm)
         // should be used here but this is needed anyway (no specific motivation)
         defaultPerms.add(perm);
       }
@@ -580,7 +585,9 @@ public class SyncManager {
       // Request permission, dont care about the result
       final String[] perms = new String[defaultPerms.size()];
       defaultPerms.toArray(perms);
-      ActivityCompat.requestPermissions(activity, perms, REQUEST_STORAGE);
+      if (permissionLauncher != null) {
+        permissionLauncher.launch(perms);
+      }
       result = false;
     }
     // TODO A popup in the AccountActivity, to prompt for storage permissions
@@ -721,8 +728,8 @@ public class SyncManager {
     if (cb != null) cb.run(null, null);
   }
 
-  public void onActivityResult(int requestCode, int resultCode, Intent data) {
-    if (requestCode != CONFIGURE_REQUEST || authSynchronizer == null) {
+  public void handleAuthResult(int resultCode, Intent data) {
+    if (authSynchronizer == null) {
       return;
     }
 

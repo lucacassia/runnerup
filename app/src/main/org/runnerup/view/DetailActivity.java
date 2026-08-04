@@ -23,6 +23,7 @@ import static org.runnerup.content.ActivityProvider.TCX_MIME;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -37,7 +38,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
-import android.content.res.ColorStateList;
 import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
@@ -53,9 +53,6 @@ import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.tabs.TabLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
@@ -64,6 +61,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -135,16 +134,14 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
   private final ActivityResultLauncher<Intent> editAccountLauncher =
       registerForActivityResult(
-          new ActivityResultContracts.StartActivityForResult(),
-          result -> requery());
+          new ActivityResultContracts.StartActivityForResult(), result -> requery());
 
   private final ActivityResultLauncher<Intent> configureLauncher =
       registerForActivityResult(
           new ActivityResultContracts.StartActivityForResult(),
           result -> {
             if (syncManager != null) {
-              syncManager.onActivityResult(
-                  SyncManager.CONFIGURE_REQUEST, result.getResultCode(), result.getData());
+              syncManager.handleAuthResult(result.getResultCode(), result.getData());
             }
             requery();
           });
@@ -245,30 +242,18 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
     TabLayout tabLayout = findViewById(R.id.tab_layout);
     tabLayout.addTab(
-        tabLayout
-            .newTab()
-            .setText(getString(org.runnerup.common.R.string.Notes))
-            .setTag("notes"));
+        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Notes)).setTag("notes"));
     tabLayout.addTab(
-        tabLayout
-            .newTab()
-            .setText(getString(org.runnerup.common.R.string.Laps))
-            .setTag("laps"));
+        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Laps)).setTag("laps"));
 
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       mapTab =
-          tabLayout
-              .newTab()
-              .setText(getString(org.runnerup.common.R.string.Map))
-              .setTag("map");
+          tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Map)).setTag("map");
       tabLayout.addTab(mapTab);
     }
 
     tabLayout.addTab(
-        tabLayout
-            .newTab()
-            .setText(getString(org.runnerup.common.R.string.Graph))
-            .setTag("graph"));
+        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Graph)).setTag("graph"));
 
     tabLayout.addTab(
         tabLayout
@@ -854,7 +839,8 @@ public class DetailActivity extends AppCompatActivity implements Constants {
             new com.google.android.material.button.MaterialButton(DetailActivity.this);
         b.setText(org.runnerup.common.R.string.Configure_accounts);
         b.setBackgroundTintList(
-            ColorStateList.valueOf(ContextCompat.getColor(DetailActivity.this, R.color.colorPrimary)));
+            ColorStateList.valueOf(
+                ContextCompat.getColor(DetailActivity.this, R.color.colorPrimary)));
         b.setTextColor(
             AppCompatResources.getColorStateList(DetailActivity.this, R.color.btn_text_color));
         b.setOnClickListener(

@@ -32,7 +32,6 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -48,7 +47,6 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.WindowCompat;
 import androidx.cursoradapter.widget.CursorAdapter;
 import androidx.loader.app.LoaderManager.LoaderCallbacks;
 import androidx.loader.content.Loader;
@@ -83,8 +81,7 @@ public class AccountListActivity extends AppCompatActivity
           new ActivityResultContracts.StartActivityForResult(),
           result -> {
             if (mSyncManager != null) {
-              mSyncManager.onActivityResult(
-                  SyncManager.CONFIGURE_REQUEST, result.getResultCode(), result.getData());
+              mSyncManager.handleAuthResult(result.getResultCode(), result.getData());
               this.mCursorAdapter.notifyDataSetChanged();
             }
           });

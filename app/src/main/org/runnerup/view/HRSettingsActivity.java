@@ -45,13 +45,14 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.WindowCompat;
 import androidx.preference.PreferenceManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.jjoe64.graphview.DefaultLabelFormatter;
 import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
@@ -98,7 +99,10 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
 
   private static final int REQUEST_BLUETOOTH_SETTINGS = 123;
   private static final int REQUEST_BLUETOOTH_ENABLE = 3002;
-  private static final int REQUEST_BLUETOOTH_PERM = 3001;
+
+  private final ActivityResultLauncher<String[]> permissionLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.RequestMultiplePermissions(), result -> {});
 
   private DeviceAdapter deviceAdapter = null;
   private boolean mIsScanning = false;
@@ -471,9 +475,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
       // Note that the result is not used, the user is dropped back to initial view when a request
       // is done.
       builder.setPositiveButton(
-          org.runnerup.common.R.string.OK,
-          (dialog, id) ->
-              ActivityCompat.requestPermissions(this, permissions, REQUEST_BLUETOOTH_PERM));
+          org.runnerup.common.R.string.OK, (dialog, id) -> permissionLauncher.launch(permissions));
     } else if (isDeniedPermission) {
       // Open settings for the app (no direct shortcut to permissions)
       Intent intent =
