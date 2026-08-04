@@ -18,4 +18,10 @@
     <string name="_sign_plus" translatable="false">+</string>
     <string name="_sign_minus" translatable="false">-</string>
     <string name="path_simplification_default_tolerance" translatable="false">3</string>
+    <string name="Theme_mode">Theme</string>
+    <string name="Theme_mode_summary">Choose light or dark appearance</string>
+    <string name="Theme_mode_system">Follow system</string>
+    <string name="Theme_mode_light">Light</string>
+    <string name="Theme_mode_dark">Dark</string>
+    <string name="Appearance_category">Appearance</string>
 </resources>

@@ -64,4 +64,20 @@
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:key="@string/Appearance_category"
+        android:title="@string/Appearance_category"
+        app:iconSpaceReserved="false">
+
+        <ListPreference
+            android:defaultValue="system"
+            android:entries="@array/themeModeEntries"
+            android:entryValues="@array/themeModeValues"
+            android:key="@string/pref_theme_mode"
+            android:persistent="true"
+            android:summary="@string/Theme_mode_summary"
+            android:title="@string/Theme_mode"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
 </PreferenceScreen>

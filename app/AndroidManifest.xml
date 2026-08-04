@@ -80,6 +80,7 @@
     </queries>
 
     <application
+        android:name=".RunnerUpApplication"
         android:allowBackup="true"
         android:appCategory="maps"
         android:dataExtractionRules="@xml/data_extraction_rules"
