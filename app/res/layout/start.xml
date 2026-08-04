@@ -41,36 +41,31 @@
 
     </com.google.android.material.appbar.MaterialToolbar>
 
-    <TabHost
-        android:id="@+id/tabhost_start"
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <RelativeLayout
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tab_layout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            app:tabMode="fixed" />
 
-            <TabWidget
-                android:id="@android:id/tabs"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentTop="true"
-                android:minWidth="48dp"
-                android:minHeight="48dp" />
+        <FrameLayout
+            android:id="@+id/tab_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_above="@id/status_layout"
+            android:layout_below="@id/tab_layout">
 
-            <FrameLayout
-                android:id="@android:id/tabcontent"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_below="@android:id/tabs">
+            <include layout="@layout/start_basic" />
 
-                <include layout="@layout/start_basic" />
+            <include layout="@layout/start_interval" />
 
-                <include layout="@layout/start_interval" />
-
-                <include layout="@layout/start_advanced" />
-            </FrameLayout>
+            <include layout="@layout/start_advanced" />
+        </FrameLayout>
 
             <RelativeLayout
                 android:id="@+id/status_layout"
@@ -213,6 +208,5 @@
                 android:layout_marginBottom="20dp" />
 
         </RelativeLayout>
-    </TabHost>
 
 </LinearLayout>

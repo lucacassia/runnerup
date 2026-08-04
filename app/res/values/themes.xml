@@ -24,7 +24,6 @@
     </style>
 
     <style name="MainLayoutTheme" parent="AppTheme.NoActionBar">
-        <item name="android:tabWidgetStyle">@style/BottomNavigationTabWidget</item>
     </style>
 
 </resources>

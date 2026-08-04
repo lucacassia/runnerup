@@ -47,8 +47,6 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TabHost;
-import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -57,6 +55,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.tabs.TabLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
@@ -123,8 +122,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   private TitleSpinner manualDistance = null;
   private EditText notes = null;
   private View rootView;
-  private View mapTab;
-  private View graphTab;
+  private TabLayout.Tab mapTab;
 
   private MapWrapper mapWrapper = null;
   private final GraphWrapper graphWrapper = null;
@@ -245,43 +243,53 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
     uploadButton.setVisibility(View.GONE);
 
-    TabHost th = findViewById(R.id.tabhost);
-    th.setup();
-    TabSpec tabSpec = th.newTabSpec("notes");
-    tabSpec.setIndicator(
-        WidgetUtil.createHoloTabIndicator(this, getString(org.runnerup.common.R.string.Notes)));
-    tabSpec.setContent(R.id.tab_main);
-    th.addTab(tabSpec);
-
-    tabSpec = th.newTabSpec("laps");
-    tabSpec.setIndicator(
-        WidgetUtil.createHoloTabIndicator(this, getString(org.runnerup.common.R.string.Laps)));
-    tabSpec.setContent(R.id.tab_lap);
-    th.addTab(tabSpec);
+    TabLayout tabLayout = findViewById(R.id.tab_layout);
+    tabLayout.addTab(
+        tabLayout
+            .newTab()
+            .setText(getString(org.runnerup.common.R.string.Notes))
+            .setTag("notes"));
+    tabLayout.addTab(
+        tabLayout
+            .newTab()
+            .setText(getString(org.runnerup.common.R.string.Laps))
+            .setTag("laps"));
 
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
-      tabSpec = th.newTabSpec("map");
-      tabSpec.setIndicator(
-          WidgetUtil.createHoloTabIndicator(this, getString(org.runnerup.common.R.string.Map)));
-      tabSpec.setContent(R.id.tab_map);
-      th.addTab(tabSpec);
-      mapTab = th.getTabWidget().getChildTabViewAt(2);
+      mapTab =
+          tabLayout
+              .newTab()
+              .setText(getString(org.runnerup.common.R.string.Map))
+              .setTag("map");
+      tabLayout.addTab(mapTab);
     }
 
-    tabSpec = th.newTabSpec("graph");
-    tabSpec.setIndicator(
-        WidgetUtil.createHoloTabIndicator(this, getString(org.runnerup.common.R.string.Graph)));
-    tabSpec.setContent(R.id.tab_graph);
-    th.addTab(tabSpec);
-    // Get graph tab (cannot hardcode index due to optional map tab).
-    int graphTabIndex = th.getTabWidget().getChildCount() - 1;
-    graphTab = th.getTabWidget().getChildTabViewAt(graphTabIndex);
+    tabLayout.addTab(
+        tabLayout
+            .newTab()
+            .setText(getString(org.runnerup.common.R.string.Graph))
+            .setTag("graph"));
 
-    tabSpec = th.newTabSpec("share");
-    tabSpec.setIndicator(
-        WidgetUtil.createHoloTabIndicator(this, getString(org.runnerup.common.R.string.Upload)));
-    tabSpec.setContent(R.id.tab_upload);
-    th.addTab(tabSpec);
+    tabLayout.addTab(
+        tabLayout
+            .newTab()
+            .setText(getString(org.runnerup.common.R.string.Upload))
+            .setTag("upload"));
+
+    tabLayout.addOnTabSelectedListener(
+        new TabLayout.OnTabSelectedListener() {
+          @Override
+          public void onTabSelected(TabLayout.Tab tab) {
+            selectTab((String) tab.getTag());
+          }
+
+          @Override
+          public void onTabUnselected(TabLayout.Tab tab) {}
+
+          @Override
+          public void onTabReselected(TabLayout.Tab tab) {}
+        });
+    selectTab("notes");
 
     fillHeaderData();
     requery();
@@ -378,6 +386,21 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     ViewCompat.requestApplyInsets(rootView);
   }
 
+  private void selectTab(String tag) {
+    setTabContentVisibility(tag);
+  }
+
+  private void setTabContentVisibility(String tag) {
+    findViewById(R.id.tab_main).setVisibility("notes".equals(tag) ? View.VISIBLE : View.GONE);
+    findViewById(R.id.tab_lap).setVisibility("laps".equals(tag) ? View.VISIBLE : View.GONE);
+    View mapView = findViewById(R.id.tab_map);
+    if (mapView != null) {
+      mapView.setVisibility("map".equals(tag) ? View.VISIBLE : View.GONE);
+    }
+    findViewById(R.id.tab_graph).setVisibility("graph".equals(tag) ? View.VISIBLE : View.GONE);
+    findViewById(R.id.tab_upload).setVisibility("upload".equals(tag) ? View.VISIBLE : View.GONE);
+  }
+
   private void updateViewForSport(int sportValue) {
     if (edit && Sport.hasManualDistance(sportValue)) {
       manualDistance.setVisibility(View.VISIBLE);
@@ -386,11 +409,11 @@ public class DetailActivity extends AppCompatActivity implements Constants {
       manualDistance.setVisibility(View.GONE);
     }
 
-    if (mapTab != null) {
+    if (mapTab != null && mapTab.view != null) {
       if (Sport.isWithoutGps(sportValue)) {
-        mapTab.setVisibility(View.GONE);
+        mapTab.view.setVisibility(View.GONE);
       } else {
-        mapTab.setVisibility(View.VISIBLE);
+        mapTab.view.setVisibility(View.VISIBLE);
       }
     }
     if (graphWrapper != null) {

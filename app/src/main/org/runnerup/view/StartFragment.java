@@ -49,9 +49,6 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TabHost;
-import android.widget.TabHost.OnTabChangeListener;
-import android.widget.TabHost.TabSpec;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -59,6 +56,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.tabs.TabLayout;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -93,7 +91,6 @@ import org.runnerup.widget.ClassicSpinner;
 import org.runnerup.widget.SpinnerInterface.OnCloseDialogListener;
 import org.runnerup.widget.SpinnerInterface.OnSetValueListener;
 import org.runnerup.widget.TitleSpinner;
-import org.runnerup.widget.WidgetUtil;
 import org.runnerup.workout.Dimension;
 import org.runnerup.workout.Sport;
 import org.runnerup.workout.Workout;
@@ -114,6 +111,10 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
   private static final String TAB_INTERVAL = "interval";
   static final String TAB_ADVANCED = "advanced";
 
+  private static final int TAB_BASIC_INDEX = 0;
+  private static final int TAB_INTERVAL_INDEX = 1;
+  private static final int TAB_ADVANCED_INDEX = 2;
+
   private boolean statusDetailsShown = false;
 
   // StartFragment normally stop GPS in onDestroy (or onStop)
@@ -124,7 +125,8 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
   private Tracker mTracker = null;
   private org.runnerup.tracker.GpsStatus mGpsStatus = null;
 
-  private TabHost tabHost = null;
+  private TabLayout tabLayout = null;
+  private int currentTabIndex = TAB_BASIC_INDEX;
   private View startButton = null;
 
   private ImageView expandIcon = null;
@@ -252,31 +254,15 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
 
     view.findViewById(R.id.status_layout).setOnClickListener(v -> toggleStatusDetails());
 
-    // TODO: Replace TabHost with ViewPager2 and TabLayout
-    tabHost = view.findViewById(R.id.tabhost_start);
-    tabHost.setup();
-    TabSpec tabSpec = tabHost.newTabSpec(TAB_BASIC);
-    tabSpec.setIndicator(
-        WidgetUtil.createHoloTabIndicator(context, getString(org.runnerup.common.R.string.Basic)));
-    tabSpec.setContent(R.id.start_basic_tab);
-    tabHost.addTab(tabSpec);
-
-    tabSpec = tabHost.newTabSpec(TAB_INTERVAL);
-    tabSpec.setIndicator(
-        WidgetUtil.createHoloTabIndicator(
-            context, getString(org.runnerup.common.R.string.Interval)));
-    tabSpec.setContent(R.id.start_interval_tab);
-    tabHost.addTab(tabSpec);
-
-    tabSpec = tabHost.newTabSpec(TAB_ADVANCED);
-    tabSpec.setIndicator(
-        WidgetUtil.createHoloTabIndicator(
-            context, getString(org.runnerup.common.R.string.Advanced)));
-    tabSpec.setContent(R.id.start_advanced_tab);
-    tabHost.addTab(tabSpec);
-
-    tabHost.setOnTabChangedListener(onTabChangeListener);
-    // tabHost.getTabWidget().setBackgroundColor(Color.DKGRAY);
+    tabLayout = view.findViewById(R.id.tab_layout);
+    tabLayout.addTab(
+        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Basic)));
+    tabLayout.addTab(
+        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Interval)));
+    tabLayout.addTab(
+        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Advanced)));
+    tabLayout.addOnTabSelectedListener(onTabSelectedListener);
+    setTabContentVisibility();
 
     LayoutInflater inflater = getLayoutInflater();
     simpleAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
@@ -329,7 +315,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     if (i != null) {
       if (i.hasExtra("mode")) {
         if (Objects.equals(i.getStringExtra("mode"), TAB_ADVANCED)) {
-          tabHost.setCurrentTab(2);
+          selectTab(TAB_ADVANCED_INDEX);
           i.removeExtra("mode");
         }
       }
@@ -464,7 +450,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
       simpleTargetType.clearDisabled();
     }
 
-    if (Objects.requireNonNull(tabHost.getCurrentTabTag()).contentEquals(TAB_ADVANCED)) {
+    if (getCurrentTabTag().contentEquals(TAB_ADVANCED)) {
       loadAdvanced(null);
     }
 
@@ -686,13 +672,52 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
         .show();
   }
 
-  private final OnTabChangeListener onTabChangeListener =
-      tabId -> {
-        if (tabId.contentEquals(TAB_ADVANCED)) {
-          loadAdvanced(null);
+  private final TabLayout.OnTabSelectedListener onTabSelectedListener =
+      new TabLayout.OnTabSelectedListener() {
+        @Override
+        public void onTabSelected(TabLayout.Tab tab) {
+          selectTab(tab.getPosition());
         }
-        updateView();
+
+        @Override
+        public void onTabUnselected(TabLayout.Tab tab) {}
+
+        @Override
+        public void onTabReselected(TabLayout.Tab tab) {}
       };
+
+  private void selectTab(int index) {
+    currentTabIndex = index;
+    setTabContentVisibility();
+    if (getCurrentTabTag().contentEquals(TAB_ADVANCED)) {
+      loadAdvanced(null);
+    }
+    updateView();
+  }
+
+  private String getCurrentTabTag() {
+    switch (currentTabIndex) {
+      case TAB_INTERVAL_INDEX:
+        return TAB_INTERVAL;
+      case TAB_ADVANCED_INDEX:
+        return TAB_ADVANCED;
+      default:
+        return TAB_BASIC;
+    }
+  }
+
+  private void setTabContentVisibility() {
+    View view = getView();
+    if (view == null) {
+      return;
+    }
+    view.findViewById(R.id.start_basic_tab)
+        .setVisibility(currentTabIndex == TAB_BASIC_INDEX ? View.VISIBLE : View.GONE);
+    view.findViewById(R.id.start_interval_tab)
+        .setVisibility(currentTabIndex == TAB_INTERVAL_INDEX ? View.VISIBLE : View.GONE);
+    view.findViewById(R.id.start_advanced_tab)
+        .setVisibility(currentTabIndex == TAB_ADVANCED_INDEX ? View.VISIBLE : View.GONE);
+  }
 
   private Workout prepareWorkout() {
     Context ctx = requireActivity().getApplicationContext();
@@ -700,16 +725,16 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     SharedPreferences audioPref;
     Workout w;
 
-    if (Objects.requireNonNull(tabHost.getCurrentTabTag()).contentEquals(TAB_BASIC)) {
+    if (getCurrentTabTag().contentEquals(TAB_BASIC)) {
       audioPref =
           WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_basic_audio));
       Dimension target = Dimension.valueOf(simpleTargetType.getValueInt());
       w = WorkoutBuilder.createDefaultWorkout(getResources(), pref, target);
-    } else if (tabHost.getCurrentTabTag().contentEquals(TAB_INTERVAL)) {
+    } else if (getCurrentTabTag().contentEquals(TAB_INTERVAL)) {
       audioPref =
           WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_interval_audio));
       w = WorkoutBuilder.createDefaultIntervalWorkout(getResources(), pref);
-    } else if (tabHost.getCurrentTabTag().contentEquals(TAB_ADVANCED)) {
+    } else if (getCurrentTabTag().contentEquals(TAB_ADVANCED)) {
       audioPref =
           WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_advanced_audio));
       w = advancedWorkout;
@@ -1002,7 +1027,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
         break;
       }
 
-      if (Objects.requireNonNull(tabHost.getCurrentTabTag()).contentEquals(TAB_ADVANCED)
+      if (getCurrentTabTag().contentEquals(TAB_ADVANCED)
           && advancedWorkout == null) {
         break;
       }

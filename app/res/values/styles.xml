@@ -41,19 +41,6 @@
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
-    <style name="BottomNavigationTabWidget" parent="android:Widget.TabWidget">
-        <item name="android:ellipsize">marquee</item>
-        <item name="android:singleLine">true</item>
-        <item name="android:tabStripEnabled">false</item>
-        <item name="divider">@null</item>
-        <item name="android:gravity">fill_horizontal|center_vertical</item>
-    </style>
-
-    <style name="BottomNavigationTabText" tools:ignore="UnusedResources">
-        <item name="android:textSize">12sp</item>
-        <item name="android:textColor">@color/bottom_tabs</item>
-    </style>
-
     <style name="AccountListText">
         <item name="android:textSize">18sp</item>
     </style>
