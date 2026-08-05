@@ -13,75 +13,92 @@
   ~
   ~  You should have received a copy of the GNU General Public License
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
--->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
+  -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/history_card"
+    style="?attr/materialCardViewFilledStyle"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp">
-
-    <TextView
-        style="@style/ListCategoryHeading"
-        android:id="@+id/history_section_title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="24dp"
-        android:visibility="visible" />
+    android:layout_marginStart="@dimen/history_row_margin_h"
+    android:layout_marginTop="@dimen/history_row_margin_v"
+    android:layout_marginEnd="@dimen/history_row_margin_h"
+    android:layout_marginBottom="@dimen/history_row_margin_v"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="@dimen/history_row_corner"
+    app:cardElevation="0dp"
+    app:rippleColor="?attr/colorControlHighlight">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:padding="16dp">
 
         <ImageView
             android:id="@+id/history_list_emblem"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="@string/Sport" />
+            android:layout_width="@dimen/history_avatar_size"
+            android:layout_height="@dimen/history_avatar_size"
+            android:background="@drawable/sport_avatar_bg"
+            android:contentDescription="@string/Sport"
+            android:padding="12dp" />
 
-        <TextView
-            style="@style/ListItem"
-            android:id="@+id/history_list_distance"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <TextView
-            style="@style/ListItem"
-            android:id="@+id/history_list_date"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:gravity="end" />
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/ListItem"
+                android:id="@+id/history_list_distance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:drawableEndCompat="@drawable/ic_chevron_right_24dp"
+                android:drawablePadding="8dp"
+                android:gravity="center_vertical"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textStyle="bold" />
+
+            <TextView
+                style="@style/ListDescription"
+                android:id="@+id/history_list_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/ListDescription"
+                    android:id="@+id/history_list_duration"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <TextView
+                    style="@style/ListDescription"
+                    android:id="@+id/history_list_pace"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end" />
+
+                <TextView
+                    style="@style/ListDescription"
+                    android:id="@+id/history_list_additional"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="end" />
+            </LinearLayout>
+        </LinearLayout>
     </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            style="@style/ListDescription"
-            android:id="@+id/history_list_duration"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <TextView
-            style="@style/ListDescription"
-            android:id="@+id/history_list_pace"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
-        <TextView
-            style="@style/ListDescription"
-            android:id="@+id/history_list_additional"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-    </LinearLayout>
-</LinearLayout>
+</com.google.android.material.card.MaterialCardView>

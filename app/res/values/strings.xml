@@ -26,4 +26,5 @@
     <string name="Appearance_category">Appearance</string>
     <string name="Dynamic_color">Dynamic color</string>
     <string name="Dynamic_color_summary">Use your wallpaper colors (Android 12+)</string>
+    <string name="history_empty">No activities yet</string>
 </resources>

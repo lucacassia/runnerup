@@ -26,10 +26,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -38,13 +35,17 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
-import androidx.cursoradapter.widget.CursorAdapter;
 import androidx.fragment.app.Fragment;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.app.LoaderManager.LoaderCallbacks;
 import androidx.loader.content.Loader;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.db.ActivityCleaner;
@@ -54,14 +55,17 @@ import org.runnerup.util.Formatter;
 import org.runnerup.util.SimpleCursorLoader;
 import org.runnerup.workout.Sport;
 
-public class HistoryFragment extends Fragment
-    implements Constants, OnItemClickListener, LoaderCallbacks<Cursor> {
+public class HistoryFragment extends Fragment implements Constants, LoaderCallbacks<Cursor> {
+
+  private static final int TYPE_HEADER = 0;
+  private static final int TYPE_ROW = 1;
 
   private SQLiteDatabase mDB = null;
   private Formatter formatter = null;
 
-  CursorAdapter cursorAdapter = null;
+  HistoryListAdapter adapter = null;
   View fab = null;
+  View emptyView = null;
 
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
@@ -76,8 +80,9 @@ public class HistoryFragment extends Fragment
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
-    ListView listView = view.findViewById(R.id.history_list);
+    RecyclerView listView = view.findViewById(R.id.history_list);
     fab = view.findViewById(R.id.history_add);
+    emptyView = view.findViewById(R.id.history_empty);
 
     Context context = requireContext();
     fab.setOnClickListener(
@@ -88,10 +93,9 @@ public class HistoryFragment extends Fragment
 
     mDB = DBHelper.getReadableDatabase(context);
     formatter = new Formatter(context);
-    listView.setDividerHeight(2);
-    listView.setOnItemClickListener(this);
-    cursorAdapter = new HistoryListAdapter(context, null);
-    listView.setAdapter(cursorAdapter);
+    listView.setLayoutManager(new LinearLayoutManager(context));
+    adapter = new HistoryListAdapter(context);
+    listView.setAdapter(adapter);
 
     LoaderManager.getInstance(this).initLoader(0, null, this);
     AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
@@ -116,7 +120,12 @@ public class HistoryFragment extends Fragment
   public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
     String[] from =
         new String[] {
-          "_id", DB.ACTIVITY.START_TIME, DB.ACTIVITY.DISTANCE, DB.ACTIVITY.TIME, DB.ACTIVITY.SPORT
+          "_id",
+          DB.ACTIVITY.START_TIME,
+          DB.ACTIVITY.DISTANCE,
+          DB.ACTIVITY.TIME,
+          DB.ACTIVITY.SPORT,
+          DB.ACTIVITY.AVG_HR
         };
 
     return new SimpleCursorLoader(
@@ -131,113 +140,267 @@ public class HistoryFragment extends Fragment
 
   @Override
   public void onLoadFinished(@NonNull Loader<Cursor> arg0, Cursor arg1) {
-    cursorAdapter.swapCursor(arg1);
+    if (emptyView != null) {
+      emptyView.setVisibility(arg1 == null || arg1.getCount() == 0 ? View.VISIBLE : View.GONE);
+    }
+    adapter.setData(arg1);
   }
 
   @Override
   public void onLoaderReset(@NonNull Loader<Cursor> arg0) {
-    cursorAdapter.swapCursor(null);
+    adapter.setData(null);
   }
 
-  @Override
-  public void onItemClick(AdapterView<?> arg0, View arg1, int position, long id) {
+  private void openActivity(long id) {
     Intent intent = new Intent(requireContext(), DetailActivity.class);
     intent.putExtra("ID", id);
     intent.putExtra("mode", "details");
     reloadLauncher.launch(intent);
   }
 
-  class HistoryListAdapter extends CursorAdapter {
-    final LayoutInflater inflater;
+  private static final class HistoryItem {
+    final long id;
+    final boolean isHeader;
+    final String monthText;
+    final long startTime;
+    final Double distance;
+    final Long time;
+    final Integer sport;
+    final Integer avgHr;
 
-    HistoryListAdapter(Context context, Cursor c) {
-      super(context, c, true);
-      inflater = LayoutInflater.from(context);
+    private HistoryItem(
+        long id,
+        boolean isHeader,
+        String monthText,
+        long startTime,
+        Double distance,
+        Long time,
+        Integer sport,
+        Integer avgHr) {
+      this.id = id;
+      this.isHeader = isHeader;
+      this.monthText = monthText;
+      this.startTime = startTime;
+      this.distance = distance;
+      this.time = time;
+      this.sport = sport == null ? Sport.OTHER.getDbValue() : sport;
+      this.avgHr = avgHr;
     }
 
-    private boolean sameMonthAsPrevious(int curYear, int curMonth, Cursor cursor) {
-      int curPosition = cursor.getPosition();
-      if (curPosition == 0) return false;
+    static HistoryItem header(String monthText, int year, int month) {
+      return new HistoryItem(-(year * 100L + month), true, monthText, 0, null, null, null, null);
+    }
 
-      cursor.moveToPrevious();
-      long prevTimeInSecs = new ActivityEntity(cursor).getStartTime();
+    static HistoryItem row(ActivityEntity ae) {
+      long startTime = ae.getStartTime() == null ? 0 : ae.getStartTime();
+      return new HistoryItem(
+          ae.getId(),
+          false,
+          null,
+          startTime,
+          ae.getDistance(),
+          ae.getTime(),
+          ae.getSport(),
+          ae.getAvgHr());
+    }
 
-      Calendar prevCal = Calendar.getInstance();
-      prevCal.setTime(new Date(prevTimeInSecs * 1000));
-      return prevCal.get(Calendar.YEAR) == curYear && prevCal.get(Calendar.MONTH) == curMonth;
+    boolean sameHeader(HistoryItem other) {
+      return isHeader == other.isHeader
+          && (monthText == null ? other.monthText == null : monthText.equals(other.monthText));
+    }
+
+    boolean sameRow(HistoryItem other) {
+      return startTime == other.startTime
+          && (distance == null ? other.distance == null : distance.equals(other.distance))
+          && (time == null ? other.time == null : time.equals(other.time))
+          && sport.equals(other.sport)
+          && (avgHr == null ? other.avgHr == null : avgHr.equals(other.avgHr));
+    }
+  }
+
+  class HistoryListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private final LayoutInflater inflater;
+    private final List<HistoryItem> items = new ArrayList<>();
+
+    HistoryListAdapter(Context context) {
+      inflater = LayoutInflater.from(context);
+      setHasStableIds(true);
+    }
+
+    void setData(Cursor cursor) {
+      List<HistoryItem> newItems = new ArrayList<>();
+      if (cursor != null && cursor.moveToFirst()) {
+        Calendar prevCal = null;
+        do {
+          ActivityEntity ae = new ActivityEntity(cursor);
+          long startTime = ae.getStartTime() == null ? 0 : ae.getStartTime();
+          Date date = new Date(startTime * 1000);
+          Calendar cal = Calendar.getInstance();
+          cal.setTime(date);
+          if (prevCal == null
+              || prevCal.get(Calendar.YEAR) != cal.get(Calendar.YEAR)
+              || prevCal.get(Calendar.MONTH) != cal.get(Calendar.MONTH)) {
+            newItems.add(
+                HistoryItem.header(
+                    formatter.formatMonth(date), cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)));
+            prevCal = cal;
+          }
+          newItems.add(HistoryItem.row(ae));
+        } while (cursor.moveToNext());
+      }
+      DiffUtil.DiffResult result = DiffUtil.calculateDiff(new HistoryDiffCallback(items, newItems));
+      items.clear();
+      items.addAll(newItems);
+      result.dispatchUpdatesTo(this);
     }
 
     @Override
-    public void bindView(View view, Context context, Cursor cursor) {
-      ActivityEntity ae = new ActivityEntity(cursor);
+    public int getItemViewType(int position) {
+      return items.get(position).isHeader ? TYPE_HEADER : TYPE_ROW;
+    }
 
-      // month + day
-      Date curDate = new Date(ae.getStartTime() * 1000);
-      Calendar cal = Calendar.getInstance();
-      cal.setTime(curDate);
-
-      TextView sectionTitle = view.findViewById(R.id.history_section_title);
-      int year = cal.get(Calendar.YEAR);
-      int month = cal.get(Calendar.MONTH);
-      if (sameMonthAsPrevious(year, month, cursor)) {
-        sectionTitle.setVisibility(View.GONE);
-      } else {
-        sectionTitle.setVisibility(View.VISIBLE);
-        sectionTitle.setText(formatter.formatMonth(curDate));
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+      if (viewType == TYPE_HEADER) {
+        return new HistoryHeaderViewHolder(
+            inflater.inflate(R.layout.history_section_header, parent, false));
       }
+      return new HistoryRowViewHolder(inflater.inflate(R.layout.history_row, parent, false));
+    }
 
-      TextView dateText = view.findViewById(R.id.history_list_date);
-      dateText.setText(formatter.formatDateTime(ae.getStartTime()));
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+      if (holder instanceof HistoryHeaderViewHolder) {
+        ((HistoryHeaderViewHolder) holder).sectionTitle.setText(items.get(position).monthText);
+      } else {
+        bindRow((HistoryRowViewHolder) holder, items.get(position));
+      }
+    }
 
-      // distance
-      Double d = ae.getDistance();
-      TextView distanceText = view.findViewById(R.id.history_list_distance);
+    private void bindRow(HistoryRowViewHolder holder, HistoryItem item) {
+      Context context = holder.itemView.getContext();
+      holder.dateText.setText(formatter.formatDateTime(item.startTime));
+
+      Double d = item.distance;
       if (d != null) {
-        distanceText.setText(formatter.formatDistance(Formatter.Format.TXT_SHORT, d.longValue()));
+        holder.distanceText.setText(
+            formatter.formatDistance(Formatter.Format.TXT_SHORT, d.longValue()));
       } else {
-        distanceText.setText("");
+        holder.distanceText.setText("");
       }
 
-      // sport + additional info
-      Integer s = ae.getSport();
-      ImageView emblem = view.findViewById(R.id.history_list_emblem);
-      TextView additionalInfo = view.findViewById(R.id.history_list_additional);
-
-      int sportColor = ContextCompat.getColor(context, Sport.colorOf(s));
+      int sportColor = ContextCompat.getColor(context, Sport.colorOf(item.sport));
       Drawable sportDrawable =
-          AppCompatResources.getDrawable(context, Sport.drawableColored16Of(s));
-      emblem.setImageDrawable(sportDrawable);
-      distanceText.setTextColor(sportColor);
-      additionalInfo.setTextColor(sportColor);
-      Integer hr = ae.getAvgHr();
-      if (hr != null) {
-        additionalInfo.setText(formatter.formatHeartRate(Formatter.Format.TXT_SHORT, hr));
+          AppCompatResources.getDrawable(context, Sport.drawableColored16Of(item.sport));
+      holder.emblem.setImageDrawable(sportDrawable);
+      holder.emblem.setColorFilter(sportColor);
+      holder.distanceText.setTextColor(sportColor);
+
+      if (item.avgHr != null) {
+        holder.additionalText.setText(
+            formatter.formatHeartRate(Formatter.Format.TXT_SHORT, item.avgHr));
+        holder.additionalText.setTextColor(sportColor);
       } else {
-        additionalInfo.setText(null);
+        holder.additionalText.setText(null);
       }
 
-      // duration
-      Long dur = ae.getTime();
-      TextView durationText = view.findViewById(R.id.history_list_duration);
+      Long dur = item.time;
       if (dur != null) {
-        durationText.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, dur));
+        holder.durationText.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, dur));
       } else {
-        durationText.setText("");
+        holder.durationText.setText("");
       }
 
-      // pace
-      TextView paceText = view.findViewById(R.id.history_list_pace);
       String paceTextContents = "";
       if (d != null && dur != null && dur != 0) {
         paceTextContents =
             formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / dur);
       }
-      paceText.setText(paceTextContents);
+      holder.paceText.setText(paceTextContents);
     }
 
     @Override
-    public View newView(Context context, Cursor cursor, ViewGroup parent) {
-      return inflater.inflate(R.layout.history_row, parent, false);
+    public long getItemId(int position) {
+      return items.get(position).id;
+    }
+
+    @Override
+    public int getItemCount() {
+      return items.size();
+    }
+
+    class HistoryHeaderViewHolder extends RecyclerView.ViewHolder {
+      final TextView sectionTitle;
+
+      HistoryHeaderViewHolder(@NonNull View itemView) {
+        super(itemView);
+        sectionTitle = itemView.findViewById(R.id.history_section_title);
+      }
+    }
+
+    class HistoryRowViewHolder extends RecyclerView.ViewHolder {
+      final ImageView emblem;
+      final TextView distanceText;
+      final TextView dateText;
+      final TextView durationText;
+      final TextView paceText;
+      final TextView additionalText;
+
+      HistoryRowViewHolder(@NonNull View itemView) {
+        super(itemView);
+        emblem = itemView.findViewById(R.id.history_list_emblem);
+        distanceText = itemView.findViewById(R.id.history_list_distance);
+        dateText = itemView.findViewById(R.id.history_list_date);
+        durationText = itemView.findViewById(R.id.history_list_duration);
+        paceText = itemView.findViewById(R.id.history_list_pace);
+        additionalText = itemView.findViewById(R.id.history_list_additional);
+        itemView.setOnClickListener(
+            v -> {
+              int position = getBindingAdapterPosition();
+              if (position == RecyclerView.NO_POSITION) {
+                return;
+              }
+              HistoryItem item = items.get(position);
+              if (!item.isHeader) {
+                openActivity(item.id);
+              }
+            });
+      }
+    }
+  }
+
+  class HistoryDiffCallback extends DiffUtil.Callback {
+    private final List<HistoryItem> oldList;
+    private final List<HistoryItem> newList;
+
+    HistoryDiffCallback(List<HistoryItem> oldList, List<HistoryItem> newList) {
+      this.oldList = oldList;
+      this.newList = newList;
+    }
+
+    @Override
+    public int getOldListSize() {
+      return oldList.size();
+    }
+
+    @Override
+    public int getNewListSize() {
+      return newList.size();
+    }
+
+    @Override
+    public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+      return oldList.get(oldItemPosition).id == newList.get(newItemPosition).id;
+    }
+
+    @Override
+    public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+      HistoryItem oldItem = oldList.get(oldItemPosition);
+      HistoryItem newItem = newList.get(newItemPosition);
+      return oldItem.isHeader
+          ? oldItem.sameHeader(newItem)
+          : !newItem.isHeader && oldItem.sameRow(newItem);
     }
   }
 }

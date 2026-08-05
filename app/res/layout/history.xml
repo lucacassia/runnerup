@@ -19,11 +19,9 @@
 
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/history_tab1_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".view.HistoryFragment">
+    android:layout_height="match_parent">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/history_actionbar"
@@ -32,10 +30,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:title="@string/History"
-        tools:ignore="UnusedAttribute" />
+        app:title="@string/History" />
 
-    <ListView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/history_list"
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -47,19 +44,34 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/history_actionbar" />
 
+    <TextView
+        android:id="@+id/history_empty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:drawableTopCompat="@drawable/sport_running"
+        android:drawablePadding="8dp"
+        android:gravity="center"
+        android:padding="24dp"
+        android:text="@string/history_empty"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/history_actionbar" />
+
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/history_add"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:contentDescription="@string/Add_manual_entry"
-        android:tooltipText="@string/Add_manual_entry"
         app:backgroundTint="?attr/colorPrimaryContainer"
         app:fabSize="normal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:srcCompat="@drawable/ic_add_white_24dp"
-        app:tint="?attr/colorOnPrimaryContainer"
-        tools:ignore="UnusedAttribute" />
+        app:tint="?attr/colorOnPrimaryContainer" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
