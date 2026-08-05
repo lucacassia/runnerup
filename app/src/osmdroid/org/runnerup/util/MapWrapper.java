@@ -21,6 +21,8 @@ import static org.runnerup.util.Formatter.Format.TXT_SHORT;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.os.Bundle;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -49,6 +51,11 @@ public class MapWrapper implements Constants {
 
   private static final java.lang.String OSMDROID_USER_AGENT = "org.runnerup.free";
 
+  private static final int TRACK_COLOR = Color.parseColor("#FF6D00");
+  private static final int TRACK_EDGE_COLOR = Color.parseColor("#FFB680");
+  private static final float TRACK_WIDTH_PX = 16.f;
+  private static final float TRACK_EDGE_WIDTH_PX = 24.f;
+
   public MapWrapper(
       Context context,
       SQLiteDatabase mDB,
@@ -76,7 +83,7 @@ public class MapWrapper implements Constants {
   }
 
   // The results from the database query
-  record Route(Polyline map, List<Marker> markers, GeoPoint firstPoint) {}
+  record Route(List<Polyline> polylines, List<Marker> markers, GeoPoint firstPoint) {}
 
   /**
    * Loads the route from the database on a background thread and then updates the UI on the main
@@ -101,7 +108,9 @@ public class MapWrapper implements Constants {
                 for (Marker marker : route.markers) {
                   mapView.getOverlays().add(marker);
                 }
-                mapView.getOverlays().add(route.map);
+                for (Polyline polyline : route.polylines) {
+                  mapView.getOverlays().add(polyline);
+                }
                 mapView.invalidate();
               });
         });
@@ -109,9 +118,8 @@ public class MapWrapper implements Constants {
 
   /** The long-running database query and data processing logic. */
   private Route loadRouteData() {
-    Polyline polyline = new Polyline(mapView, true);
-    polyline.setInfoWindow(null);
-    polyline.getOutlinePaint().setStrokeWidth(10.f);
+    Polyline edge = newPolyline(TRACK_EDGE_COLOR, TRACK_EDGE_WIDTH_PX);
+    Polyline track = newPolyline(TRACK_COLOR, TRACK_WIDTH_PX);
 
     java.util.List<Marker> markers = new ArrayList<>();
     java.util.List<GeoPoint> points = new LinkedList<>();
@@ -141,10 +149,21 @@ public class MapWrapper implements Constants {
       }
     }
     ll.close();
-    polyline.setPoints(points);
+    edge.setPoints(points);
+    track.setPoints(points);
 
     GeoPoint firstPoint = points.isEmpty() ? null : points.get(0);
-    return new Route(polyline, markers, firstPoint);
+    return new Route(List.of(edge, track), markers, firstPoint);
+  }
+
+  private Polyline newPolyline(int color, float width) {
+    Polyline polyline = new Polyline(mapView, true);
+    polyline.setInfoWindow(null);
+    polyline.getOutlinePaint().setColor(color);
+    polyline.getOutlinePaint().setStrokeWidth(width);
+    polyline.getOutlinePaint().setStrokeCap(Paint.Cap.ROUND);
+    polyline.getOutlinePaint().setStrokeJoin(Paint.Join.ROUND);
+    return polyline;
   }
 
   public void onResume() {
