@@ -24,6 +24,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import androidx.appcompat.content.res.AppCompatResources;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +38,7 @@ import org.osmdroid.views.CustomZoomButtonsController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
+import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.db.entities.LocationEntity;
 
@@ -53,8 +55,8 @@ public class MapWrapper implements Constants {
 
   private static final int TRACK_COLOR = Color.parseColor("#FF6D00");
   private static final int TRACK_EDGE_COLOR = Color.parseColor("#FFB680");
-  private static final float TRACK_WIDTH_PX = 16.f;
-  private static final float TRACK_EDGE_WIDTH_PX = 24.f;
+  private static final float TRACK_WIDTH_PX = 10.f;
+  private static final float TRACK_EDGE_WIDTH_PX = 20.f;
 
   public MapWrapper(
       Context context,
@@ -72,9 +74,7 @@ public class MapWrapper implements Constants {
 
   public void onCreate(Bundle savedInstanceState) {
     mapView.setTileSource(TileSourceFactory.MAPNIK);
-    mapView
-        .getZoomController()
-        .setVisibility(CustomZoomButtonsController.Visibility.SHOW_AND_FADEOUT);
+    mapView.getZoomController().setVisibility(CustomZoomButtonsController.Visibility.NEVER);
     mapView.setMultiTouchControls(true);
 
     Configuration.getInstance().setUserAgentValue(OSMDROID_USER_AGENT);
@@ -104,12 +104,12 @@ public class MapWrapper implements Constants {
                   mapController.setCenter(route.firstPoint);
                 }
 
-                // Add markers and the polyline to the map
-                for (Marker marker : route.markers) {
-                  mapView.getOverlays().add(marker);
-                }
+                // Add the polyline and markers to the map, polyline first so the markers sit on top
                 for (Polyline polyline : route.polylines) {
                   mapView.getOverlays().add(polyline);
+                }
+                for (Marker marker : route.markers) {
+                  mapView.getOverlays().add(marker);
                 }
                 mapView.invalidate();
               });
@@ -132,28 +132,50 @@ public class MapWrapper implements Constants {
 
       int lap = loc.getLap();
       if (lastLap != lap) {
-        Marker marker = new Marker(mapView);
-        marker.setPosition(point);
-        java.lang.String info =
-            "#"
-                + loc.getLap()
-                + " "
-                + formatter.formatDistance(TXT_SHORT, loc.getDistance().longValue())
-                + " "
-                + formatter.formatElapsedTime(TXT_SHORT, Math.round(loc.getElapsed() / 1000.0));
         lastLap = lap;
-        marker.setTextIcon(info);
-        marker.setInfoWindow(null);
-        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        markers.add(marker);
+        if (markers.isEmpty()) {
+          markers.add(newIconMarker(R.drawable.ic_map_marker_start, point));
+        } else {
+          Marker marker = new Marker(mapView);
+          marker.setPosition(point);
+          java.lang.String info =
+              "#"
+                  + loc.getLap()
+                  + " "
+                  + formatter.formatDistance(TXT_SHORT, loc.getDistance().longValue())
+                  + " "
+                  + formatter.formatElapsedTime(TXT_SHORT, Math.round(loc.getElapsed() / 1000.0));
+          marker.setTextIcon(info);
+          marker.setInfoWindow(null);
+          marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+          markers.add(marker);
+        }
       }
     }
     ll.close();
+    if (!points.isEmpty()) {
+      if (!markers.isEmpty()) {
+        Marker lastMarker = markers.get(markers.size() - 1);
+        if (lastMarker.getPosition().equals(points.get(points.size() - 1))) {
+          markers.remove(markers.size() - 1);
+        }
+      }
+      markers.add(newIconMarker(R.drawable.ic_map_marker_end, points.get(points.size() - 1)));
+    }
     edge.setPoints(points);
     track.setPoints(points);
 
     GeoPoint firstPoint = points.isEmpty() ? null : points.get(0);
     return new Route(List.of(edge, track), markers, firstPoint);
+  }
+
+  private Marker newIconMarker(int drawableRes, GeoPoint point) {
+    Marker marker = new Marker(mapView);
+    marker.setPosition(point);
+    marker.setIcon(AppCompatResources.getDrawable(mapView.getContext(), drawableRes));
+    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+    marker.setInfoWindow(null);
+    return marker;
   }
 
   private Polyline newPolyline(int color, float width) {
