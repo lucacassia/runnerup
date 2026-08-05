@@ -24,4 +24,6 @@
     <string name="Theme_mode_light">Light</string>
     <string name="Theme_mode_dark">Dark</string>
     <string name="Appearance_category">Appearance</string>
+    <string name="Dynamic_color">Dynamic color</string>
+    <string name="Dynamic_color_summary">Use your wallpaper colors (Android 12+)</string>
 </resources>

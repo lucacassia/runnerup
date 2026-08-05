@@ -87,10 +87,10 @@ import org.runnerup.tracker.component.TrackerWear;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SafeParse;
 import org.runnerup.util.TickListener;
-import org.runnerup.widget.ClassicSpinner;
+import org.runnerup.widget.MaterialSportSpinner;
+import org.runnerup.widget.MaterialTitleSpinner;
 import org.runnerup.widget.SpinnerInterface.OnCloseDialogListener;
 import org.runnerup.widget.SpinnerInterface.OnSetValueListener;
-import org.runnerup.widget.TitleSpinner;
 import org.runnerup.workout.Dimension;
 import org.runnerup.workout.Sport;
 import org.runnerup.workout.Workout;
@@ -149,21 +149,21 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
   boolean sportWithoutGps = false;
   boolean batteryLevelMessageShown = false;
 
-  TitleSpinner simpleTargetType = null;
-  TitleSpinner simpleTargetPaceValue = null;
-  TitleSpinner simpleTargetHrz = null;
+  MaterialTitleSpinner simpleTargetType = null;
+  MaterialTitleSpinner simpleTargetPaceValue = null;
+  MaterialTitleSpinner simpleTargetHrz = null;
   AudioSchemeListAdapter simpleAudioListAdapter = null;
   HRZonesListAdapter hrZonesAdapter = null;
 
-  TitleSpinner intervalType = null;
-  TitleSpinner intervalTime = null;
-  TitleSpinner intervalDistance = null;
-  TitleSpinner intervalRestType = null;
-  TitleSpinner intervalRestTime = null;
-  TitleSpinner intervalRestDistance = null;
+  MaterialTitleSpinner intervalType = null;
+  MaterialTitleSpinner intervalTime = null;
+  MaterialTitleSpinner intervalDistance = null;
+  MaterialTitleSpinner intervalRestType = null;
+  MaterialTitleSpinner intervalRestTime = null;
+  MaterialTitleSpinner intervalRestDistance = null;
   AudioSchemeListAdapter intervalAudioListAdapter = null;
 
-  TitleSpinner advancedWorkoutSpinner = null;
+  MaterialTitleSpinner advancedWorkoutSpinner = null;
   WorkoutListAdapter advancedWorkoutListAdapter = null;
   Workout advancedWorkout = null;
   ListView advancedStepList = null;
@@ -222,7 +222,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     gpsSearchingState = new GpsSearchingState(context, this);
     gpsBoundState = new GpsBoundState(context);
 
-    ClassicSpinner sportSpinner = view.findViewById(R.id.sport_spinner);
+    MaterialSportSpinner sportSpinner = view.findViewById(R.id.sport_spinner);
     ArrayAdapter<CharSequence> adapter =
         new ArrayAdapter<>(
             context, R.layout.actionbar_spinner, Sport.getStringArray(getResources()));
@@ -265,7 +265,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     LayoutInflater inflater = getLayoutInflater();
     simpleAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
     simpleAudioListAdapter.reload();
-    TitleSpinner simpleAudioSpinner = view.findViewById(R.id.basic_audio_cue_spinner);
+    MaterialTitleSpinner simpleAudioSpinner = view.findViewById(R.id.basic_audio_cue_spinner);
     simpleAudioSpinner.setAdapter(simpleAudioListAdapter);
     simpleAudioSpinner.setOnSetValueListener(new OnConfigureAudioListener(simpleAudioListAdapter));
     simpleTargetType = view.findViewById(R.id.tab_basic_target_type);
@@ -287,14 +287,14 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     intervalRestType.setOnSetValueListener(intervalRestTypeSetValue);
     intervalAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
     intervalAudioListAdapter.reload();
-    TitleSpinner intervalAudioSpinner = view.findViewById(R.id.interval_audio_cue_spinner);
+    MaterialTitleSpinner intervalAudioSpinner = view.findViewById(R.id.interval_audio_cue_spinner);
     intervalAudioSpinner.setAdapter(intervalAudioListAdapter);
     intervalAudioSpinner.setOnSetValueListener(
         new OnConfigureAudioListener(intervalAudioListAdapter));
 
     advancedAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
     advancedAudioListAdapter.reload();
-    TitleSpinner advancedAudioSpinner = view.findViewById(R.id.advanced_audio_cue_spinner);
+    MaterialTitleSpinner advancedAudioSpinner = view.findViewById(R.id.advanced_audio_cue_spinner);
     advancedAudioSpinner.setAdapter(advancedAudioListAdapter);
     advancedAudioSpinner.setOnSetValueListener(
         new OnConfigureAudioListener(advancedAudioListAdapter));

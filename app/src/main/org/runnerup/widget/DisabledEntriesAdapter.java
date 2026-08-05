@@ -22,10 +22,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.TextView;
 import java.util.HashSet;
 
-class DisabledEntriesAdapter extends BaseAdapter {
+class DisabledEntriesAdapter extends BaseAdapter implements Filterable {
 
   private final String[] entries;
   private final LayoutInflater inflator;
@@ -34,6 +36,24 @@ class DisabledEntriesAdapter extends BaseAdapter {
   public DisabledEntriesAdapter(Context ctx, int id) {
     inflator = (LayoutInflater) ctx.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     entries = ctx.getResources().getStringArray(id);
+  }
+
+  @Override
+  public Filter getFilter() {
+    return new Filter() {
+      @Override
+      protected FilterResults performFiltering(CharSequence constraint) {
+        FilterResults results = new FilterResults();
+        results.values = entries;
+        results.count = entries.length;
+        return results;
+      }
+
+      @Override
+      protected void publishResults(CharSequence constraint, FilterResults results) {
+        notifyDataSetChanged();
+      }
+    };
   }
 
   public void addDisabled(int i) {

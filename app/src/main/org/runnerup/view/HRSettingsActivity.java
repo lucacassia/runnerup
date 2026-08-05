@@ -53,10 +53,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.jjoe64.graphview.DefaultLabelFormatter;
-import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -92,8 +88,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   private TextView tvBatteryLevel = null;
 
   private Formatter formatter = null;
-  private GraphView graphView = null;
-  private LineGraphSeries<DataPoint> graphViewSeries = null;
+  private RunnerUpGraphView graphView = null;
   private static final int GRAPH_HISTORY_SIZE = 180;
   private static final double xInterval = 60;
 
@@ -161,30 +156,17 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
 
     formatter = new Formatter(this);
     {
-      graphView = new GraphView(this);
+      graphView = new RunnerUpGraphView(this);
       graphView.setTitle(getString(org.runnerup.common.R.string.Heart_rate));
-      DataPoint[] empty = {};
-      graphViewSeries = new LineGraphSeries<>(empty);
-      graphView.addSeries(graphViewSeries);
-      graphView.getViewport().setXAxisBoundsManual(true);
-      graphView.getViewport().setMinX(0);
-      graphView.getViewport().setMaxX(xInterval);
-      graphView.getViewport().setYAxisBoundsManual(true);
-      graphView.getViewport().setMinY(40);
-      graphView.getViewport().setMaxY(200);
-      graphView
-          .getGridLabelRenderer()
-          .setLabelFormatter(
-              new DefaultLabelFormatter() {
-                @Override
-                public String formatLabel(double value, boolean isValueX) {
-                  if (isValueX) {
-                    return formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, (long) value);
-                  } else {
-                    return formatter.formatHeartRate(Formatter.Format.TXT_SHORT, value);
-                  }
-                }
-              });
+      graphView.setVerticalAxisTitle("bpm");
+      graphView.setHorizontalAxisTitle(getString(org.runnerup.common.R.string.Time));
+      graphView.setLabelFormatter(
+          (value, isValueX) ->
+              isValueX
+                  ? formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, (long) value)
+                  : formatter.formatHeartRate(Formatter.Format.TXT_SHORT, value));
+      graphView.setManualYBounds(40, 200);
+      graphView.setXWindow(0, xInterval);
 
       LinearLayout graphLayout = findViewById(R.id.hr_graph_layout);
       graphLayout.addView(graphView);
@@ -339,8 +321,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   }
 
   private void clearGraph() {
-    DataPoint[] empty = {};
-    graphViewSeries.resetData(empty);
+    graphView.clearLiveData();
     timerStartTime = 0;
   }
 
@@ -640,23 +621,15 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
     long hrValue = data.hrValue;
     if (timerStartTime == 0) {
       timerStartTime = age;
-      DataPoint[] empty = {};
-      graphViewSeries.resetData(empty);
+      graphView.clearLiveData();
     }
 
     tvHR.setText(String.format(Locale.getDefault(), "%d", hrValue));
     if (age != lastTimestamp) {
       double x = (age - timerStartTime) / 1000.0;
-      graphViewSeries.appendData(new DataPoint(x, hrValue), true, GRAPH_HISTORY_SIZE);
+      graphView.appendPoint(x, hrValue, GRAPH_HISTORY_SIZE);
+      graphView.fitYBoundsToData();
       lastTimestamp = age;
-
-      // graphView works weird with live data
-      graphView.getViewport().setMinY(graphViewSeries.getLowestValueY());
-      graphView.getViewport().setMaxY(graphViewSeries.getHighestValueY());
-      if (x > xInterval) {
-        graphView.getViewport().setMinX(x - xInterval);
-        graphView.getViewport().setMaxX(x);
-      }
     }
   }
 

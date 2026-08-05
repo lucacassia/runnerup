@@ -119,6 +119,7 @@
     <string name="pref_show_on_lock_screen">pref_show_on_lock_screen</string>
     <string name="pref_keep_screen_on">pref_keep_screen_on</string>
     <string name="pref_theme_mode">pref_theme_mode</string>
+    <string name="pref_dynamic_color">pref_dynamic_color</string>
 
     <string name="pref_suppress_battery_optimization_popup">pref_suppress_battery_optimization_popup</string>
 

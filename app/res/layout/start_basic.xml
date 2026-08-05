@@ -22,7 +22,7 @@
     android:orientation="vertical"
     android:padding="@dimen/activity_margin">
 
-    <org.runnerup.widget.TitleSpinner
+    <org.runnerup.widget.MaterialTitleSpinner
         android:id="@+id/basic_audio_cue_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -30,7 +30,7 @@
         android:text="@string/Audio_cue_settings"
         runnerup:type="spinner_txt" />
 
-    <org.runnerup.widget.TitleSpinner
+    <org.runnerup.widget.MaterialTitleSpinner
         android:id="@+id/tab_basic_target_type"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -40,7 +40,7 @@
         android:text="@string/Target"
         runnerup:values="@array/target_values" />
 
-    <org.runnerup.widget.TitleSpinner
+    <org.runnerup.widget.MaterialTitleSpinner
         android:id="@+id/tab_basic_target_pace_max"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -51,7 +51,7 @@
         android:text="@string/Target_pace_HHMMSS"
         runnerup:type="durationpicker" />
 
-    <org.runnerup.widget.TitleSpinner
+    <org.runnerup.widget.MaterialTitleSpinner
         android:id="@+id/tab_basic_target_hrz"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

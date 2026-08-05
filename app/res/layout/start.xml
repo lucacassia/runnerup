@@ -29,15 +29,17 @@
         android:layout_height="wrap_content"
         tools:ignore="UnusedAttribute">
 
-        <org.runnerup.widget.ClassicSpinner
+        <org.runnerup.widget.MaterialSportSpinner
             android:id="@+id/sport_spinner"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:contentDescription="@string/Sport"
+            android:cursorVisible="false"
+            android:focusable="false"
+            android:inputType="none"
             android:key="@string/pref_sport"
             android:minWidth="48dp"
-            android:minHeight="48dp"
-            android:spinnerMode="dropdown" />
+            android:minHeight="48dp" />
 
     </com.google.android.material.appbar.MaterialToolbar>
 
