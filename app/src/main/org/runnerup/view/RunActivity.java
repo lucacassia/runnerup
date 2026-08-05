@@ -17,6 +17,7 @@
 
 package org.runnerup.view;
 
+import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.content.ComponentName;
 import android.content.ContentValues;
@@ -28,6 +29,7 @@ import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -42,10 +44,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.ListView;
-import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -56,6 +55,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -105,7 +106,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private TextView intervalPace = null;
   private TextView currentPace = null;
   private TextView countdownView = null;
-  private ListView workoutList = null;
+  private RecyclerView workoutList = null;
   private View tableRowInterval = null;
   private org.runnerup.workout.Step currentStep = null;
   private Formatter formatter = null;
@@ -165,6 +166,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     countdownView = findViewById(R.id.countdown_text_view);
     workoutList = findViewById(R.id.workout_list);
     hrDebug = findViewById(R.id.hr_debug);
+    workoutList.setLayoutManager(new LinearLayoutManager(this));
     WorkoutAdapter adapter = new WorkoutAdapter(workoutRows);
     workoutList.setAdapter(adapter);
 
@@ -181,7 +183,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       hrDebug = null;
     }
 
-    TableLayout t = findViewById(R.id.table_layout1);
+    View t = findViewById(R.id.table_layout1);
     t.setOnTouchListener(
         (v, event) -> {
           // Detect tapping on the header
@@ -497,6 +499,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
   }
 
+  @SuppressLint("NotifyDataSetChanged")
   private void updateView() {
     boolean isPaused = workout != null && workout.isPaused();
     if (mTracker.getState() == TrackerState.STOPPED && !isPaused) {
@@ -576,7 +579,10 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       if (curr != currentStep) {
         ((WorkoutAdapter) workoutList.getAdapter()).notifyDataSetChanged();
         currentStep = curr;
-        workoutList.setSelection(getPosition(workoutRows, currentStep));
+        if (workoutList.getLayoutManager() instanceof LinearLayoutManager) {
+          ((LinearLayoutManager) workoutList.getLayoutManager())
+              .scrollToPosition(getPosition(workoutRows, currentStep));
+        }
       }
     }
   }
@@ -634,7 +640,10 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
   }
 
-  class WorkoutAdapter extends BaseAdapter {
+  class WorkoutAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private static final int TYPE_STEP = 0;
+    private static final int TYPE_LAP = 1;
 
     final ArrayList<WorkoutRow> rows;
 
@@ -643,40 +652,50 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
 
     @Override
-    public int getCount() {
+    public int getItemCount() {
       return rows.size();
     }
 
     @Override
-    public Object getItem(int position) {
-      return rows.get(position);
+    public int getItemViewType(int position) {
+      return rows.get(position).step != null ? TYPE_STEP : TYPE_LAP;
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+      LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+      if (viewType == TYPE_LAP) {
+        return new LapRowViewHolder(inflater.inflate(R.layout.laplist_row, parent, false));
+      }
+      return new WorkoutRowViewHolder(inflater.inflate(R.layout.workout_row, parent, false));
     }
 
     @Override
-    public long getItemId(int position) {
-      return 0;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
       WorkoutRow tmp = rows.get(position);
-      if (tmp.step != null) {
-        return getWorkoutRow(tmp.step, tmp.level, convertView, parent);
-      } else {
-        return getLapRow(tmp.lap, convertView, parent);
+      if (holder instanceof WorkoutRowViewHolder) {
+        bindWorkoutRow((WorkoutRowViewHolder) holder, tmp.step, tmp.level);
       }
     }
 
-    private View getWorkoutRow(
-        org.runnerup.workout.Step step, int level, View convertView, ViewGroup parent) {
-      LayoutInflater inflater = LayoutInflater.from(RunActivity.this);
-      View view = inflater.inflate(R.layout.workout_row, parent, false);
-      TextView intensity = view.findViewById(R.id.workout_step_intensity);
-      TextView durationType = view.findViewById(R.id.workout_step_duration_type);
-      TextView durationValue = view.findViewById(R.id.workout_step_duration_value);
-      TextView targetPace = view.findViewById(R.id.workout_step_pace);
+    private void bindWorkoutRow(WorkoutRowViewHolder holder, Step step, int level) {
+      TextView intensity = holder.intensity;
+      TextView durationType = holder.durationType;
+      TextView durationValue = holder.durationValue;
+      TextView targetPace = holder.targetPace;
       intensity.setPadding(level * 10, 0, 0, 0);
       intensity.setText(getResources().getText(step.getIntensity().getTextId()));
+      boolean isCurrent = currentStep == step;
+      if (isCurrent) {
+        holder.itemView.setBackgroundResource(R.drawable.workout_row_active_bg);
+        intensity.setTextColor(ContextCompat.getColor(RunActivity.this, R.color.colorPrimary));
+        intensity.setTypeface(Typeface.DEFAULT_BOLD);
+      } else {
+        holder.itemView.setBackgroundResource(android.R.color.transparent);
+        intensity.setTextColor(ContextCompat.getColor(RunActivity.this, R.color.colorText));
+        intensity.setTypeface(Typeface.DEFAULT);
+      }
       if (step.getDurationType() != null) {
         durationType.setText(getResources().getText(step.getDurationType().getTextId()));
         durationValue.setText(
@@ -685,11 +704,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       } else {
         durationType.setText("");
         durationValue.setText("");
-      }
-      if (currentStep == step) {
-        // view.setBackgroundResource(android.R.color.background_light);
-      } else {
-        view.setBackgroundResource(android.R.color.black);
       }
 
       if (step.getTargetType() == null) {
@@ -721,12 +735,28 @@ public class RunActivity extends AppCompatActivity implements TickListener {
                   step.getRepeatCount()));
         }
       }
-      return view;
     }
+  }
 
-    private View getLapRow(ContentValues tmp, View convertView, ViewGroup parent) {
-      LayoutInflater inflater = LayoutInflater.from(RunActivity.this);
-      return inflater.inflate(R.layout.laplist_row, parent, false);
+  class WorkoutRowViewHolder extends RecyclerView.ViewHolder {
+    final TextView intensity;
+    final TextView durationType;
+    final TextView durationValue;
+    final TextView targetPace;
+
+    WorkoutRowViewHolder(@NonNull View itemView) {
+      super(itemView);
+      intensity = itemView.findViewById(R.id.workout_step_intensity);
+      durationType = itemView.findViewById(R.id.workout_step_duration_type);
+      durationValue = itemView.findViewById(R.id.workout_step_duration_value);
+      targetPace = itemView.findViewById(R.id.workout_step_pace);
+    }
+  }
+
+  class LapRowViewHolder extends RecyclerView.ViewHolder {
+
+    LapRowViewHolder(@NonNull View itemView) {
+      super(itemView);
     }
   }
 }

@@ -13,7 +13,7 @@
   ~
   ~  You should have received a copy of the GNU General Public License
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
--->
+  -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/start_view"
@@ -21,203 +21,274 @@
     android:layout_height="fill_parent"
     android:orientation="vertical">
 
-    <TableLayout
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/table_layout1"
-        android:layout_width="fill_parent"
+        style="?attr/materialCardViewFilledStyle"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true">
-
-        <TableRow
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                style="@style/RunHeader"
-                android:gravity="end"
-                android:text="@string/time" />
-
-            <TextView
-                style="@style/RunHeader"
-                android:gravity="end"
-                android:text="@string/distance" />
-
-            <TextView
-                android:id="@+id/velocity_label"
-                style="@style/RunHeader"
-                android:gravity="end"
-                android:text="@string/Pace" />
-
-            <TextView
-                android:id="@+id/activity_header_hr"
-                style="@style/RunHeader"
-                android:layout_marginEnd="3dp"
-                android:gravity="end"
-                android:text="@string/metrics_heartrate" />
-        </TableRow>
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        app:cardCornerRadius="@dimen/history_row_corner"
+        app:cardElevation="0dp">
 
         <LinearLayout
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/colorSurfaceContainer"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:padding="20dp">
 
             <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
                     style="@style/RunHeader"
-                    android:layout_marginStart="10dp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="start"
                     android:text="@string/Total" />
-            </LinearLayout>
-
-            <TableRow
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
 
                 <TextView
-                    android:id="@+id/run_activity_time"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/run_activity_distance"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/run_activity_pace"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/activity_hr"
-                    style="@style/RunInfo"
-                    android:layout_marginEnd="3dp" />
-            </TableRow>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/table_row_interval"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorSurfaceContainer"
-            android:orientation="vertical">
-
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
+                    android:id="@+id/velocity_label"
                     style="@style/RunHeader"
-                    android:layout_marginStart="10dp"
-                    android:text="@string/Interval" />
-            </LinearLayout>
-
-            <TableRow
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="end"
+                    android:text="@string/Pace" />
 
                 <TextView
-                    android:id="@+id/run_interval_time"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/intervall_distance"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/interval_pace"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/interval_hr"
-                    style="@style/RunInfo"
-                    android:layout_marginEnd="3dp" />
-            </TableRow>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorSurfaceContainer"
-            android:orientation="vertical">
-
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
-
-                <TextView
+                    android:id="@+id/activity_header_hr"
                     style="@style/RunHeader"
-                    android:layout_marginStart="10dp"
-                    android:text="@string/Lap" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:gravity="end"
+                    android:text="@string/metrics_heartrate" />
             </LinearLayout>
 
-            <TableRow
-                android:layout_width="fill_parent"
+            <TextView
+                android:id="@+id/run_activity_distance"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="end">
-
-                <TextView
-                    android:id="@+id/lap_time"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/lap_distance"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/lap_pace"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/lap_hr"
-                    style="@style/RunInfo"
-                    android:layout_marginEnd="3dp" />
-            </TableRow>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/table_row_current"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorSurfaceContainer"
-            android:orientation="vertical">
+                android:layout_marginTop="4dp"
+                android:textAppearance="?attr/textAppearanceDisplayMedium"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold" />
 
             <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/ListDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/time" />
+
+                    <TextView
+                        android:id="@+id/run_activity_time"
+                        style="@style/RunInfo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/ListDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/Pace" />
+
+                    <TextView
+                        android:id="@+id/run_activity_pace"
+                        style="@style/RunInfo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/ListDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/metrics_heartrate" />
+
+                    <TextView
+                        android:id="@+id/activity_hr"
+                        style="@style/RunInfo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="12dp"
+                android:background="?attr/colorOutlineVariant" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
                     style="@style/RunHeader"
-                    android:layout_marginStart="10dp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="start"
                     android:text="@string/Current" />
-            </LinearLayout>
-
-            <TableRow
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="0dp">
-
-                <TextView
-                    android:id="@+id/current_time_unused"
-                    style="@style/RunInfo" />
-
-                <TextView
-                    android:id="@+id/current_distance_unused"
-                    style="@style/RunInfo" />
 
                 <TextView
                     android:id="@+id/current_pace"
                     style="@style/RunInfo"
-                    android:layout_marginEnd="3dp" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/current_hr"
                     style="@style/RunInfo"
-                    android:layout_marginEnd="3dp" />
-            </TableRow>
-        </LinearLayout>
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
-    </TableLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/RunHeader"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="start"
+                    android:text="@string/Lap" />
+
+                <TextView
+                    android:id="@+id/lap_time"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/lap_distance"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/lap_pace"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/lap_hr"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/table_row_interval"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/RunHeader"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="start"
+                    android:text="@string/Interval" />
+
+                <TextView
+                    android:id="@+id/run_interval_time"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/intervall_distance"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/interval_pace"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <TextView
+                    android:id="@+id/interval_hr"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <LinearLayout
         android:id="@+id/countdown_layout"
@@ -231,7 +302,7 @@
             android:id="@+id/countdown_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_margin="20dp"
+            android:layout_margin="12dp"
             android:background="?attr/colorSurfaceContainer"
             android:padding="20dp"
             android:text=""
@@ -241,65 +312,85 @@
             android:visibility="invisible" />
     </LinearLayout>
 
-    <ListView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/workout_list"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/countdown_layout"></ListView>
+        android:layout_height="0dp"
+        android:layout_above="@id/run_table_row1"
+        android:layout_below="@id/countdown_layout"
+        android:clipToPadding="false"
+        android:paddingStart="16dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp" />
 
     <TextView
         android:id="@+id/hr_debug"
         android:layout_width="match_parent"
-        android:layout_height="fill_parent"
-        android:layout_above="@id/run_table_row1"
-        android:layout_below="@id/workout_list"
-        android:scrollbars="vertical" />
+        android:layout_height="0dp"
+        android:layout_alignTop="@id/workout_list"
+        android:layout_alignBottom="@id/workout_list"
+        android:scrollbars="vertical"
+        android:visibility="gone" />
 
-    <TableRow
+    <LinearLayout
         android:id="@+id/run_table_row1"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/run_table_row2">
+        android:layout_above="@id/run_table_row2"
+        android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/new_lap_button"
             style="@style/ButtonText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="4dp"
             android:layout_weight="1"
-            app:backgroundTint="?attr/colorPrimary"
             android:drawableEnd="@drawable/ic_av_newlap"
             android:drawablePadding="-32dp"
-            android:text="@string/Lap" />
+            android:text="@string/Lap"
+            app:backgroundTint="?attr/colorPrimary" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/pause_button"
             style="@style/ButtonText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="4dp"
             android:layout_weight="1"
-            app:backgroundTint="?attr/colorPrimary"
             android:drawableEnd="@drawable/ic_av_pause"
             android:drawablePadding="-32dp"
-            android:text="@string/Pause" />
-    </TableRow>
+            android:text="@string/Pause"
+            app:backgroundTint="?attr/colorPrimary" />
+    </LinearLayout>
 
-    <TableRow
+    <LinearLayout
         android:id="@+id/run_table_row2"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true">
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/stop_button"
             style="@style/ButtonText"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            app:backgroundTint="?attr/colorError"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
             android:drawableEnd="@drawable/ic_av_stop"
             android:drawablePadding="-32dp"
-            android:text="@string/Stop" />
-    </TableRow>
+            android:text="@string/Stop"
+            app:backgroundTint="?attr/colorError" />
+    </LinearLayout>
 
 </RelativeLayout>
