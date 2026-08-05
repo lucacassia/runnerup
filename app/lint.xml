@@ -31,9 +31,6 @@
         <ignore path="res/**" />
         <ignore path="**/common/src/main/res/**" />
     </issue>
-    <issue id="IconColors">
-        <ignore path="**/ic_stat_notify.png" />
-    </issue>
     <issue id="ObsoleteSdkInt" severity="ignore">
         <ignore regexp=".*drawable-r21$" />
     </issue>
