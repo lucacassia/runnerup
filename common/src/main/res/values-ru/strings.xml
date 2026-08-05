@@ -275,7 +275,7 @@
   <string name="Share_workout">Опубликовать</string>
   <string name="New_audio_scheme">Новая голосовая схема</string>
   <string name="Bluetooth_permission_required">Разрешение устройств поблизости</string>
-  <string name="GPS_permission_required">Разрешение фонового местоположения</string>
+  <string name="GPS_permission_required">Разрешение на определение местоположения</string>
   <string name="GPS_permission_text_pre_Android10">Требуется разрешение на определение местоположения через настройки системы</string>
   <string name="Request_permission_text">Нажмите \"ОК\", что бы разрешить.</string>
   <string name="Battery_optimization_check">Оптимизация батареи включена</string>

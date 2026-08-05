@@ -280,7 +280,7 @@
   <string name="Share_workout">שיתוף אימון…</string>
   <string name="New_audio_scheme">ערכת אודיו חדשה</string>
   <string name="Bluetooth_permission_required">הרשאת התקנים בקרבת מקום</string>
-  <string name="GPS_permission_required">הרשאת מיקום ברקע</string>
+  <string name="GPS_permission_required">הרשאת מיקום</string>
   <string name="GPS_permission_text_pre_Android10">נדרשת הרשאת מיקום בהגדרות המערכת</string>
   <string name="Request_permission_text">התר הרשאות בלחיצה על \"אישור\".</string>
   <string name="Battery_optimization_check">אופטימיזציית סוללה מופעלת</string>

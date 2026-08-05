@@ -280,10 +280,10 @@
   <string name="Share_workout">分享训练...</string>
   <string name="New_audio_scheme">新建语音模版</string>
   <string name="Bluetooth_permission_required">附近设备权限</string>
-  <string name="GPS_permission_required">后台定位权限</string>
+  <string name="GPS_permission_required">定位权限</string>
   <string name="GPS_permission_text_pre_Android10">需要开启定位权限</string>
-  <string name="GPS_permission_text">本APP收集位置数据以便在APP被关闭或未使用时（APP处于后台）实现运动追踪。\n当关闭屏幕或其他APP在前台时为了记录运动需要这样做。\n\n你需要在系统设置中明确设置为“始终允许”。\n跑步节奏也需要“体育活动”权限。</string>
-  <string name="GPS_permission_text_Android12">本APP收集位置数据以便在APP被关闭或未使用时（APP处于后台）实现运动追踪。\n当关闭屏幕或其他APP在前台时为了记录运动需要这样做。\n\n你需要在系统设置中明确设置为“始终允许”。\n跑步节奏也需要“体育活动”权限，另外蓝牙功能需要获取“附近设备”权限。</string>
+  <string name="GPS_permission_text">本应用使用位置信息来记录你的活动。运动追踪在前台服务中运行并显示通知，因此屏幕关闭或使用其他应用时仍会继续。\n授予“仅使用期间允许”即可。\n跑步节奏还需要“体育活动”权限。</string>
+  <string name="GPS_permission_text_Android12">本应用使用位置信息来记录你的活动。运动追踪在前台服务中运行并显示通知，因此屏幕关闭或使用其他应用时仍会继续。\n授予“仅使用期间允许”即可。\n跑步节奏还需要“体育活动”权限，另外蓝牙功能需要“附近设备”权限。</string>
   <string name="Request_permission_text">点击“确定”以授权</string>
   <string name="Battery_optimization_check">开启了电池优化</string>
   <string name="Battery_optimization_check_text">电池优化将会降低记录精度。\n点击“确定”前往系统设置-全部应用，搜索“RunnerUp”并选择“不要优化”。</string>

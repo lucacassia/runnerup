@@ -283,10 +283,10 @@
   <string name="Share_workout">Dela träningspass…</string>
   <string name="New_audio_scheme">Nytt ljudschema</string>
   <string name="Bluetooth_permission_required">Behörighet för enheter i närheten</string>
-  <string name="GPS_permission_required">Behörighet till plats i bakgrunden</string>
+  <string name="GPS_permission_required">Platsbehörighet</string>
   <string name="GPS_permission_text_pre_Android10">Behörighet för Plats behövs i systeminställningar</string>
-  <string name="GPS_permission_text">Behörighet för Plats behövs i systeminställningar, också då appen är i bakgrunden (\"Tillåt alltid\" i inställningarna).\nFör stegfrekvens behövs behörighet för Kroppssensorer också.</string>
-  <string name="GPS_permission_text_Android12">Behörighet för Plats behövs i systeminställningar, också då appen är i bakgrunden (\"Tillåt alltid\" i inställningarna).\nFör stegfrekvens behövs behörighet för Kroppssensorer och Bluetooth behöver \"Enheter i närheten\".</string>
+  <string name="GPS_permission_text">Den här appen använder plats för att spela in dina aktiviteter. Spårningen körs i en förgrundstjänst med en synlig avisering, så den fortsätter när skärmen är av eller en annan app är i förgrunden.\nAtt ge \"Endast när appen används\" räcker.\nFör stegfrekvens behövs dessutom behörigheten \"Fysisk aktivitet\".</string>
+  <string name="GPS_permission_text_Android12">Den här appen använder plats för att spela in dina aktiviteter. Spårningen körs i en förgrundstjänst med en synlig avisering, så den fortsätter när skärmen är av eller en annan app är i förgrunden.\nAtt ge \"Endast när appen används\" räcker.\nFör stegfrekvens behövs dessutom behörigheten \"Fysisk aktivitet\" och Bluetooth kräver \"Enheter i närheten\".</string>
   <string name="Request_permission_text">Tillåt behörighet genom att klicka OK.</string>
   <string name="Battery_optimization_check">Batterioptimering aktiverad</string>
   <string name="Battery_optimization_check_text">Batterioptimering minskar noggrannheten.\nVälj OK för att gå till inställningar, välj \"Alla appar\", sök efter \"RunnerUp\", välj \"Optimera inte\".</string>
