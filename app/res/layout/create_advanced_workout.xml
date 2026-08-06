@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context="org.runnerup.view.CreateAdvancedWorkout">
 
-    <org.runnerup.widget.TitleSpinner
+    <org.runnerup.widget.MaterialTitleSpinner
         android:id="@+id/new_workout_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -14,14 +14,13 @@
         android:text="@string/Workout"
         runnerup:type="spinner_txt" />
 
-    <ListView
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/new_advnced_workout_steps"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/create_button_table"
         android:layout_below="@id/new_workout_spinner"
-        android:paddingTop="8dp"
-        android:scrollbarAlwaysDrawVerticalTrack="true" />
+        android:paddingTop="8dp" />
 
     <TableLayout
         android:id="@+id/create_button_table"

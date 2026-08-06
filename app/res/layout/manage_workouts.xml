@@ -21,14 +21,21 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <ExpandableListView
-        android:id="@+id/expandable_list_view"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/actionbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        app:title="@string/Manage_workouts" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/workout_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/manage_button_table"
-        android:layout_alignParentStart="false"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="false" />
+        android:layout_alignParentStart="true"
+        android:layout_below="@id/actionbar"
+        android:layout_alignParentEnd="true" />
 
     <TableLayout
         android:id="@+id/manage_button_table"

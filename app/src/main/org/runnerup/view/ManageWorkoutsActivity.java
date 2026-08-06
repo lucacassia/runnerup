@@ -17,6 +17,7 @@
 
 package org.runnerup.view;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -32,22 +33,21 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
-import android.widget.ExpandableListView;
-import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -60,7 +60,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.content.WorkoutFileProvider;
@@ -82,15 +81,14 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
   public static final String WORKOUT_NAME = "";
   public static final String WORKOUT_EDIT_MODE = "workout_edit_mode";
 
-  private final HashSet<SyncManager.WorkoutRef> pendingWorkouts = new HashSet<>();
   private final ArrayList<ContentValues> providers = new ArrayList<>();
   private final HashMap<String, ArrayList<SyncManager.WorkoutRef>> workouts = new HashMap<>();
-  private WorkoutAccountListAdapter adapter = null;
-
+  private final HashSet<String> expandedProviders = new HashSet<>();
   private final HashSet<String> loadedProviders = new HashSet<>();
+  private WorkoutListAdapter adapter = null;
 
   private boolean uploading = false;
-  private CompoundButton currentlySelectedWorkout = null;
+  private WorkoutRef selectedWorkout = null;
   private Button deleteButton = null;
   private Button shareButton = null;
   private Button editButton = null;
@@ -117,11 +115,16 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
     PHONE_STRING = getResources().getString(org.runnerup.common.R.string.my_phone);
 
+    MaterialToolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
     mDB = DBHelper.getReadableDatabase(this);
     syncManager = new SyncManager(this);
     syncManager.setConfigureLauncher(configureLauncher);
-    adapter = new WorkoutAccountListAdapter(this);
-    ExpandableListView list = findViewById(R.id.expandable_list_view);
+    adapter = new WorkoutListAdapter(this);
+    RecyclerView list = findViewById(R.id.workout_list);
+    list.setLayoutManager(new LinearLayoutManager(this));
     list.setAdapter(adapter);
 
     deleteButton = findViewById(R.id.delete_workout_button);
@@ -139,8 +142,8 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
     requery();
     listLocal();
-    if (!list.getAdapter().isEmpty()) {
-      list.expandGroup(0);
+    if (!providers.isEmpty()) {
+      adapter.setGroupExpanded(PHONE_STRING, true);
     }
 
     Uri data = getIntent().getData();
@@ -288,7 +291,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
   }
 
   private void handleButtons() {
-    if (currentlySelectedWorkout == null) {
+    if (selectedWorkout == null) {
       deleteButton.setEnabled(false);
       shareButton.setEnabled(false);
       editButton.setEnabled(false);
@@ -296,8 +299,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
       return;
     }
 
-    WorkoutRef selected = (WorkoutRef) currentlySelectedWorkout.getTag();
-    if (PHONE_STRING.contentEquals(selected.synchronizer())) {
+    if (PHONE_STRING.contentEquals(selectedWorkout.synchronizer())) {
       deleteButton.setEnabled(true);
       shareButton.setEnabled(true);
       editButton.setEnabled(true);
@@ -320,7 +322,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
     workouts.remove(PHONE_STRING);
     workouts.put(PHONE_STRING, newlist);
-    adapter.notifyDataSetChanged();
+    adapter.refresh();
   }
 
   @Override
@@ -376,27 +378,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     //            }
     //        }
 
-    adapter.notifyDataSetChanged();
-  }
-
-  interface Filter<T> {
-    boolean match(T t);
-  }
-
-  ArrayList<SyncManager.WorkoutRef> filter(
-      List<SyncManager.WorkoutRef> list, Filter<SyncManager.WorkoutRef> f) {
-    ArrayList<SyncManager.WorkoutRef> newlist = new ArrayList<>();
-    return filter(list, newlist, f);
-  }
-
-  private ArrayList<SyncManager.WorkoutRef> filter(
-      List<SyncManager.WorkoutRef> list,
-      ArrayList<WorkoutRef> newlist,
-      Filter<SyncManager.WorkoutRef> f) {
-    for (SyncManager.WorkoutRef w : list) {
-      if (f.match(w)) newlist.add(w);
-    }
-    return newlist;
+    adapter.refresh();
   }
 
   private final OnClickListener createButtonClick =
@@ -444,9 +426,9 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
   private final OnClickListener deleteButtonClick =
       v -> {
-        if (currentlySelectedWorkout == null) return;
+        if (selectedWorkout == null) return;
 
-        final WorkoutRef selected = (WorkoutRef) currentlySelectedWorkout.getTag();
+        final WorkoutRef selected = selectedWorkout;
         new MaterialAlertDialogBuilder(ManageWorkoutsActivity.this)
             .setTitle(
                 getString(org.runnerup.common.R.string.Delete_workout)
@@ -477,29 +459,16 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
             pref.getString(getResources().getString(R.string.pref_advanced_workout), ""))) {
       pref.edit().putString(getResources().getString(R.string.pref_advanced_workout), "").apply();
     }
-    currentlySelectedWorkout = null;
+    selectedWorkout = null;
     listLocal();
   }
 
-  private final OnCheckedChangeListener onWorkoutChecked =
-      (arg0, isChecked) -> {
-        if (currentlySelectedWorkout != null) {
-          currentlySelectedWorkout.setChecked(false);
-        }
-        if (isChecked) {
-          currentlySelectedWorkout = arg0;
-        } else {
-          currentlySelectedWorkout = null;
-        }
-        handleButtons();
-      };
-
   private final OnClickListener shareButtonClick =
       v -> {
-        if (currentlySelectedWorkout == null) return;
+        if (selectedWorkout == null) return;
 
         final AppCompatActivity context = ManageWorkoutsActivity.this;
-        final WorkoutRef selected = (WorkoutRef) currentlySelectedWorkout.getTag();
+        final WorkoutRef selected = selectedWorkout;
         final String name = selected.workoutName();
         final Intent intent = new Intent(Intent.ACTION_SEND);
 
@@ -519,9 +488,9 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
   private final OnClickListener editButtonClick =
       v -> {
-        if (currentlySelectedWorkout == null) return;
+        if (selectedWorkout == null) return;
 
-        final WorkoutRef selected = (WorkoutRef) currentlySelectedWorkout.getTag();
+        final WorkoutRef selected = selectedWorkout;
         final Intent intent = new Intent(ManageWorkoutsActivity.this, CreateAdvancedWorkout.class);
 
         intent.putExtra(WORKOUT_NAME, selected.workoutName());
@@ -529,126 +498,130 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
         startActivity(intent);
       };
 
-  class WorkoutAccountListAdapter extends BaseExpandableListAdapter {
+  private void onWorkoutChecked(WorkoutRef workout, boolean isChecked) {
+    if (isChecked) {
+      selectedWorkout = workout;
+    } else if (selectedWorkout == workout) {
+      selectedWorkout = null;
+    }
+    handleButtons();
+  }
 
-    final Context context;
+  class WorkoutListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    WorkoutAccountListAdapter(Context ctx) {
+    private static final int TYPE_GROUP = 0;
+    private static final int TYPE_WORKOUT = 1;
+
+    private final Context context;
+    private final ArrayList<Object> items = new ArrayList<>();
+
+    WorkoutListAdapter(Context ctx) {
       context = ctx;
     }
 
-    String getProvider(int index) {
-      return providers.get(index).getAsString(DB.ACCOUNT.NAME);
-    }
-
-    @Override
-    public Object getChild(int groupPosition, int childPosition) {
-      return workouts.get(getProvider(groupPosition)).get(childPosition);
-    }
-
-    @Override
-    public long getChildId(int groupPosition, int childPosition) {
-      return 0;
-    }
-
-    @Override
-    public View getChildView(
-        int groupPosition, int childPosition, boolean isLastChild, View view, ViewGroup parent) {
-
-      if (!(view instanceof LinearLayout)) {
-        LayoutInflater infalInflater =
-            (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        view = infalInflater.inflate(R.layout.manage_workouts_list_row, parent, false);
+    @SuppressLint("NotifyDataSetChanged")
+    void refresh() {
+      items.clear();
+      for (ContentValues provider : providers) {
+        String name = provider.getAsString(DB.ACCOUNT.NAME);
+        items.add(provider);
+        if (expandedProviders.contains(name)) {
+          ArrayList<WorkoutRef> list = workouts.get(name);
+          if (list != null) items.addAll(list);
+        }
       }
-
-      WorkoutRef workout = workouts.get(getProvider(groupPosition)).get(childPosition);
-      RadioButton cb = view.findViewById(R.id.download_workout_checkbox);
-
-      cb.setTag(workout);
-      cb.setChecked(
-          currentlySelectedWorkout != null && currentlySelectedWorkout.getTag() == workout);
-      cb.setOnCheckedChangeListener(onWorkoutChecked);
-      cb.setText(workout.workoutName());
-      return view;
+      notifyDataSetChanged();
     }
 
-    @Override
-    public int getChildrenCount(int groupPosition) {
-      return workouts.get(getProvider(groupPosition)).size();
-    }
-
-    @Override
-    public Object getGroup(int groupPosition) {
-      return providers.get(groupPosition);
-    }
-
-    @Override
-    public int getGroupCount() {
-      return providers.size();
-    }
-
-    @Override
-    public long getGroupId(int groupPosition) {
-      return 0;
-    }
-
-    @Override
-    public View getGroupView(
-        int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-      if (convertView == null) {
-        LayoutInflater inflater =
-            (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        convertView = inflater.inflate(R.layout.manage_workouts_list_category, parent, false);
+    void setGroupExpanded(String name, boolean expanded) {
+      if (expanded) {
+        expandedProviders.add(name);
+      } else {
+        expandedProviders.remove(name);
       }
-
-      TextView categoryText = convertView.findViewById(R.id.category_text);
-      categoryText.setText(getProvider(groupPosition));
-
-      if (isExpanded)
-        categoryText.setCompoundDrawablesWithIntrinsicBounds(
-            0, 0, R.drawable.ic_expand_up_white_24dp, 0);
-      else
-        categoryText.setCompoundDrawablesWithIntrinsicBounds(
-            0, 0, R.drawable.ic_expand_down_white_24dp, 0);
-
-      return convertView;
+      refresh();
     }
 
-    @Override
-    public boolean hasStableIds() {
-      return false;
-    }
-
-    @Override
-    public boolean isChildSelectable(int groupPosition, int childPosition) {
-      return false;
-    }
-
-    int saveGroupPosition;
-
-    @Override
-    public void onGroupExpanded(int groupPosition) {
-      String provider = getProvider(groupPosition);
-      if (PHONE_STRING.contentEquals(provider)) {
-        super.onGroupExpanded(groupPosition);
+    void expandGroup(String name) {
+      if (PHONE_STRING.contentEquals(name) || loadedProviders.contains(name)) {
+        setGroupExpanded(name, true);
         return;
       }
 
       // below is not supported by any current provider, so 'uploading'
       // is not set (back while uploading would abort)
-      if (loadedProviders.contains(provider)) {
-        super.onGroupExpanded(groupPosition);
-        return;
-      }
-
       uploading = true;
-      saveGroupPosition = groupPosition;
-
-      if (!syncManager.isConfigured(provider)) {
-        syncManager.connect(onSynchronizerConfiguredCallback, provider);
+      if (!syncManager.isConfigured(name)) {
+        syncManager.connect(onSynchronizerConfiguredCallback, name);
       } else {
-        onSynchronizerConfiguredCallback.run(provider, Synchronizer.Status.OK);
+        onSynchronizerConfiguredCallback.run(name, Synchronizer.Status.OK);
       }
+    }
+
+    void collapseGroup(String name) {
+      setGroupExpanded(name, false);
+      if (selectedWorkout != null && selectedWorkout.synchronizer().contentEquals(name)) {
+        selectedWorkout = null;
+        handleButtons();
+      }
+    }
+
+    @Override
+    public int getItemCount() {
+      return items.size();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+      return items.get(position) instanceof ContentValues ? TYPE_GROUP : TYPE_WORKOUT;
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+      LayoutInflater inflater = LayoutInflater.from(context);
+      if (viewType == TYPE_GROUP) {
+        return new GroupViewHolder(
+            inflater.inflate(R.layout.manage_workouts_list_category, parent, false));
+      }
+      return new WorkoutViewHolder(
+          inflater.inflate(R.layout.manage_workouts_list_row, parent, false));
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+      if (holder instanceof GroupViewHolder) {
+        bindGroup((GroupViewHolder) holder, (ContentValues) items.get(position));
+      } else {
+        bindWorkout((WorkoutViewHolder) holder, (WorkoutRef) items.get(position));
+      }
+    }
+
+    private void bindGroup(GroupViewHolder holder, ContentValues provider) {
+      String name = provider.getAsString(DB.ACCOUNT.NAME);
+      holder.categoryText.setText(name);
+      if (expandedProviders.contains(name)) {
+        holder.categoryText.setCompoundDrawablesWithIntrinsicBounds(
+            0, 0, R.drawable.ic_expand_up_white_24dp, 0);
+      } else {
+        holder.categoryText.setCompoundDrawablesWithIntrinsicBounds(
+            0, 0, R.drawable.ic_expand_down_white_24dp, 0);
+      }
+      holder.categoryText.setOnClickListener(
+          v -> {
+            if (expandedProviders.contains(name)) {
+              collapseGroup(name);
+            } else {
+              expandGroup(name);
+            }
+          });
+    }
+
+    private void bindWorkout(WorkoutViewHolder holder, WorkoutRef workout) {
+      RadioButton cb = holder.checkbox;
+      cb.setText(workout.workoutName());
+      cb.setChecked(selectedWorkout == workout);
+      cb.setOnClickListener(v -> onWorkoutChecked(workout, cb.isChecked()));
     }
 
     final Callback onSynchronizerConfiguredCallback =
@@ -671,35 +644,34 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
           }
         };
 
-    private void onGroupExpandedImpl() {
-      super.onGroupExpanded(saveGroupPosition);
-    }
-
-    private final Callback onLoadWorkoutListCallback =
+    final Callback onLoadWorkoutListCallback =
         new Callback() {
-
           @Override
           public void run(String synchronizerName, Status status) {
             uploading = false;
             if (status == Status.OK) {
-              loadedProviders.add(getProvider(saveGroupPosition));
-              adapter.notifyDataSetChanged();
-              onGroupExpandedImpl();
+              loadedProviders.add(synchronizerName);
+              setGroupExpanded(synchronizerName, true);
             }
           }
         };
+  }
 
-    @Override
-    public void onGroupCollapsed(int groupPosition) {
-      super.onGroupCollapsed(groupPosition);
-      String provider = getProvider(groupPosition);
-      if (currentlySelectedWorkout != null) {
-        WorkoutRef ref = (WorkoutRef) currentlySelectedWorkout.getTag();
-        if (ref.synchronizer().contentEquals(provider)) {
-          currentlySelectedWorkout.setChecked(false);
-          currentlySelectedWorkout = null;
-        }
-      }
+  class GroupViewHolder extends RecyclerView.ViewHolder {
+    final TextView categoryText;
+
+    GroupViewHolder(@NonNull View itemView) {
+      super(itemView);
+      categoryText = itemView.findViewById(R.id.category_text);
+    }
+  }
+
+  class WorkoutViewHolder extends RecyclerView.ViewHolder {
+    final RadioButton checkbox;
+
+    WorkoutViewHolder(@NonNull View itemView) {
+      super(itemView);
+      checkbox = itemView.findViewById(R.id.download_workout_checkbox);
     }
   }
 }
