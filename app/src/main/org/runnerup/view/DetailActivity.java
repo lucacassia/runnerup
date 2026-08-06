@@ -20,10 +20,10 @@ package org.runnerup.view;
 import static org.runnerup.content.ActivityProvider.GPX_MIME;
 import static org.runnerup.content.ActivityProvider.TCX_MIME;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -39,14 +39,12 @@ import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -54,13 +52,13 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
@@ -84,8 +82,8 @@ import org.runnerup.util.Formatter;
 import org.runnerup.util.GraphWrapper;
 import org.runnerup.util.MapWrapper;
 import org.runnerup.util.SafeParse;
+import org.runnerup.widget.MaterialTitleSpinner;
 import org.runnerup.widget.SpinnerInterface.OnSetValueListener;
-import org.runnerup.widget.TitleSpinner;
 import org.runnerup.widget.WidgetUtil;
 import org.runnerup.workout.Intensity;
 import org.runnerup.workout.Sport;
@@ -101,7 +99,8 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   private boolean lapHrPresent = false;
   private ContentValues[] laps = null;
   private final ArrayList<ContentValues> reports = new ArrayList<>();
-  private final ArrayList<BaseAdapter> adapters = new ArrayList<>(2);
+  private LapListAdapter lapListAdapter = null;
+  private ReportListAdapter reportListAdapter = null;
 
   private int mode; // 0 == save 1 == details
   private static final int MODE_SAVE = 0;
@@ -117,14 +116,14 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   private View activityPaceSeparator = null;
   private TextView activityDistance = null;
 
-  private TitleSpinner sport = null;
-  private TitleSpinner manualDistance = null;
+  private MaterialTitleSpinner sport = null;
+  private MaterialTitleSpinner manualDistance = null;
   private EditText notes = null;
   private View rootView;
   private TabLayout.Tab mapTab;
 
   private MapWrapper mapWrapper = null;
-  private final GraphWrapper graphWrapper = null;
+  private GraphWrapper graphWrapper = null;
 
   private SyncManager syncManager = null;
   private Formatter formatter = null;
@@ -279,18 +278,15 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     fillHeaderData();
     requery();
 
-    {
-      ListView lv = findViewById(R.id.laplist);
-      LapListAdapter adapter = new LapListAdapter();
-      adapters.add(adapter);
-      lv.setAdapter(adapter);
-    }
-    {
-      ListView lv = findViewById(R.id.report_list);
-      ReportListAdapter adapter = new ReportListAdapter();
-      adapters.add(adapter);
-      lv.setAdapter(adapter);
-    }
+    lapListAdapter = new LapListAdapter();
+    RecyclerView lapList = findViewById(R.id.laplist);
+    lapList.setLayoutManager(new LinearLayoutManager(this));
+    lapList.setAdapter(lapListAdapter);
+
+    reportListAdapter = new ReportListAdapter();
+    RecyclerView reportList = findViewById(R.id.report_list);
+    reportList.setLayoutManager(new LinearLayoutManager(this));
+    reportList.setAdapter(reportListAdapter);
 
     getOnBackPressedDispatcher()
         .addCallback(
@@ -343,9 +339,9 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     LinearLayout graphTabLayout = findViewById(R.id.graphview);
     LinearLayout hrzonesBarLayout = findViewById(R.id.hrzonesBarLayout);
     boolean use_distance_as_x = !Sport.isWithoutGps(sport.getValueInt());
-    // variable not needed
-    new GraphWrapper(
-        this, graphTabLayout, hrzonesBarLayout, formatter, mDB, mID, use_distance_as_x);
+    graphWrapper =
+        new GraphWrapper(
+            this, graphTabLayout, hrzonesBarLayout, formatter, mDB, mID, use_distance_as_x);
 
     if (this.mode == MODE_SAVE) {
       resumeButton.setOnClickListener(resumeButtonClick);
@@ -534,6 +530,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     }
   }
 
+  @SuppressLint("NotifyDataSetChanged")
   private void requery() {
     {
       /*
@@ -633,8 +630,11 @@ public class DetailActivity extends AppCompatActivity implements Constants {
       setUploadVisibility();
     }
 
-    for (BaseAdapter a : adapters) {
-      a.notifyDataSetChanged();
+    if (lapListAdapter != null) {
+      lapListAdapter.notifyDataSetChanged();
+    }
+    if (reportListAdapter != null) {
+      reportListAdapter.notifyDataSetChanged();
     }
   }
 
@@ -712,52 +712,17 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     }
   }
 
-  private class ViewHolderLapList {
-    private TextView tv0;
-    private TextView tv1;
-    private TextView tv2;
-    private TextView tv3;
-    private TextView tv4;
-    private TextView tvHr;
-  }
+  private class LapListAdapter extends RecyclerView.Adapter<LapListAdapter.LapViewHolder> {
 
-  private class LapListAdapter extends BaseAdapter {
-
+    @NonNull
     @Override
-    public int getCount() {
-      return laps.length;
+    public LapViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+      LayoutInflater inflater = LayoutInflater.from(DetailActivity.this);
+      return new LapViewHolder(inflater.inflate(R.layout.laplist_row, parent, false));
     }
 
     @Override
-    public Object getItem(int position) {
-      return laps[position];
-    }
-
-    @Override
-    public long getItemId(int position) {
-      return laps[position].getAsLong("_id");
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-      View view = convertView;
-      ViewHolderLapList viewHolder;
-
-      if (view == null) {
-        viewHolder = new ViewHolderLapList();
-        LayoutInflater inflater = LayoutInflater.from(DetailActivity.this);
-        view = inflater.inflate(R.layout.laplist_row, parent, false);
-        viewHolder.tv0 = view.findViewById(R.id.lap_list_type);
-        viewHolder.tv1 = view.findViewById(R.id.lap_list_id);
-        viewHolder.tv2 = view.findViewById(R.id.lap_list_distance);
-        viewHolder.tv3 = view.findViewById(R.id.lap_list_time);
-        viewHolder.tv4 = view.findViewById(R.id.lap_list_pace);
-        viewHolder.tvHr = view.findViewById(R.id.lap_list_hr);
-
-        view.setTag(viewHolder);
-      } else {
-        viewHolder = (ViewHolderLapList) view.getTag();
-      }
+    public void onBindViewHolder(@NonNull LapViewHolder viewHolder, int position) {
       int i = laps[position].getAsInteger(DB.LAP.INTENSITY);
       Intensity intensity = Intensity.values()[i];
       switch (intensity) {
@@ -801,75 +766,65 @@ public class DetailActivity extends AppCompatActivity implements Constants {
       } else {
         viewHolder.tvHr.setVisibility(View.GONE);
       }
+    }
 
-      return view;
+    @Override
+    public int getItemCount() {
+      return laps.length;
+    }
+
+    class LapViewHolder extends RecyclerView.ViewHolder {
+      private final TextView tv0;
+      private final TextView tv1;
+      private final TextView tv2;
+      private final TextView tv3;
+      private final TextView tv4;
+      private final TextView tvHr;
+
+      LapViewHolder(@NonNull View itemView) {
+        super(itemView);
+        tv0 = itemView.findViewById(R.id.lap_list_type);
+        tv1 = itemView.findViewById(R.id.lap_list_id);
+        tv2 = itemView.findViewById(R.id.lap_list_distance);
+        tv3 = itemView.findViewById(R.id.lap_list_time);
+        tv4 = itemView.findViewById(R.id.lap_list_pace);
+        tvHr = itemView.findViewById(R.id.lap_list_hr);
+      }
     }
   }
 
-  private class ReportListAdapter extends BaseAdapter {
+  private class ReportListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int TYPE_ROW = 0;
+    private static final int TYPE_CONFIGURE = 1;
 
     @Override
-    public int getCount() {
+    public int getItemCount() {
       return reports.size() + 1;
     }
 
     @Override
-    public Object getItem(int position) {
-      if (position < reports.size()) return reports.get(position);
-      return this;
+    public int getItemViewType(int position) {
+      return position == reports.size() ? TYPE_CONFIGURE : TYPE_ROW;
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+      LayoutInflater inflater = LayoutInflater.from(DetailActivity.this);
+      if (viewType == TYPE_CONFIGURE) {
+        return new ConfigureViewHolder(
+            inflater.inflate(R.layout.reportlist_configure_row, parent, false));
+      }
+      return new RowViewHolder(inflater.inflate(R.layout.reportlist_row, parent, false));
     }
 
     @Override
-    public long getItemId(int position) {
-      if (position < reports.size()) return reports.get(position).getAsLong("_id");
-
-      return 0;
-    }
-
-    private class ViewHolderDetailActivity {
-      private TextView tv0;
-      private CheckBox cb;
-      private TextView tv1;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-      if (position == reports.size()) {
-        com.google.android.material.button.MaterialButton b =
-            new com.google.android.material.button.MaterialButton(DetailActivity.this);
-        b.setText(org.runnerup.common.R.string.Configure_accounts);
-        b.setBackgroundTintList(
-            ColorStateList.valueOf(
-                ContextCompat.getColor(DetailActivity.this, R.color.colorPrimary)));
-        b.setTextColor(
-            AppCompatResources.getColorStateList(DetailActivity.this, R.color.btn_text_color));
-        b.setOnClickListener(
-            v -> {
-              Intent i = new Intent(DetailActivity.this, AccountListActivity.class);
-              editAccountLauncher.launch(i);
-            });
-        return b;
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+      if (holder instanceof ConfigureViewHolder) {
+        return;
       }
 
-      View view = convertView;
-      ViewHolderDetailActivity viewHolder;
-
-      // Note: Special ViewHolder support as the Configure button is not in the view
-      if (view == null || view.getTag() == null) {
-        viewHolder = new ViewHolderDetailActivity();
-
-        LayoutInflater inflater = LayoutInflater.from(DetailActivity.this);
-        view = inflater.inflate(R.layout.reportlist_row, parent, false);
-
-        viewHolder.tv0 = view.findViewById(R.id.reportlist_account_id);
-        viewHolder.cb = view.findViewById(R.id.reportlist_sent);
-        viewHolder.tv1 = view.findViewById(R.id.reportlist_account_name);
-
-        view.setTag(viewHolder);
-      } else {
-        viewHolder = (ViewHolderDetailActivity) view.getTag();
-      }
-
+      RowViewHolder viewHolder = (RowViewHolder) holder;
       ContentValues tmp = reports.get(position);
       String name = tmp.getAsString(DB.ACCOUNT.NAME);
       viewHolder.cb.setOnCheckedChangeListener(null);
@@ -891,17 +846,35 @@ public class DetailActivity extends AppCompatActivity implements Constants {
         viewHolder.cb.setText(org.runnerup.common.R.string.Upload);
         viewHolder.cb.setOnLongClickListener(null);
       }
-      if (mode == MODE_DETAILS) {
-        viewHolder.cb.setEnabled(true);
-      } else if (mode == MODE_SAVE) {
-        viewHolder.cb.setEnabled(true);
-      }
+      viewHolder.cb.setEnabled(true);
       viewHolder.cb.setOnCheckedChangeListener(onSendChecked);
 
       viewHolder.tv0.setText(tmp.getAsString("_id"));
       viewHolder.tv1.setText(name);
+    }
 
-      return view;
+    class ConfigureViewHolder extends RecyclerView.ViewHolder {
+      ConfigureViewHolder(@NonNull View itemView) {
+        super(itemView);
+        itemView.setOnClickListener(
+            v -> {
+              Intent i = new Intent(DetailActivity.this, AccountListActivity.class);
+              editAccountLauncher.launch(i);
+            });
+      }
+    }
+
+    class RowViewHolder extends RecyclerView.ViewHolder {
+      private final TextView tv0;
+      private final CheckBox cb;
+      private final TextView tv1;
+
+      RowViewHolder(@NonNull View itemView) {
+        super(itemView);
+        tv0 = itemView.findViewById(R.id.reportlist_account_id);
+        cb = itemView.findViewById(R.id.reportlist_sent);
+        tv1 = itemView.findViewById(R.id.reportlist_account_name);
+      }
     }
   }
 

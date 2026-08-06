@@ -22,6 +22,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.LinearLayout;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,18 +30,10 @@ import org.runnerup.R;
 
 public class HRZonesBar extends View {
 
-  private static final int colorLow = Color.WHITE; // Color for the zone 0
-  private static final int colorHigh = Color.parseColor("#ff0000"); // Color for the last zone
-
+  private final int fontColor;
   // The two arrays will be used to make the gradient
-  private static final int[] dColorLow =
-      new int[] {Color.red(colorLow), Color.green(colorLow), Color.blue(colorLow)};
-  private static final int[] dColorDiff =
-      new int[] {
-        Color.red(colorHigh) - dColorLow[0],
-        Color.green(colorHigh) - dColorLow[1],
-        Color.blue(colorHigh) - dColorLow[2]
-      };
+  private final int[] dColorLow;
+  private final int[] dColorDiff;
 
   private static final float borderSize = 10; // Border around the chart
   private static final float separatorSize = 2; // Separator between two zones
@@ -55,6 +48,24 @@ public class HRZonesBar extends View {
 
   public HRZonesBar(Context ctx) {
     super(ctx);
+    int colorLow = resolveColor(ctx, androidx.appcompat.R.attr.colorPrimary, Color.WHITE);
+    int colorHigh = resolveColor(ctx, androidx.appcompat.R.attr.colorError, Color.RED);
+    fontColor = resolveColor(ctx, com.google.android.material.R.attr.colorOnSurface, Color.WHITE);
+    dColorLow = new int[] {Color.red(colorLow), Color.green(colorLow), Color.blue(colorLow)};
+    dColorDiff =
+        new int[] {
+          Color.red(colorHigh) - dColorLow[0],
+          Color.green(colorHigh) - dColorLow[1],
+          Color.blue(colorHigh) - dColorLow[2]
+        };
+  }
+
+  private static int resolveColor(Context ctx, int attr, int fallback) {
+    TypedValue tv = new TypedValue();
+    if (ctx.getTheme().resolveAttribute(attr, tv, true)) {
+      return tv.data;
+    }
+    return fallback;
   }
 
   public void pushHrzData(double[] data) {
@@ -88,7 +99,7 @@ public class HRZonesBar extends View {
     int fontSize = (int) calculatedBarHeight / 2;
     fontPaint.setTextSize(fontSize);
     fontPaint.setFlags(Paint.ANTI_ALIAS_FLAG);
-    fontPaint.setColor(Color.WHITE);
+    fontPaint.setColor(fontColor);
     fontPaint.setStyle(Paint.Style.FILL);
     fontPaint.setTextAlign(Paint.Align.LEFT);
 

@@ -113,7 +113,7 @@
                     android:layout_margin="@dimen/activity_margin"
                     android:orientation="vertical">
 
-                    <org.runnerup.widget.TitleSpinner
+                    <org.runnerup.widget.MaterialTitleSpinner
                         android:id="@+id/summary_sport"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -121,10 +121,11 @@
                         android:prompt="@string/Type"
                         android:text="@string/Sport" />
 
-                    <org.runnerup.widget.TitleSpinner
+                    <org.runnerup.widget.MaterialTitleSpinner
                         android:id="@+id/summary_manual_distance"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:inputType="numberDecimal"
                         android:minWidth="48dp"
                         android:minHeight="48dp"
@@ -132,22 +133,30 @@
                         android:text="@string/Distance"
                         runnerup:type="distancepicker" />
 
-                    <EditText
-                        android:id="@+id/notes_text"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/notes_layout"
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="top|start"
-                        android:hint="@string/Notes_about_your_workout"
-                        android:inputType="textCapSentences|textMultiLine"
-                        android:minLines="4"
-                        android:singleLine="false"
-                        tools:ignore="AutoFill" />
+                        android:layout_marginTop="8dp"
+                        android:hint="@string/Notes_about_your_workout">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/notes_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="top|start"
+                            android:inputType="textCapSentences|textMultiLine"
+                            android:minLines="4"
+                            android:singleLine="false"
+                            tools:ignore="AutoFill" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
                     <LinearLayout
                         android:id="@+id/hrzonesBarLayout"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:background="@android:color/black"
+                        android:background="?attr/colorSurfaceContainer"
                         android:orientation="vertical"
                         android:visibility="gone">
 
@@ -157,7 +166,8 @@
                             android:layout_gravity="center"
                             android:text="@string/Heartrate_zones_distribution"
                             android:textAlignment="center"
-                            android:textColor="@android:color/white" />
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -168,11 +178,14 @@
                     android:layout_margin="@dimen/activity_margin"
                     android:baselineAligned="false">
 
-                    <ListView
+                    <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/laplist"
                         android:layout_width="0dip"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clipToPadding="false"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -209,11 +222,14 @@
                     android:layout_margin="@dimen/activity_margin"
                     android:baselineAligned="false">
 
-                    <ListView
+                    <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/report_list"
                         android:layout_width="0dip"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1" />
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:clipToPadding="false"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp" />
                 </LinearLayout>
             </FrameLayout>
     </LinearLayout>

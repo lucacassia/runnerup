@@ -263,6 +263,7 @@ public class MaterialTitleSpinner extends LinearLayout implements SpinnerInterfa
     var adapter =
         new ArrayAdapter<CharSequence>(getContext(), android.R.layout.simple_spinner_item, entries);
     adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    mAdapter = adapter;
     mText.setAdapter(adapter);
   }
 }
