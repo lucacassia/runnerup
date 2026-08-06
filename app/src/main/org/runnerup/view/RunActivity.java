@@ -29,6 +29,7 @@ import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Build;
@@ -44,7 +45,6 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -57,6 +57,8 @@ import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.color.MaterialColors;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -93,8 +95,8 @@ public class RunActivity extends AppCompatActivity implements TickListener {
           new ActivityResultContracts.StartActivityForResult(),
           result -> onWorkoutResult(result.getResultCode(), result.getData(), false));
 
-  private Button pauseButton = null;
-  private Button newLapButton = null;
+  private FloatingActionButton pauseButton = null;
+  private FloatingActionButton newLapButton = null;
   private TextView activityTime = null;
   private TextView activityDistance = null;
   private TextView activityPace = null;
@@ -142,7 +144,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     TextView velocity = findViewById(R.id.velocity_label);
     velocity.setText(formatter.formatVelocityLabel());
 
-    final Button stopButton = findViewById(R.id.stop_button);
+    final FloatingActionButton stopButton = findViewById(R.id.stop_button);
     stopButton.setOnClickListener(stopButtonClick);
     pauseButton = findViewById(R.id.pause_button);
     pauseButton.setOnClickListener(pauseButtonClick);
@@ -296,7 +298,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
     populateWorkoutList();
     newLapButton.setOnClickListener(newLapButtonClick);
-    newLapButton.setText(org.runnerup.common.R.string.Lap);
     mTracker.displayNotificationState();
   }
 
@@ -399,17 +400,22 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
   private void setPauseButtonEnabled(boolean enabled) {
     if (enabled) {
-      pauseButton.setText(org.runnerup.common.R.string.Pause);
+      pauseButton.setImageResource(R.drawable.ic_pause);
       pauseButton.setBackgroundTintList(
-          ColorStateList.valueOf(ContextCompat.getColor(this, R.color.colorPrimary)));
-      pauseButton.setCompoundDrawablesWithIntrinsicBounds(
-          0, 0, org.runnerup.common.R.drawable.ic_av_pause, 0);
+          ColorStateList.valueOf(
+              MaterialColors.getColor(
+                  this, com.google.android.material.R.attr.colorPrimaryContainer, 0)));
+      pauseButton.setImageTintList(
+          ColorStateList.valueOf(
+              MaterialColors.getColor(
+                  this, com.google.android.material.R.attr.colorOnPrimaryContainer, 0)));
+      pauseButton.setContentDescription(getString(org.runnerup.common.R.string.Pause));
     } else {
-      pauseButton.setText(org.runnerup.common.R.string.Resume);
+      pauseButton.setImageResource(R.drawable.ic_play_arrow);
       pauseButton.setBackgroundTintList(
           ColorStateList.valueOf(ContextCompat.getColor(this, R.color.btn_green)));
-      pauseButton.setCompoundDrawablesWithIntrinsicBounds(
-          0, 0, org.runnerup.common.R.drawable.ic_av_play_arrow, 0);
+      pauseButton.setImageTintList(ColorStateList.valueOf(Color.WHITE));
+      pauseButton.setContentDescription(getString(org.runnerup.common.R.string.Resume));
     }
   }
 

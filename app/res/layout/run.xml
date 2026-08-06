@@ -337,60 +337,45 @@
         android:id="@+id/run_table_row1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/run_table_row2"
-        android:orientation="horizontal">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/new_lap_button"
-            style="@style/ButtonText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="4dp"
-            android:layout_weight="1"
-            android:drawableEnd="@drawable/ic_av_newlap"
-            android:drawablePadding="-32dp"
-            android:text="@string/Lap"
-            app:backgroundTint="?attr/colorPrimary" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/pause_button"
-            style="@style/ButtonText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="4dp"
-            android:layout_weight="1"
-            android:drawableEnd="@drawable/ic_av_pause"
-            android:drawablePadding="-32dp"
-            android:text="@string/Pause"
-            app:backgroundTint="?attr/colorPrimary" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/run_table_row2"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:orientation="horizontal">
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/stop_button"
-            style="@style/ButtonText"
-            android:layout_width="match_parent"
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/new_lap_button"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="8dp"
-            android:drawableEnd="@drawable/ic_av_stop"
-            android:drawablePadding="-32dp"
-            android:text="@string/Stop"
-            app:backgroundTint="?attr/colorError" />
+            android:layout_marginEnd="24dp"
+            android:contentDescription="@string/Lap"
+            app:backgroundTint="?attr/colorSecondaryContainer"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_flag"
+            app:tint="?attr/colorOnSecondaryContainer" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/pause_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="24dp"
+            android:contentDescription="@string/Pause"
+            app:backgroundTint="?attr/colorPrimaryContainer"
+            app:fabSize="normal"
+            app:srcCompat="@drawable/ic_pause"
+            app:tint="?attr/colorOnPrimaryContainer" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/stop_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/Stop"
+            app:backgroundTint="?attr/colorErrorContainer"
+            app:fabSize="mini"
+            app:srcCompat="@drawable/ic_stop"
+            app:tint="?attr/colorOnErrorContainer" />
     </LinearLayout>
 
 </RelativeLayout>
