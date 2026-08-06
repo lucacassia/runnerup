@@ -27,11 +27,14 @@ public class NotificationStateManager {
         CharSequence name = context.getString(org.runnerup.common.R.string.app_name);
         String description =
             context.getString(org.runnerup.common.R.string.channel_notification_ongoing);
-        int importance = NotificationManager.IMPORTANCE_HIGH;
+        int importance = NotificationManager.IMPORTANCE_LOW;
+        NotificationChannel existing = notificationManager.getNotificationChannel(id);
+        if (existing != null && existing.getImportance() > importance) {
+          notificationManager.deleteNotificationChannel(id);
+        }
         mChannel = new NotificationChannel(id, name, importance);
         mChannel.setDescription(description);
         mChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-        mChannel.setBypassDnd(true);
         notificationManager.createNotificationChannel(mChannel);
       }
       return mChannel.getId();

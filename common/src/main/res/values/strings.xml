@@ -259,10 +259,7 @@
     <string name="Prune">Permanently delete</string>
     <string name="Heartrate_zones_distribution">Heart rate zone distribution</string>
     <string name="Battery_level">Battery level</string>
-    <string name="Activity_ready">Activity ready</string>
-    <string name="Ready_to_start_running">Ready to start running!</string>
     <string name="Searching_for_GPS">Searching for GPS</string>
-    <string name="RunnerUp_activity_started">RunnerUp activity started</string>
     <string name="Low_HRM_battery_level">Low HRM battery level</string>
     <string name="High_HRM_battery_level">High HRM battery level</string>
     <string name="Warning">Warning</string>

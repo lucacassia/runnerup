@@ -19,7 +19,6 @@ package org.runnerup.view;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -76,11 +75,6 @@ import org.runnerup.common.util.ValueModel;
 import org.runnerup.db.DBHelper;
 import org.runnerup.hr.HRProvider;
 import org.runnerup.hr.MockHRProvider;
-import org.runnerup.notification.GpsBoundState;
-import org.runnerup.notification.GpsSearchingState;
-import org.runnerup.notification.NotificationManagerDisplayStrategy;
-import org.runnerup.notification.NotificationStateManager;
-import org.runnerup.tracker.GpsInformation;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerCadence;
 import org.runnerup.tracker.component.TrackerHRM;
@@ -99,7 +93,7 @@ import org.runnerup.workout.Workout.StepListEntry;
 import org.runnerup.workout.WorkoutBuilder;
 import org.runnerup.workout.WorkoutSerializer;
 
-public class StartFragment extends Fragment implements TickListener, GpsInformation {
+public class StartFragment extends Fragment implements TickListener {
 
   private enum GpsLevel {
     NOT_FIXED,
@@ -174,9 +168,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
   SQLiteDatabase mDB = null;
 
   Formatter formatter = null;
-  private NotificationStateManager notificationStateManager;
-  private GpsSearchingState gpsSearchingState;
-  private GpsBoundState gpsBoundState;
   // Note that the result is not used, the user is dropped back to initial view when a request is
   // done.
   private final ActivityResultLauncher<String[]> permissionLauncher =
@@ -216,12 +207,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
 
     bindGpsTracker();
     mGpsStatus = new org.runnerup.tracker.GpsStatus(context);
-    NotificationManager notificationManager =
-        ContextCompat.getSystemService(context, NotificationManager.class);
-    notificationStateManager =
-        new NotificationStateManager(new NotificationManagerDisplayStrategy(notificationManager));
-    gpsSearchingState = new GpsSearchingState(context, this);
-    gpsBoundState = new GpsBoundState(context);
 
     MaterialSportSpinner sportSpinner = view.findViewById(R.id.sport_spinner);
     ArrayAdapter<CharSequence> adapter =
@@ -581,7 +566,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
       if (!mGpsStatus.isEnabled()) {
         startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
       }
-      notificationStateManager.displayNotificationState(gpsSearchingState);
     }
 
     if (mGpsStatus != null && !mGpsStatus.isStarted()) {
@@ -607,8 +591,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     if (mTracker != null) {
       mTracker.reset();
     }
-
-    notificationStateManager.cancelNotification();
   }
 
   public boolean isGpsLogging() {
@@ -761,7 +743,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     runActivityPending = true;
     Intent intent = new Intent(requireContext(), RunActivity.class);
     runLauncher.launch(intent);
-    notificationStateManager.cancelNotification(); // will be added by RunActivity
   }
 
   private final OnClickListener startButtonClick =
@@ -1128,11 +1109,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
         gpsMessage.setText(org.runnerup.common.R.string.GPS_level_good);
         break;
     }
-    if (gpsLevel == GpsLevel.NOT_FIXED) {
-      notificationStateManager.displayNotificationState(gpsSearchingState);
-    } else {
-      notificationStateManager.displayNotificationState(gpsBoundState);
-    }
   }
 
   private boolean updateHRView() {
@@ -1185,7 +1161,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     return true;
   }
 
-  @Override
   public float getGpsAccuracy() {
     if (mTracker != null) {
       Location l = mTracker.getLastKnownLocation();
@@ -1438,16 +1413,6 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
           .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
           .show();
     }
-  }
-
-  @Override
-  public int getSatellitesAvailable() {
-    return mGpsStatus.getSatellitesAvailable();
-  }
-
-  @Override
-  public int getSatellitesFixed() {
-    return mGpsStatus.getSatellitesFixed();
   }
 
   final class WorkoutStepsAdapter extends RecyclerView.Adapter<WorkoutStepsAdapter.StepViewHolder> {

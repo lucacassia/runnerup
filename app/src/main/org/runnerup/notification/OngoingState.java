@@ -49,14 +49,13 @@ public class OngoingState implements NotificationState {
 
     builder =
         new NotificationCompat.Builder(context, chanId)
-            .setTicker(context.getString(org.runnerup.common.R.string.RunnerUp_activity_started))
             .setContentIntent(pi)
             .setContentTitle(Sport.textOf(context.getResources(), workoutInfo.getSport()))
             .setSmallIcon(R.drawable.ic_stat_notify)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setLocalOnly(true)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .addAction(
                 org.runnerup.common.R.drawable.ic_av_newlap,
                 context.getString(org.runnerup.common.R.string.Lap),
