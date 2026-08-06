@@ -241,15 +241,48 @@
         android:layout_alignParentBottom="true"
         android:orientation="vertical">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/resume_button"
-            style="@style/ButtonText"
-            android:layout_width="fill_parent"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            runnerup:backgroundTint="?attr/colorPrimary"
-            android:drawableEnd="@drawable/ic_av_play_arrow"
-            android:drawablePadding="-32dp"
-            android:text="@string/Resume" />
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="16dp">
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/resume_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:contentDescription="@string/Resume"
+                runnerup:backgroundTint="?attr/colorPrimaryContainer"
+                runnerup:fabSize="normal"
+                runnerup:srcCompat="@drawable/ic_play_arrow"
+                runnerup:tint="?attr/colorOnPrimaryContainer" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/save_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:contentDescription="@string/Save"
+                runnerup:backgroundTint="@color/btn_green"
+                runnerup:fabSize="normal"
+                runnerup:srcCompat="@drawable/ic_check"
+                runnerup:tint="@android:color/white" />
+
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/discard_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/Discard"
+                runnerup:backgroundTint="?attr/colorErrorContainer"
+                runnerup:fabSize="normal"
+                runnerup:srcCompat="@drawable/ic_delete"
+                runnerup:tint="?attr/colorOnErrorContainer" />
+        </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/upload_button"
@@ -259,22 +292,6 @@
             runnerup:backgroundTint="?attr/colorPrimary"
             android:singleLine="false"
             android:text="@string/Upload" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/save_button"
-            style="@style/ButtonText"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            runnerup:backgroundTint="@color/btn_green"
-            android:text="@string/Save" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/discard_button"
-            style="@style/ButtonText"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            runnerup:backgroundTint="?attr/colorError"
-            android:text="@string/Discard" />
     </LinearLayout>
 
 </RelativeLayout>

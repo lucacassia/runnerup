@@ -60,6 +60,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -108,9 +109,9 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   private boolean edit = false;
   private boolean uploading = false;
 
-  private Button saveButton = null;
+  private FloatingActionButton saveButton = null;
   private Button uploadButton = null;
-  private Button resumeButton = null;
+  private FloatingActionButton resumeButton = null;
   private TextView activityTime = null;
   private TextView activityPace = null;
   private View activityPaceSeparator = null;
@@ -184,7 +185,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     }
 
     saveButton = findViewById(R.id.save_button);
-    Button discardButton = findViewById(R.id.discard_button);
+    FloatingActionButton discardButton = findViewById(R.id.discard_button);
     resumeButton = findViewById(R.id.resume_button);
     uploadButton = findViewById(R.id.upload_button);
     activityTime = findViewById(R.id.activity_time);
