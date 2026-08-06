@@ -228,7 +228,7 @@
             android:name=".view.HRSettingsActivity"
             android:label="@string/Heart_Rate_Monitor"
             android:parentActivityName=".view.MainLayout"
-            android:theme="@style/AppTheme">
+            android:theme="@style/AppTheme.NoActionBar">
             <!-- Parent activity meta-data to support 4.0 and lower -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -239,7 +239,7 @@
             android:name=".view.HRZonesActivity"
             android:label="@string/Heart_Rate_Zones"
             android:parentActivityName=".view.MainLayout"
-            android:theme="@style/AppTheme">
+            android:theme="@style/AppTheme.NoActionBar">
             <!-- Parent activity meta-data to support 4.0 and lower -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"

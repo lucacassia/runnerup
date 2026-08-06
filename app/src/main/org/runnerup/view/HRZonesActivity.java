@@ -17,7 +17,6 @@
 
 package org.runnerup.view;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -29,14 +28,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
-import android.widget.TableLayout;
-import android.widget.TableRow;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.Locale;
 import java.util.Vector;
@@ -46,14 +44,13 @@ import org.runnerup.util.HRZoneCalculator;
 import org.runnerup.util.HRZones;
 import org.runnerup.util.SafeParse;
 import org.runnerup.util.ViewUtil;
-import org.runnerup.widget.TitleSpinner;
-import org.runnerup.widget.WidgetUtil;
+import org.runnerup.widget.MaterialTitleSpinner;
 
 public class HRZonesActivity extends AppCompatActivity implements Constants {
 
-  private TitleSpinner ageSpinner;
-  private TitleSpinner sexSpinner;
-  private TitleSpinner maxHRSpinner;
+  private MaterialTitleSpinner ageSpinner;
+  private MaterialTitleSpinner sexSpinner;
+  private MaterialTitleSpinner maxHRSpinner;
   private HRZones hrZones;
   private HRZoneCalculator hrZoneCalculator;
 
@@ -61,8 +58,7 @@ public class HRZonesActivity extends AppCompatActivity implements Constants {
   private boolean skipSave = false;
 
   private View addZoneRow(LayoutInflater inflator, ViewGroup root, int zone) {
-    @SuppressLint("InflateParams")
-    TableRow row = (TableRow) inflator.inflate(R.layout.heartratezonerow, null);
+    View row = inflator.inflate(R.layout.heartratezonerow, root, false);
     TextView tv = row.findViewById(R.id.zonetext);
     EditText lo = row.findViewById(R.id.zonelo);
     EditText hi = row.findViewById(R.id.zonehi);
@@ -168,17 +164,19 @@ public class HRZonesActivity extends AppCompatActivity implements Constants {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
-    Window window = getWindow();
     super.onCreate(savedInstanceState);
     setContentView(R.layout.heartratezones);
-    WidgetUtil.addLegacyOverflowButton(window);
+
+    Toolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
     hrZones = new HRZones(this);
     hrZoneCalculator = new HRZoneCalculator(this);
     ageSpinner = findViewById(R.id.hrz_age);
     sexSpinner = findViewById(R.id.hrz_sex);
     maxHRSpinner = findViewById(R.id.hrz_mhr);
-    TableLayout zonesTable = findViewById(R.id.zones_table);
+    LinearLayout zonesTable = findViewById(R.id.zones_table);
     {
       int zoneCount = hrZoneCalculator.getZoneCount();
       LayoutInflater inflator = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);

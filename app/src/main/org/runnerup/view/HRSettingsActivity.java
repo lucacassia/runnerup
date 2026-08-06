@@ -39,7 +39,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -49,6 +48,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
@@ -67,7 +67,6 @@ import org.runnerup.hr.HRProvider;
 import org.runnerup.hr.HRProvider.HRClient;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.ViewUtil;
-import org.runnerup.widget.WidgetUtil;
 
 public class HRSettingsActivity extends AppCompatActivity implements HRClient {
 
@@ -130,10 +129,12 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
-    Window window = getWindow();
     super.onCreate(savedInstanceState);
     setContentView(R.layout.hr_settings);
-    WidgetUtil.addLegacyOverflowButton(window);
+
+    Toolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
     providers = HRManager.getHRProviderList(this);
     deviceAdapter = new DeviceAdapter(this);

@@ -17,52 +17,67 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/heartratezone_view"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:layout_margin="@dimen/activity_margin"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/hrz_age"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/actionbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:key="@string/pref_hrz_age"
-        android:minWidth="48dp"
-        android:minHeight="48dp"
-        android:text="@string/Age"
-        app:digits="3"
-        app:max_val="300"
-        app:min_val="0"
-        app:type="numberpicker"></org.runnerup.widget.TitleSpinner>
+        app:title="@string/Heart_Rate_Zones" />
 
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/hrz_sex"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:entries="@array/sexes"
-        android:key="@string/pref_hrz_sex"
-        android:minWidth="48dp"
-        android:minHeight="48dp"
-        android:prompt="@string/Sex"
-        android:text="@string/Sex"
-        app:type="spinner"></org.runnerup.widget.TitleSpinner>
+        android:layout_height="match_parent"
+        android:layout_margin="@dimen/activity_margin"
+        android:orientation="vertical">
 
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/hrz_mhr"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:key="@string/pref_hrz_mhr"
-        android:minWidth="48dp"
-        android:minHeight="48dp"
-        android:text="@string/Maximum_heart_rate_MHR"
-        app:digits="3"
-        app:max_val="300"
-        app:min_val="0"
-        app:type="numberpicker"></org.runnerup.widget.TitleSpinner>
+        <org.runnerup.widget.MaterialTitleSpinner
+            android:id="@+id/hrz_age"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:key="@string/pref_hrz_age"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:text="@string/Age"
+            app:digits="3"
+            app:max_val="300"
+            app:min_val="0"
+            app:type="numberpicker" />
 
-    <TableLayout
-        android:id="@+id/zones_table"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"></TableLayout>
+        <org.runnerup.widget.MaterialTitleSpinner
+            android:id="@+id/hrz_sex"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:entries="@array/sexes"
+            android:key="@string/pref_hrz_sex"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:prompt="@string/Sex"
+            android:text="@string/Sex"
+            app:type="spinner" />
 
+        <org.runnerup.widget.MaterialTitleSpinner
+            android:id="@+id/hrz_mhr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:key="@string/pref_hrz_mhr"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:text="@string/Maximum_heart_rate_MHR"
+            app:digits="3"
+            app:max_val="300"
+            app:min_val="0"
+            app:type="numberpicker" />
+
+        <LinearLayout
+            android:id="@+id/zones_table"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical" />
+    </LinearLayout>
 </LinearLayout>

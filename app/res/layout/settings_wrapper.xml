@@ -19,7 +19,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <org.runnerup.widget.TitleSpinner
+    <org.runnerup.widget.MaterialTitleSpinner
         android:id="@+id/settings_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
