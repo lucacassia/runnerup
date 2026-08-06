@@ -19,27 +19,23 @@ package org.runnerup.view;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
-import android.view.Window;
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.OnApplyWindowInsetsListener;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.appcompat.widget.Toolbar;
 import org.runnerup.R;
-import org.runnerup.widget.WidgetUtil;
+import org.runnerup.util.ViewUtil;
 
 public class AudioCueSettingsActivity extends AppCompatActivity {
   public static final String SUFFIX = "_audio_cues";
 
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
-    Window window = getWindow();
     super.onCreate(savedInstanceState);
-    WidgetUtil.addLegacyOverflowButton(window);
     setContentView(R.layout.settings_activity);
+
+    Toolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
     Intent intent = getIntent();
     String settingsName = intent.getStringExtra("name");
@@ -59,17 +55,6 @@ public class AudioCueSettingsActivity extends AppCompatActivity {
           .commit();
     }
 
-    ViewCompat.setOnApplyWindowInsetsListener(
-        findViewById(R.id.settings_fragment_container),
-        new OnApplyWindowInsetsListener() {
-          @NonNull
-          @Override
-          public WindowInsetsCompat onApplyWindowInsets(
-              @NonNull View v, @NonNull WindowInsetsCompat windowInsets) {
-            Insets systemBars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, 0);
-            return WindowInsetsCompat.CONSUMED;
-          }
-        });
+    ViewUtil.Insets(findViewById(R.id.settings_root_view), true);
   }
 }

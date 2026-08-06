@@ -18,6 +18,7 @@
 package org.runnerup.view;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -43,12 +44,10 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -60,6 +59,8 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
@@ -166,7 +167,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
   MaterialTitleSpinner advancedWorkoutSpinner = null;
   WorkoutListAdapter advancedWorkoutListAdapter = null;
   Workout advancedWorkout = null;
-  ListView advancedStepList = null;
+  RecyclerView advancedStepList = null;
   final WorkoutStepsAdapter advancedWorkoutStepsAdapter = new WorkoutStepsAdapter();
   AudioSchemeListAdapter advancedAudioListAdapter = null;
 
@@ -306,7 +307,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     advancedWorkoutSpinner.setOnSetValueListener(
         new OnConfigureWorkoutsListener(advancedWorkoutListAdapter));
     advancedStepList = view.findViewById(R.id.advanced_step_list);
-    advancedStepList.setDividerHeight(0);
+    advancedStepList.setLayoutManager(new LinearLayoutManager(context));
     advancedStepList.setAdapter(advancedWorkoutStepsAdapter);
 
     Intent i = requireActivity().getIntent();
@@ -1416,6 +1417,7 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
         }
       };
 
+  @SuppressLint("NotifyDataSetChanged")
   private void loadAdvanced(String name) {
     Context ctx = requireActivity().getApplicationContext();
     if (name == null) {
@@ -1448,38 +1450,38 @@ public class StartFragment extends Fragment implements TickListener, GpsInformat
     return mGpsStatus.getSatellitesFixed();
   }
 
-  final class WorkoutStepsAdapter extends BaseAdapter {
+  final class WorkoutStepsAdapter extends RecyclerView.Adapter<WorkoutStepsAdapter.StepViewHolder> {
 
     List<StepListEntry> steps = new ArrayList<>();
 
     @Override
-    public int getCount() {
-      return steps.size();
+    public StepViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+      return new StepViewHolder(new StepButton(requireContext(), null));
     }
 
     @Override
-    public Object getItem(int position) {
-      return steps.get(position);
-    }
-
-    @Override
-    public long getItemId(int position) {
-      return 0;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public void onBindViewHolder(StepViewHolder holder, int position) {
       StepListEntry entry = steps.get(position);
-      StepButton button =
-          (convertView instanceof StepButton)
-              ? (StepButton) convertView
-              : new StepButton(requireContext(), null);
+      StepButton button = holder.button;
       button.setStep(entry.step());
 
       float pxToDp = getResources().getDisplayMetrics().density;
       button.setPadding((int) (entry.level() * 8 * pxToDp + 0.5f), 0, 0, 0);
       button.setOnChangedListener(onWorkoutChanged);
-      return button;
+    }
+
+    @Override
+    public int getItemCount() {
+      return steps.size();
+    }
+
+    static class StepViewHolder extends RecyclerView.ViewHolder {
+      final StepButton button;
+
+      StepViewHolder(StepButton button) {
+        super(button);
+        this.button = button;
+      }
     }
   }
 

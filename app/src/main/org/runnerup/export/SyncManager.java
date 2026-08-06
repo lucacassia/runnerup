@@ -37,7 +37,6 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.TableRow;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -405,7 +404,7 @@ public class SyncManager {
     final TextView tv2 = view.findViewById(R.id.password_input);
     final TextView urlInput = view.findViewById(R.id.url_input);
     final TextView tvAuthNotice = view.findViewById(R.id.userpass_textViewAuthNotice);
-    final TableRow rowUrl = view.findViewById(R.id.table_row_url);
+    final View rowUrl = view.findViewById(R.id.table_row_url);
     String authConfigStr = sync.getAuthConfig();
     final JSONObject authConfig = newObj(authConfigStr);
     String username = authConfig != null ? authConfig.optString("username", "") : null;
