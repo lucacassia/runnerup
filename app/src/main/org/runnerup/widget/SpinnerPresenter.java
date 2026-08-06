@@ -132,6 +132,7 @@ public class SpinnerPresenter {
     }
 
     arr.recycle(); // Do this when done.
+    mFirstSetValue = false; // initialization complete; next selection is a user action
   }
 
   private void setupEditText(
