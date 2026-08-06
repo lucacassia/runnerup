@@ -18,6 +18,7 @@
 
     <!-- Base application theme. Follows the system light/dark setting. -->
     <style name="AppTheme" parent="Theme.Material3.DayNight">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.Material3</item>
     </style>
 
     <style name="AppTheme.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">

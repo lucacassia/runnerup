@@ -19,6 +19,7 @@ package org.runnerup.view;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.View;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -26,6 +27,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import com.google.android.material.appbar.MaterialToolbar;
 import org.runnerup.R;
 
 /**
@@ -40,7 +42,7 @@ public class SettingsContainerFragment extends Fragment
     implements PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
 
   public SettingsContainerFragment() {
-    super(R.layout.settings_activity);
+    super(R.layout.settings_tab);
   }
 
   @Override
@@ -52,6 +54,15 @@ public class SettingsContainerFragment extends Fragment
   @Override
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
+
+    toolbar = view.findViewById(R.id.settings_actionbar);
+    toolbar.setNavigationOnClickListener(
+        v -> {
+          if (hasBackStackEntries()) {
+            getChildFragmentManager().popBackStackImmediate();
+            updateToolbarState();
+          }
+        });
 
     // Ensure that this fragment is added only once
     if (savedInstanceState == null) {
@@ -68,6 +79,7 @@ public class SettingsContainerFragment extends Fragment
     super.onResume();
     // Update callback state when resumed
     onBackPressed.setEnabled(hasBackStackEntries());
+    updateToolbarState();
   }
 
   @Override
@@ -105,6 +117,8 @@ public class SettingsContainerFragment extends Fragment
       return false;
     }
 
+    subTitle = pref.getTitle();
+
     // Instantiate the new settings fragment
     final Fragment fragment =
         getChildFragmentManager()
@@ -119,16 +133,44 @@ public class SettingsContainerFragment extends Fragment
         .setReorderingAllowed(true)
         .addToBackStack(null)
         .commit();
+    getChildFragmentManager().executePendingTransactions();
 
     // Since a new settings fragment has been pushed onto the back stack, enable our
     // onBackPressed callback to handle back presses within this fragment.
     onBackPressed.setEnabled(true);
+    updateToolbarState();
 
     return true;
   }
 
   private boolean hasBackStackEntries() {
     return getChildFragmentManager().getBackStackEntryCount() > 0;
+  }
+
+  /**
+   * Updates the toolbar title and navigation affordance to match the current settings level: the
+   * root screen shows the app-wide {@code Settings} title without a back arrow, while nested
+   * preference screens show their own title with a back arrow.
+   */
+  private void updateToolbarState() {
+    if (toolbar == null) {
+      return;
+    }
+    boolean subScreen = hasBackStackEntries();
+    toolbar.setTitle(
+        subScreen && subTitle != null
+            ? subTitle
+            : getString(org.runnerup.common.R.string.Settings));
+    if (subScreen) {
+      TypedValue typedValue = new TypedValue();
+      if (requireActivity()
+          .getTheme()
+          .resolveAttribute(androidx.appcompat.R.attr.homeAsUpIndicator, typedValue, true)) {
+        toolbar.setNavigationIcon(typedValue.resourceId);
+      }
+    } else {
+      toolbar.setNavigationIcon(null);
+    }
   }
 
   /**
@@ -146,10 +188,14 @@ public class SettingsContainerFragment extends Fragment
           if (hasBackStackEntries()) {
             // There are back stack entries, so pop one off
             getChildFragmentManager().popBackStackImmediate();
+            updateToolbarState();
 
             // After popping, update the enabled state of this callback
             setEnabled(hasBackStackEntries());
           }
         }
       };
+
+  private MaterialToolbar toolbar;
+  private CharSequence subTitle;
 }
