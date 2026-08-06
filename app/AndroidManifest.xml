@@ -150,7 +150,7 @@
             android:name=".view.AccountListActivity"
             android:label="@string/Configure_accounts"
             android:parentActivityName=".view.MainLayout"
-            android:theme="@style/AppTheme">
+            android:theme="@style/AppTheme.NoActionBar">
             <!-- Parent activity meta-data to support 4.0 and lower -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -160,7 +160,7 @@
         <activity
             android:name=".view.AccountActivity"
             android:parentActivityName=".view.AccountListActivity"
-            android:theme="@style/AppTheme">
+            android:theme="@style/AppTheme.NoActionBar">
             <!-- Parent activity meta-data to support 4.0 and lower -->
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -169,7 +169,7 @@
 
         <activity
             android:name=".view.UploadActivity"
-            android:theme="@style/AppTheme" />
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
             android:name=".view.ManageWorkoutsActivity"

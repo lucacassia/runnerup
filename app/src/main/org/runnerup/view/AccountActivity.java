@@ -32,7 +32,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.Window;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -47,6 +46,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.preference.PreferenceManager;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.ArrayList;
 import org.runnerup.R;
@@ -58,7 +58,6 @@ import org.runnerup.export.SyncManager;
 import org.runnerup.export.Synchronizer;
 import org.runnerup.util.Bitfield;
 import org.runnerup.util.ViewUtil;
-import org.runnerup.widget.WidgetUtil;
 import org.runnerup.workout.FileFormats;
 
 public class AccountActivity extends AppCompatActivity implements Constants {
@@ -75,14 +74,16 @@ public class AccountActivity extends AppCompatActivity implements Constants {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
-    Window window = getWindow();
     super.onCreate(savedInstanceState);
     setContentView(R.layout.account);
 
-    WidgetUtil.addLegacyOverflowButton(window);
-
     Intent intent = getIntent();
     mSynchronizerName = intent.getStringExtra("synchronizer");
+
+    MaterialToolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    getSupportActionBar().setTitle(mSynchronizerName);
 
     mDB = DBHelper.getReadableDatabase(this);
     syncManager = new SyncManager(this);

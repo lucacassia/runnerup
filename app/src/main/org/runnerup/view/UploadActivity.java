@@ -17,6 +17,7 @@
 
 package org.runnerup.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -27,12 +28,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
@@ -40,6 +38,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.appbar.MaterialToolbar;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -61,7 +62,7 @@ public class UploadActivity extends AppCompatActivity implements Constants {
   private String mSynchronizerName = null;
   private SyncManager.SyncMode syncMode = SyncManager.SyncMode.UPLOAD;
   private SyncManager syncManager = null;
-  private ListView listView = null;
+  private RecyclerView recyclerView = null;
 
   private SQLiteDatabase mDB = null;
   private Formatter formatter = null;
@@ -89,13 +90,23 @@ public class UploadActivity extends AppCompatActivity implements Constants {
     mSynchronizerName = intent.getStringExtra("synchronizer");
     syncMode = SyncManager.SyncMode.valueOf(intent.getStringExtra("mode"));
 
+    MaterialToolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    getSupportActionBar()
+        .setTitle(
+            getString(
+                syncMode.equals(SyncManager.SyncMode.DOWNLOAD)
+                    ? org.runnerup.common.R.string.Download
+                    : org.runnerup.common.R.string.Upload));
+
     mDB = DBHelper.getReadableDatabase(this);
     formatter = new Formatter(this);
     syncManager = new SyncManager(this);
 
-    listView = findViewById(R.id.upload_view);
-    listView.setDividerHeight(1);
-    listView.setAdapter(new UploadListAdapter(this));
+    recyclerView = findViewById(R.id.upload_view);
+    recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    recyclerView.setAdapter(new UploadListAdapter(this));
 
     {
       Button btn = findViewById(R.id.upload_account_set_all);
@@ -157,6 +168,12 @@ public class UploadActivity extends AppCompatActivity implements Constants {
                 finish();
               }
             });
+  }
+
+  @Override
+  public boolean onSupportNavigateUp() {
+    finish();
+    return true;
   }
 
   @Override
@@ -280,8 +297,9 @@ public class UploadActivity extends AppCompatActivity implements Constants {
     }
   }
 
+  @SuppressLint("NotifyDataSetChanged")
   private void requery() {
-    if (listView != null) ((BaseAdapter) listView.getAdapter()).notifyDataSetChanged();
+    if (recyclerView != null) recyclerView.getAdapter().notifyDataSetChanged();
     if (syncCount > 0) {
       actionButton.setText(
           String.format(Locale.getDefault(), "%s (%d)", actionButtonText, syncCount));
@@ -292,99 +310,43 @@ public class UploadActivity extends AppCompatActivity implements Constants {
     }
   }
 
-  private final OnClickListener onActivityClick =
-      arg0 -> {
-        long id = ((UploadListAdapter.ViewHolderUploadActivity) arg0.getTag()).activityID;
-        Intent intent = new Intent(UploadActivity.this, DetailActivity.class);
-        intent.putExtra("ID", id);
-        intent.putExtra("mode", "details");
-        detailLauncher.launch(intent);
-      };
+  class UploadListAdapter extends RecyclerView.Adapter<UploadListAdapter.UploadViewHolder> {
 
-  class UploadListAdapter extends BaseAdapter {
     final LayoutInflater inflater;
 
     public UploadListAdapter(Context context) {
-      super();
       inflater = LayoutInflater.from(context);
     }
 
-    @Override
-    public int getCount() {
-      return allSyncActivities.size();
-    }
-
-    @Override
-    public Object getItem(int arg0) {
-      return allSyncActivities.get(arg0);
-    }
-
-    @Override
-    public long getItemId(int arg0) {
-      return allSyncActivities.get(arg0).getId();
-    }
-
-    private class ViewHolderUploadActivity {
-      private TextView tvStartTime;
-      private TextView tvDistance;
-      private TextView tvTime;
-      private TextView tvPace;
-      private TextView tvSport;
-      private CheckBox cb;
+    static class UploadViewHolder extends RecyclerView.ViewHolder {
+      private final TextView tvStartTime;
+      private final TextView tvSport;
+      private final CheckBox cb;
       // metadata when clicking activities
       private long activityID;
+
+      UploadViewHolder(View view) {
+        super(view);
+        tvStartTime = view.findViewById(R.id.upload_list_start_time);
+        tvSport = view.findViewById(R.id.upload_list_sport);
+        cb = view.findViewById(R.id.upload_list_check);
+      }
     }
 
     @Override
-    public View getView(int arg0, View convertView, ViewGroup parent) {
-      View view = convertView;
-      ViewHolderUploadActivity viewHolder;
+    public UploadViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+      return new UploadViewHolder(inflater.inflate(R.layout.upload_row, parent, false));
+    }
 
-      if (view == null) {
-        viewHolder = new ViewHolderUploadActivity();
-
-        view = inflater.inflate(R.layout.upload_row, parent, false);
-        viewHolder.tvStartTime = view.findViewById(R.id.upload_list_start_time);
-        viewHolder.tvDistance = view.findViewById(R.id.upload_list_distance);
-        viewHolder.tvTime = view.findViewById(R.id.upload_list_time);
-        viewHolder.tvPace = view.findViewById(R.id.upload_list_pace);
-        viewHolder.tvSport = view.findViewById(R.id.upload_list_sport);
-        viewHolder.cb = view.findViewById(R.id.upload_list_check);
-
-        view.setTag(viewHolder);
-      } else {
-        viewHolder = (ViewHolderUploadActivity) view.getTag();
-      }
-      viewHolder.activityID = getItemId(arg0);
-      SyncActivityItem ai = allSyncActivities.get(arg0);
-
-      Double d = ai.getDistance();
-      Long t = ai.getDuration();
+    @Override
+    public void onBindViewHolder(UploadViewHolder viewHolder, int position) {
+      viewHolder.activityID = allSyncActivities.get(position).getId();
+      SyncActivityItem ai = allSyncActivities.get(position);
 
       if (ai.getStartTime() != null) {
         viewHolder.tvStartTime.setText(formatter.formatDateTime(ai.getStartTime()));
       } else {
         viewHolder.tvStartTime.setText("");
-      }
-
-      if (d != null) {
-        viewHolder.tvDistance.setText(
-            formatter.formatDistance(Formatter.Format.TXT_SHORT, d.longValue()));
-      } else {
-        viewHolder.tvDistance.setText("");
-      }
-
-      if (t != null) {
-        viewHolder.tvTime.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, t));
-      } else {
-        viewHolder.tvTime.setText("");
-      }
-
-      if (d != null && t != null && t != 0) {
-        viewHolder.tvPace.setText(
-            formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / t));
-      } else {
-        viewHolder.tvPace.setText("");
       }
 
       if (ai.getSport() == null) {
@@ -394,34 +356,36 @@ public class UploadActivity extends AppCompatActivity implements Constants {
         viewHolder.tvSport.setText(Sport.textOf(getResources(), sport));
       }
 
-      viewHolder.cb.setTag(arg0);
-      viewHolder.cb.setOnCheckedChangeListener(checkedChangeClick);
+      viewHolder.cb.setEnabled(ai.isRelevantForSynch(syncMode));
+      viewHolder.cb.setOnCheckedChangeListener(null);
       viewHolder.cb.setChecked(!ai.skipActivity());
-
-      if (ai.isRelevantForSynch(syncMode)) {
-        viewHolder.cb.setEnabled(Boolean.TRUE);
-      } else {
-        viewHolder.cb.setEnabled(Boolean.FALSE);
-      }
+      final int pos = position;
+      viewHolder.cb.setOnCheckedChangeListener(
+          (button, checked) -> {
+            SyncActivityItem tmp = allSyncActivities.get(pos);
+            tmp.setSkipFlag(!checked);
+            updateSyncCount();
+            requery();
+          });
 
       if (syncMode.equals(SyncManager.SyncMode.UPLOAD)) {
-        view.setOnClickListener(onActivityClick);
-      } else if (view.hasOnClickListeners()) {
-        view.setOnClickListener(null);
+        viewHolder.itemView.setOnClickListener(
+            v -> {
+              Intent intent = new Intent(UploadActivity.this, DetailActivity.class);
+              intent.putExtra("ID", viewHolder.activityID);
+              intent.putExtra("mode", "details");
+              detailLauncher.launch(intent);
+            });
+      } else {
+        viewHolder.itemView.setOnClickListener(null);
       }
+    }
 
-      return view;
+    @Override
+    public int getItemCount() {
+      return allSyncActivities.size();
     }
   }
-
-  private final OnCheckedChangeListener checkedChangeClick =
-      (arg0, arg1) -> {
-        int pos = (Integer) arg0.getTag();
-        SyncActivityItem tmp = allSyncActivities.get(pos);
-        tmp.setSkipFlag(!arg1);
-        updateSyncCount();
-        requery();
-      };
 
   private final OnClickListener uploadButtonClick =
       new OnClickListener() {

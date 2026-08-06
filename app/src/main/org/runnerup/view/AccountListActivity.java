@@ -19,6 +19,7 @@ package org.runnerup.view;
 
 import static org.runnerup.util.NetworkUtils.isNetworkAvailable;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -32,10 +33,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -47,9 +45,12 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.ContextCompat;
-import androidx.cursoradapter.widget.CursorAdapter;
 import androidx.loader.app.LoaderManager.LoaderCallbacks;
 import androidx.loader.content.Loader;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.button.MaterialButton;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.db.DBHelper;
@@ -66,7 +67,7 @@ public class AccountListActivity extends AppCompatActivity
   private SQLiteDatabase mDB = null;
   private SyncManager mSyncManager = null;
   private boolean mShowDisabled = false;
-  private CursorAdapter mCursorAdapter;
+  private AccountListAdapter mCursorAdapter;
 
   private final ActivityResultLauncher<Intent> editLauncher =
       registerForActivityResult(
@@ -76,6 +77,7 @@ public class AccountListActivity extends AppCompatActivity
             getSupportLoaderManager().restartLoader(0, null, this);
           });
 
+  @SuppressLint("NotifyDataSetChanged")
   private final ActivityResultLauncher<Intent> configureLauncher =
       registerForActivityResult(
           new ActivityResultContracts.StartActivityForResult(),
@@ -95,37 +97,35 @@ public class AccountListActivity extends AppCompatActivity
 
     setContentView(R.layout.account_list);
 
+    MaterialToolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
     mDB = DBHelper.getReadableDatabase(this);
     mSyncManager = new SyncManager(this);
     mSyncManager.setConfigureLauncher(configureLauncher);
-    ListView listView = findViewById(R.id.account_list_list);
+    RecyclerView listView = findViewById(R.id.account_list_list);
+    listView.setLayoutManager(new LinearLayoutManager(this));
 
     // button footer
-    Button showDisabledBtn = new Button(this);
-    showDisabledBtn.setTextAppearance(
-        this, androidx.appcompat.R.style.TextAppearance_AppCompat_Button);
+    MaterialButton showDisabledBtn = findViewById(R.id.account_list_show_disabled);
     showDisabledBtn.setText(org.runnerup.common.R.string.Show_disabled_accounts);
-    showDisabledBtn.setBackgroundResource(0);
     showDisabledBtn.setOnClickListener(
         view -> {
           mShowDisabled = !mShowDisabled;
           if (mShowDisabled) {
-            ((Button) view).setText(org.runnerup.common.R.string.Hide_disabled_accounts);
+            showDisabledBtn.setText(org.runnerup.common.R.string.Hide_disabled_accounts);
           } else {
-            ((Button) view).setText(org.runnerup.common.R.string.Show_disabled_accounts);
+            showDisabledBtn.setText(org.runnerup.common.R.string.Show_disabled_accounts);
           }
           getSupportLoaderManager().restartLoader(0, null, AccountListActivity.this);
         });
-    listView.addFooterView(showDisabledBtn);
 
     // adapter
-    mCursorAdapter = new AccountListAdapter(this, null);
+    mCursorAdapter = new AccountListAdapter(this);
     listView.setAdapter(mCursorAdapter);
     getSupportLoaderManager().initLoader(0, null, this);
 
-    listView.setOnItemClickListener(configureItemClick);
-
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
     ViewUtil.Insets(findViewById(R.id.account_list_view), true);
   }
 
@@ -181,26 +181,37 @@ public class AccountListActivity extends AppCompatActivity
     mCursorAdapter.swapCursor(null);
   }
 
-  class AccountListAdapter extends CursorAdapter {
+  class AccountListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     final LayoutInflater inflater;
+    Cursor cursor;
 
-    public AccountListAdapter(Context context, Cursor cursor) {
-      super(context, cursor, true);
+    AccountListAdapter(Context context) {
       inflater = LayoutInflater.from(context);
     }
 
-    @Override
-    public void changeCursor(Cursor cursor) {
-      super.changeCursor(cursor);
+    @SuppressLint("NotifyDataSetChanged")
+    Cursor swapCursor(Cursor newCursor) {
+      Cursor oldCursor = cursor;
+      cursor = newCursor;
+      notifyDataSetChanged();
+      return oldCursor;
     }
 
     @Override
-    public Cursor swapCursor(Cursor newCursor) {
-      return super.swapCursor(newCursor);
+    public int getItemCount() {
+      return cursor == null ? 0 : cursor.getCount();
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+      return new AccountViewHolder(inflater.inflate(R.layout.account_row, parent, false));
     }
 
     @Override
-    public void bindView(View view, Context context, Cursor cursor) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+      AccountViewHolder viewHolder = (AccountViewHolder) holder;
+      cursor.moveToPosition(position);
       ContentValues values = DBHelper.get(cursor);
 
       final Synchronizer synchronizer = mSyncManager.add(values);
@@ -208,13 +219,14 @@ public class AccountListActivity extends AppCompatActivity
       final String name = values.getAsString(DB.ACCOUNT.NAME);
       boolean configured = synchronizer != null && synchronizer.isConfigured();
 
+      View view = viewHolder.itemView;
       view.setTag(synchronizer);
 
-      TextView sectionTitle = view.findViewById(R.id.account_row_section_title);
-      ImageView accountIcon = view.findViewById(R.id.account_row_icon);
-      TextView accountIconText = view.findViewById(R.id.account_row_icon_text);
-      TextView accountNameText = view.findViewById(R.id.account_row_name);
-      SwitchCompat accountUploadBox = view.findViewById(R.id.account_row_upload);
+      TextView sectionTitle = viewHolder.sectionTitle;
+      ImageView accountIcon = viewHolder.accountIcon;
+      TextView accountIconText = viewHolder.accountIconText;
+      TextView accountNameText = viewHolder.accountNameText;
+      SwitchCompat accountUploadBox = viewHolder.accountUploadBox;
 
       // category name
       int curPosition = cursor.getPosition();
@@ -226,7 +238,7 @@ public class AccountListActivity extends AppCompatActivity
 
         final Synchronizer synchronizer2 = mSyncManager.add(values2);
         prevConfigured = synchronizer2 != null && synchronizer2.isConfigured();
-        cursor.moveToNext();
+        cursor.moveToPosition(curPosition);
       }
 
       if (curPosition > 0 && configured == prevConfigured) {
@@ -259,19 +271,22 @@ public class AccountListActivity extends AppCompatActivity
       // service icon
       int synchronizerIcon = synchronizer.getIconId();
       if (synchronizerIcon == 0) {
-        Drawable circle = AppCompatResources.getDrawable(context, R.drawable.circle_40dp);
+        Drawable circle =
+            AppCompatResources.getDrawable(getApplicationContext(), R.drawable.circle_40dp);
         circle.setColorFilter(
-            ContextCompat.getColor(context, synchronizer.getColorId()), PorterDuff.Mode.SRC_IN);
+            ContextCompat.getColor(getApplicationContext(), synchronizer.getColorId()),
+            PorterDuff.Mode.SRC_IN);
         accountIcon.setImageDrawable(circle);
         accountIconText.setText(name.substring(0, 1));
       } else {
-        accountIcon.setImageDrawable(AppCompatResources.getDrawable(context, synchronizerIcon));
+        accountIcon.setImageDrawable(
+            AppCompatResources.getDrawable(getApplicationContext(), synchronizerIcon));
         accountIconText.setText(null);
       }
 
       // upload box
       accountUploadBox.setTag(synchronizer);
-      setCustomThumb(accountUploadBox, R.drawable.switch_upload, context);
+      setCustomThumb(accountUploadBox, R.drawable.switch_upload, getApplicationContext());
       accountUploadBox.setOnCheckedChangeListener(
           (arg0, arg1) ->
               setFlag(((Synchronizer) arg0.getTag()).getName(), DB.ACCOUNT.FLAG_UPLOAD, arg1));
@@ -283,11 +298,45 @@ public class AccountListActivity extends AppCompatActivity
       } else {
         accountUploadBox.setVisibility(View.GONE);
       }
-    }
 
-    @Override
-    public View newView(Context context, Cursor cursor, ViewGroup parent) {
-      return inflater.inflate(R.layout.account_row, parent, false);
+      view.setOnClickListener(
+          v -> {
+            // Check network connection #1082
+            if (!isNetworkAvailable(AccountListActivity.this)) {
+              Toast.makeText(
+                      AccountListActivity.this,
+                      org.runnerup.common.R.string.check_internet_connection,
+                      Toast.LENGTH_LONG)
+                  .show();
+              return;
+            }
+            final Synchronizer sync = (Synchronizer) v.getTag();
+            if (sync == null) {
+              return;
+            }
+            if (sync.isConfigured()) {
+              startActivity(sync.getName(), true);
+            } else {
+              mSyncManager.connect(callback, sync.getName());
+            }
+          });
+    }
+  }
+
+  class AccountViewHolder extends RecyclerView.ViewHolder {
+    final TextView sectionTitle;
+    final ImageView accountIcon;
+    final TextView accountIconText;
+    final TextView accountNameText;
+    final SwitchCompat accountUploadBox;
+
+    AccountViewHolder(@NonNull View itemView) {
+      super(itemView);
+      sectionTitle = itemView.findViewById(R.id.account_row_section_title);
+      accountIcon = itemView.findViewById(R.id.account_row_icon);
+      accountIconText = itemView.findViewById(R.id.account_row_icon_text);
+      accountNameText = itemView.findViewById(R.id.account_row_name);
+      accountUploadBox = itemView.findViewById(R.id.account_row_upload);
     }
   }
 
@@ -297,31 +346,6 @@ public class AccountListActivity extends AppCompatActivity
         AppCompatResources.getColorStateList(context, R.color.switch_thumb));
     switchCompat.setThumbTintMode(PorterDuff.Mode.MULTIPLY);
   }
-
-  private final AdapterView.OnItemClickListener configureItemClick =
-      new AdapterView.OnItemClickListener() {
-        @Override
-        public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-          // Check network connection #1082
-          if (!isNetworkAvailable(AccountListActivity.this)) {
-            Toast.makeText(
-                    AccountListActivity.this,
-                    org.runnerup.common.R.string.check_internet_connection,
-                    Toast.LENGTH_LONG)
-                .show();
-            return;
-          }
-          final Synchronizer synchronizer = ((Synchronizer) view.getTag());
-          if (synchronizer == null) {
-            return;
-          }
-          if (synchronizer.isConfigured()) {
-            startActivity(synchronizer.getName(), true);
-          } else {
-            mSyncManager.connect(callback, synchronizer.getName());
-          }
-        }
-      };
 
   private void setFlag(String synchronizerName, int flag, boolean val) {
     if (val) {

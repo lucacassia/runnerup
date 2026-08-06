@@ -15,16 +15,34 @@
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/account_list_view"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <ListView
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/actionbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        app:title="@string/Configure_accounts" />
+
+    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/account_list_list"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/account_list_show_disabled"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"></ListView>
+        android:layout_below="@id/actionbar"
+        android:layout_alignParentEnd="true" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/account_list_show_disabled"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:text="@string/Show_disabled_accounts" />
 
 </RelativeLayout>
