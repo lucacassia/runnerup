@@ -15,89 +15,111 @@
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:runnerup="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/tab_manual"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_margin="@dimen/activity_margin"
     android:orientation="vertical">
 
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/manual_sport"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/actionbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
-        android:prompt="@string/Type"
-        android:text="@string/Sport" />
+        app:title="@string/Manual_activity_title" />
 
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/manual_date"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/manual_sport"
-        android:defaultValue="today"
-        android:prompt="@string/Type"
-        android:text="@string/Date"
-        runnerup:type="datepicker" />
-
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/manual_time"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/manual_date"
+        android:layout_height="match_parent"
+        android:layout_below="@id/actionbar"
         android:layout_alignParentStart="true"
-        android:defaultValue="now"
-        android:prompt="@string/Type"
-        android:text="@string/Start_hour"
-        runnerup:type="timepicker" />
+        android:fillViewport="true">
 
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/manual_duration"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/manual_time"
-        android:layout_alignParentStart="true"
-        android:defaultValue="00:00:00"
-        android:prompt="@string/Type"
-        android:text="@string/Duration"
-        runnerup:type="durationpicker" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/activity_margin"
+            android:orientation="vertical">
 
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/manual_distance"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/manual_duration"
-        android:layout_alignParentStart="true"
-        android:inputType="numberDecimal"
-        android:minWidth="48dp"
-        android:minHeight="48dp"
-        android:prompt="@string/Type"
-        android:text="@string/Distance"
-        runnerup:type="distancepicker" />
+            <org.runnerup.widget.MaterialTitleSpinner
+                android:id="@+id/manual_sport"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:prompt="@string/Type"
+                android:text="@string/Sport" />
 
-    <org.runnerup.widget.TitleSpinner
-        android:id="@+id/manual_pace"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/manual_distance"
-        android:layout_alignParentStart="true"
-        android:inputType="numberDecimal"
-        android:prompt="@string/Type"
-        android:text="@string/pace"
-        runnerup:type="durationpicker" />
+            <org.runnerup.widget.MaterialTitleSpinner
+                android:id="@+id/manual_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:defaultValue="today"
+                android:prompt="@string/Type"
+                android:text="@string/Date"
+                runnerup:type="datepicker" />
 
-    <EditText
-        android:id="@+id/manual_notes"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/manual_pace"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentBottom="true"
-        android:ems="10"
-        android:gravity="top|start"
-        android:hint="@string/Add_workout_notes"
-        android:inputType="textMultiLine"
-        tools:ignore="AutoFill" />
+            <org.runnerup.widget.MaterialTitleSpinner
+                android:id="@+id/manual_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:defaultValue="now"
+                android:prompt="@string/Type"
+                android:text="@string/Start_hour"
+                runnerup:type="timepicker" />
+
+            <org.runnerup.widget.MaterialTitleSpinner
+                android:id="@+id/manual_duration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:defaultValue="00:00:00"
+                android:prompt="@string/Type"
+                android:text="@string/Duration"
+                runnerup:type="durationpicker" />
+
+            <org.runnerup.widget.MaterialTitleSpinner
+                android:id="@+id/manual_distance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:inputType="numberDecimal"
+                android:minWidth="48dp"
+                android:minHeight="48dp"
+                android:prompt="@string/Type"
+                android:text="@string/Distance"
+                runnerup:type="distancepicker" />
+
+            <org.runnerup.widget.MaterialTitleSpinner
+                android:id="@+id/manual_pace"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:inputType="numberDecimal"
+                android:prompt="@string/Type"
+                android:text="@string/pace"
+                runnerup:type="durationpicker" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/manual_notes_layout"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="@string/Add_workout_notes">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/manual_notes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:minLines="4"
+                    android:singleLine="false"
+                    tools:ignore="AutoFill" />
+            </com.google.android.material.textfield.TextInputLayout>
+        </LinearLayout>
+    </ScrollView>
 </RelativeLayout>

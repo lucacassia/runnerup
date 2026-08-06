@@ -28,6 +28,7 @@ import android.view.View;
 import android.widget.EditText;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Calendar;
@@ -38,18 +39,18 @@ import org.runnerup.db.DBHelper;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SafeParse;
 import org.runnerup.util.ViewUtil;
+import org.runnerup.widget.MaterialTitleSpinner;
 import org.runnerup.widget.SpinnerInterface.OnSetValueListener;
-import org.runnerup.widget.TitleSpinner;
 import org.runnerup.workout.Sport;
 
 public class ManualActivity extends AppCompatActivity {
 
-  TitleSpinner manualSport = null;
-  TitleSpinner manualDate = null;
-  TitleSpinner manualTime = null;
-  TitleSpinner manualDistance = null;
-  TitleSpinner manualDuration = null;
-  TitleSpinner manualPace = null;
+  MaterialTitleSpinner manualSport = null;
+  MaterialTitleSpinner manualDate = null;
+  MaterialTitleSpinner manualTime = null;
+  MaterialTitleSpinner manualDistance = null;
+  MaterialTitleSpinner manualDuration = null;
+  MaterialTitleSpinner manualPace = null;
   EditText manualNotes = null;
 
   SQLiteDatabase mDB = null;
@@ -66,6 +67,10 @@ public class ManualActivity extends AppCompatActivity {
     formatter = new Formatter(this);
 
     setContentView(R.layout.manual);
+
+    Toolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
     manualSport = findViewById(R.id.manual_sport);
     manualDate = findViewById(R.id.manual_date);
