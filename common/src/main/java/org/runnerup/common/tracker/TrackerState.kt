@@ -14,12 +14,12 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package org.runnerup.common.tracker;
+package org.runnerup.common.tracker
 
-import org.runnerup.common.util.Constants;
+import org.runnerup.common.util.Constants
 
 /** Created by jonas on 12/12/14. */
-public enum TrackerState {
+enum class TrackerState(private val value: Int) {
   INIT(Constants.TRACKER_STATE.INIT), // initial state
   INITIALIZING(Constants.TRACKER_STATE.INITIALIZING), // initializing components
   INITIALIZED(Constants.TRACKER_STATE.INITIALIZED), // initialized
@@ -31,44 +31,31 @@ public enum TrackerState {
   CLEANUP(Constants.TRACKER_STATE.CLEANUP), // Cleaning up components
   ERROR(Constants.TRACKER_STATE.ERROR); // Components failed to initialize
 
-  private final int value;
+  fun getValue(): Int = value
 
-  TrackerState(int value) {
-    this.value = value;
-  }
+  companion object {
+    @JvmStatic
+    fun valueOf(value: Int): TrackerState? =
+      when (value) {
+        Constants.TRACKER_STATE.INIT -> INIT
+        Constants.TRACKER_STATE.INITIALIZING -> INITIALIZING
+        Constants.TRACKER_STATE.INITIALIZED -> INITIALIZED
+        Constants.TRACKER_STATE.CONNECTING -> CONNECTING
+        Constants.TRACKER_STATE.CONNECTED -> CONNECTED
+        Constants.TRACKER_STATE.STARTED -> STARTED
+        Constants.TRACKER_STATE.PAUSED -> PAUSED
+        Constants.TRACKER_STATE.STOPPED -> STOPPED
+        Constants.TRACKER_STATE.CLEANUP -> CLEANUP
+        Constants.TRACKER_STATE.ERROR -> ERROR
+        else -> null
+      }
 
-  public int getValue() {
-    return value;
-  }
-
-  public static TrackerState valueOf(int val) {
-    switch (val) {
-      case Constants.TRACKER_STATE.INIT:
-        return INIT;
-      case Constants.TRACKER_STATE.INITIALIZING:
-        return INITIALIZING;
-      case Constants.TRACKER_STATE.INITIALIZED:
-        return INITIALIZED;
-      case Constants.TRACKER_STATE.STARTED:
-        return STARTED;
-      case Constants.TRACKER_STATE.PAUSED:
-        return PAUSED;
-      case Constants.TRACKER_STATE.CLEANUP:
-        return CLEANUP;
-      case Constants.TRACKER_STATE.ERROR:
-        return ERROR;
-      case Constants.TRACKER_STATE.CONNECTING:
-        return CONNECTING;
-      case Constants.TRACKER_STATE.CONNECTED:
-        return CONNECTED;
-      case Constants.TRACKER_STATE.STOPPED:
-        return STOPPED;
-    }
-    return null;
-  }
-
-  public static boolean equals(TrackerState oldVal, TrackerState newVal) {
-    if (oldVal != null && newVal != null) return oldVal.getValue() == newVal.getValue();
-    return oldVal == null && newVal == null;
+    @JvmStatic
+    fun equals(oldVal: TrackerState?, newVal: TrackerState?): Boolean =
+      if (oldVal != null && newVal != null) {
+        oldVal.value == newVal.value
+      } else {
+        oldVal == null && newVal == null
+      }
   }
 }
