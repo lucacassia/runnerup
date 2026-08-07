@@ -24,18 +24,28 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.File;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.util.M3ProgressDialog;
@@ -49,11 +59,7 @@ class DatabaseImporter implements Constants {
 
   static void merge(Context ctx, File tempDbFile) {
     if (DBHelper.hasOngoingActivity(ctx)) {
-      new MaterialAlertDialogBuilder(ctx)
-          .setTitle(R.string.import_choice_title)
-          .setMessage(R.string.import_blocked_activity_in_progress)
-          .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
-          .show();
+      showBlockedDialog(ctx);
       tempDbFile.delete();
       return;
     }
@@ -71,21 +77,20 @@ class DatabaseImporter implements Constants {
             handler.post(
                 () -> {
                   progress.dismiss();
-                  new MaterialAlertDialogBuilder(ctx)
-                      .setTitle(R.string.import_choice_title)
-                      .setMessage(R.string.import_blocked_activity_in_progress)
-                      .setPositiveButton(
-                          org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
-                      .show();
+                  showBlockedDialog(ctx);
                 });
             return;
           }
           try {
-            MergeResult result = doMerge(ctx, tempDbFile);
+            MergeResult result = doMerge(ctx, tempDbFile, handler);
             handler.post(
                 () -> {
                   progress.dismiss();
-                  showResultDialog(ctx, result);
+                  if (result.cancelled) {
+                    showCancelled(ctx);
+                  } else {
+                    showResultDialog(ctx, result);
+                  }
                 });
           } catch (Exception e) {
             Log.e(TAG, "Merge failed", e);
@@ -104,7 +109,24 @@ class DatabaseImporter implements Constants {
         });
   }
 
-  private static MergeResult doMerge(Context ctx, File tempDbFile) throws Exception {
+  private static void showBlockedDialog(Context ctx) {
+    new MaterialAlertDialogBuilder(ctx)
+        .setTitle(R.string.import_choice_title)
+        .setMessage(R.string.import_blocked_activity_in_progress)
+        .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
+        .show();
+  }
+
+  private static void showCancelled(Context ctx) {
+    new MaterialAlertDialogBuilder(ctx)
+        .setTitle(R.string.import_choice_title)
+        .setMessage(org.runnerup.common.R.string.import_cancelled)
+        .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
+        .show();
+  }
+
+  private static MergeResult doMerge(Context ctx, File tempDbFile, Handler handler)
+      throws Exception {
     SQLiteDatabase live = DBHelper.getWritableDatabase(ctx);
     SQLiteDatabase imported =
         SQLiteDatabase.openDatabase(
@@ -116,19 +138,28 @@ class DatabaseImporter implements Constants {
           readActivities(imported, tableColumns(live, DB.ACTIVITY.TABLE));
 
       List<ImportedActivity> toImport = new ArrayList<>();
-      List<ImportedActivity> conflicts = new ArrayList<>();
+      List<Conflict> conflicts = new ArrayList<>();
       for (ImportedActivity activity : importedActivities) {
         if (activity.deleted) {
           result.skippedDeleted++;
           continue;
         }
-        if (localIndex.containsKey(key(activity.startTime, activity.type))) {
-          conflicts.add(activity);
+        if (isDuplicate(localIndex, activity.startTime, activity.type)) {
+          conflicts.add(
+              new Conflict(activity, localIndex.get(key(activity.startTime, activity.type))));
         } else {
           toImport.add(activity);
         }
       }
-      result.kept = conflicts.size();
+
+      List<Decision> decisions = Collections.emptyList();
+      if (!conflicts.isEmpty()) {
+        decisions = resolveConflicts(ctx, conflicts, handler);
+        if (containsAbort(decisions)) {
+          result.cancelled = true;
+          return result;
+        }
+      }
 
       Set<String> lapCols = tableColumns(live, DB.LAP.TABLE);
       Set<String> locationCols = tableColumns(live, DB.LOCATION.TABLE);
@@ -144,6 +175,29 @@ class DatabaseImporter implements Constants {
           idMap.put(activity.oldId, newId);
           result.mergedActivityIds.add(newId);
           result.imported++;
+        }
+
+        for (int i = 0; i < conflicts.size(); i++) {
+          Decision decision = decisions.get(i);
+          Conflict conflict = conflicts.get(i);
+          switch (decision.resolution) {
+            case KEEP:
+              result.kept++;
+              break;
+            case OVERWRITE:
+              overwriteActivity(live, conflict, idMap);
+              result.mergedActivityIds.add(conflict.localId);
+              result.overwritten++;
+              break;
+            case DUPLICATE:
+              long newId = live.insert(DB.ACTIVITY.TABLE, null, conflict.imported.values);
+              idMap.put(conflict.imported.oldId, newId);
+              result.mergedActivityIds.add(newId);
+              result.duplicated++;
+              break;
+            case ABORT:
+              break;
+          }
         }
 
         importChildren(live, imported, idMap, lapCols, locationCols);
@@ -162,8 +216,121 @@ class DatabaseImporter implements Constants {
     }
   }
 
+  private static void overwriteActivity(
+      SQLiteDatabase live, Conflict conflict, Map<Long, Long> idMap) {
+    long localId = conflict.localId;
+    String[] idArgs = {Long.toString(localId)};
+    live.delete(DB.LAP.TABLE, DB.LAP.ACTIVITY + " = ?", idArgs);
+    live.delete(DB.LOCATION.TABLE, DB.LOCATION.ACTIVITY + " = ?", idArgs);
+    live.delete(DB.EXPORT.TABLE, DB.EXPORT.ACTIVITY + " = ?", idArgs);
+    live.update(DB.ACTIVITY.TABLE, conflict.imported.values, "_id = ?", idArgs);
+    idMap.put(conflict.imported.oldId, localId);
+  }
+
+  private static List<Decision> resolveConflicts(
+      Context ctx, List<Conflict> conflicts, Handler handler) throws InterruptedException {
+    List<Decision> decisions = new ArrayList<>();
+    boolean applyToAll = false;
+    Resolution applyToAllResolution = null;
+    for (int i = 0; i < conflicts.size(); i++) {
+      if (applyToAll) {
+        decisions.add(new Decision(applyToAllResolution, false));
+        continue;
+      }
+      Conflict conflict = conflicts.get(i);
+      BlockingQueue<Decision> queue = new LinkedBlockingQueue<>();
+      handler.post(() -> showConflictDialog(ctx, conflict, queue));
+      Decision decision = queue.take();
+      decisions.add(decision);
+      if (decision.resolution == Resolution.ABORT) {
+        return decisions;
+      }
+      if (decision.applyToAll) {
+        applyToAll = true;
+        applyToAllResolution = decision.resolution;
+      }
+    }
+    return decisions;
+  }
+
+  private static boolean containsAbort(List<Decision> decisions) {
+    for (Decision decision : decisions) {
+      if (decision.resolution == Resolution.ABORT) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private static void showConflictDialog(
+      Context ctx, Conflict conflict, BlockingQueue<Decision> queue) {
+    float density = ctx.getResources().getDisplayMetrics().density;
+
+    LinearLayout content = new LinearLayout(ctx);
+    content.setOrientation(LinearLayout.VERTICAL);
+
+    TextView info = new TextView(ctx);
+    String name = conflict.imported.values.getAsString(DB.ACTIVITY.NAME);
+    String start =
+        DateFormat.getDateTimeInstance().format(new Date(conflict.imported.startTime * 1000));
+    info.setText(name != null ? name + "\n" + start : start);
+    content.addView(info);
+
+    final CheckBox applyToAll = new CheckBox(ctx);
+    applyToAll.setText(R.string.import_apply_to_all_remaining);
+    content.addView(applyToAll);
+
+    Button cancelImport = new Button(ctx);
+    cancelImport.setText(R.string.import_cancel_import);
+    LinearLayout.LayoutParams cancelLp =
+        new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    cancelLp.topMargin = (int) (8 * density);
+    cancelImport.setLayoutParams(cancelLp);
+    content.addView(cancelImport);
+
+    final AlertDialog dialog =
+        new MaterialAlertDialogBuilder(ctx)
+            .setTitle(R.string.import_conflict_title)
+            .setView(content)
+            .setPositiveButton(
+                R.string.import_conflict_replace,
+                (d, which) ->
+                    queue.offer(new Decision(Resolution.OVERWRITE, applyToAll.isChecked())))
+            .setNeutralButton(
+                R.string.import_conflict_keep_both,
+                (d, which) ->
+                    queue.offer(new Decision(Resolution.DUPLICATE, applyToAll.isChecked())))
+            .setNegativeButton(
+                R.string.import_conflict_keep_old,
+                (d, which) -> queue.offer(new Decision(Resolution.KEEP, applyToAll.isChecked())))
+            .create();
+    dialog.setOnCancelListener(d -> queue.offer(new Decision(Resolution.ABORT, false)));
+    cancelImport.setOnClickListener(
+        v -> {
+          dialog.dismiss();
+          queue.offer(new Decision(Resolution.ABORT, false));
+        });
+    dialog.show();
+  }
+
   static String key(long startTime, Integer type) {
     return startTime + "|" + (type == null ? "null" : type);
+  }
+
+  static boolean isDuplicate(Map<String, Long> localIndex, long startTime, Integer type) {
+    return localIndex.containsKey(key(startTime, type));
+  }
+
+  static List<ImportedActivity> classifyConflicts(
+      List<ImportedActivity> activities, Map<String, Long> localIndex) {
+    List<ImportedActivity> conflicts = new ArrayList<>();
+    for (ImportedActivity activity : activities) {
+      if (!activity.deleted && isDuplicate(localIndex, activity.startTime, activity.type)) {
+        conflicts.add(activity);
+      }
+    }
+    return conflicts;
   }
 
   private static Map<String, Long> readLocalIndex(SQLiteDatabase db) {
@@ -410,16 +577,44 @@ class DatabaseImporter implements Constants {
         });
   }
 
+  private enum Resolution {
+    KEEP,
+    OVERWRITE,
+    DUPLICATE,
+    ABORT
+  }
+
+  private static class Decision {
+    final Resolution resolution;
+    final boolean applyToAll;
+
+    Decision(Resolution resolution, boolean applyToAll) {
+      this.resolution = resolution;
+      this.applyToAll = applyToAll;
+    }
+  }
+
+  private static class Conflict {
+    final ImportedActivity imported;
+    final long localId;
+
+    Conflict(ImportedActivity imported, long localId) {
+      this.imported = imported;
+      this.localId = localId;
+    }
+  }
+
   private static class MergeResult {
     int imported;
     int kept;
     int overwritten;
     int duplicated;
     int skippedDeleted;
+    boolean cancelled;
     final List<Long> mergedActivityIds = new ArrayList<>();
   }
 
-  private static class ImportedActivity {
+  static class ImportedActivity {
     long oldId;
     long startTime;
     Integer type;

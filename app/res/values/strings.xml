@@ -38,4 +38,10 @@
         Merged: %1$d imported, %2$d kept, %3$d overwritten, %4$d duplicated, %5$d deleted skipped
     </string>
     <string name="import_recompute_merged">Recompute aggregates for merged activities</string>
+    <string name="import_apply_to_all_remaining">Apply to all remaining duplicates</string>
+    <string name="import_conflict_title">Existing activity</string>
+    <string name="import_conflict_replace">Replace with new</string>
+    <string name="import_conflict_keep_both">Keep both</string>
+    <string name="import_conflict_keep_old">Keep old</string>
+    <string name="import_cancel_import">Cancel import</string>
 </resources>
