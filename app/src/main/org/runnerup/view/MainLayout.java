@@ -208,7 +208,8 @@ public class MainLayout extends AppCompatActivity {
     if (filePath != null) {
       // No check for permissions or that this is within scooped storage (>=SDK29)
       Log.i(getClass().getSimpleName(), "Importing database from " + filePath);
-      DBHelper.importDatabase(MainLayout.this, Uri.parse(filePath));
+      Uri toImport = "file".equals(data.getScheme()) ? data : Uri.parse(filePath);
+      DBHelper.importDatabase(MainLayout.this, toImport);
     }
 
     // Apply system bars insets to avoid UI overlap
