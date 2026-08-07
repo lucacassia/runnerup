@@ -27,4 +27,7 @@
     <string name="Dynamic_color">Dynamic color</string>
     <string name="Dynamic_color_summary">Use your wallpaper colors (Android 12+)</string>
     <string name="history_empty">No activities yet</string>
+    <string name="import_blocked_activity_in_progress">
+        Cannot import while a run is in progress. Stop the run first.
+    </string>
 </resources>

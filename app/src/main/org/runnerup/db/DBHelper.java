@@ -37,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.db.entities.DBEntity;
 import org.runnerup.export.DropboxSynchronizer;
@@ -691,7 +692,39 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
     return Uri.fromFile(dbFile);
   }
 
+  /** True when the database contains a live activity that is still being recorded. */
+  private static boolean hasOngoingActivity(Context context) {
+    try (Cursor cursor =
+        getReadableDatabase(context)
+            .query(
+                DB.ACTIVITY.TABLE,
+                new String[] {"_id"},
+                DB.ACTIVITY.TIME
+                    + " IS NULL AND "
+                    + DB.ACTIVITY.DISTANCE
+                    + " IS NULL AND "
+                    + DB.ACTIVITY.DELETED
+                    + " = 0",
+                null,
+                null,
+                null,
+                null,
+                "1")) {
+      return cursor.moveToFirst();
+    }
+  }
+
   public static void importDatabase(Context ctx, Uri from) {
+    if (hasOngoingActivity(ctx)) {
+      DialogInterface.OnClickListener listener = (dialog, which) -> dialog.dismiss();
+      new MaterialAlertDialogBuilder(ctx)
+          .setTitle("Import " + DBNAME)
+          .setMessage(R.string.import_blocked_activity_in_progress)
+          .setPositiveButton(org.runnerup.common.R.string.OK, listener)
+          .show();
+      return;
+    }
+
     final DBHelper mDBHelper = DBHelper.getHelper(ctx);
     final SQLiteDatabase db = mDBHelper.getWritableDatabase();
     db.close();
@@ -764,6 +797,48 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
   }
 
   /**
+   * Copies the content at the given Uri into a temp file in the cache dir and returns the file, or
+   * null if it could not be copied or is not a valid RunnerUp database. On success the temp file is
+   * left for the caller to use and delete; on failure it is removed.
+   */
+  private static File copyToTempDb(Context context, Uri uri) {
+    if (uri == null || context == null) {
+      return null;
+    }
+
+    File tempDbFile = null;
+    SQLiteDatabase tempDb = null;
+
+    try {
+      tempDbFile = File.createTempFile("import_test", ".db", context.getCacheDir());
+      int cnt = FileUtil.copyFile(context, Uri.fromFile(tempDbFile), uri);
+      Log.d(TAG, "Copied " + cnt + " bytes to temporary db file.");
+
+      tempDb =
+          SQLiteDatabase.openDatabase(
+              tempDbFile.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
+
+      if (!tableExists(tempDb, DB.ACTIVITY.TABLE)) {
+        tempDb.close();
+        tempDb = null;
+        tempDbFile.delete();
+        tempDbFile = null;
+        return null;
+      }
+      return tempDbFile;
+    } catch (Exception e) {
+      Log.e(TAG, "Unexpected error during db validation. URI: " + uri);
+      if (tempDb != null && tempDb.isOpen()) {
+        tempDb.close();
+      }
+      if (tempDbFile != null) {
+        tempDbFile.delete();
+      }
+      return null;
+    }
+  }
+
+  /**
    * Checks if the content at the given Uri is a valid RunnerUp SQLite database by attempting to
    * open the database and query its schema.
    *
@@ -772,39 +847,12 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
    * @return true if the Uri is a valid RunnerUp database, false otherwise.
    */
   private static boolean isValidRunnerUpDatabase(Context context, Uri uri) {
-    if (uri == null || context == null) {
+    File tempDbFile = copyToTempDb(context, uri);
+    if (tempDbFile == null) {
       return false;
     }
-
-    File tempDbFile = null;
-    SQLiteDatabase tempDb = null;
-
-    try {
-      // 1. Create a temp file in the app's cache directory, and copy the content of the Uri to it
-      tempDbFile = File.createTempFile("import_test", ".db", context.getCacheDir());
-      int cnt = FileUtil.copyFile(context, Uri.fromFile(tempDbFile), uri);
-      Log.d(TAG, "Copied " + cnt + " bytes to temporary db file.");
-
-      // 2. Open the temporary file as an SQLite database
-      tempDb =
-          SQLiteDatabase.openDatabase(
-              tempDbFile.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
-
-      // 3. Assume valid if a table named "activity" exists
-      return tableExists(tempDb, DB.ACTIVITY.TABLE);
-
-    } catch (Exception e) {
-      Log.e(TAG, "Unexpected error during db validation. URI: " + uri);
-      return false;
-    } finally {
-      if (tempDb != null && tempDb.isOpen()) {
-        tempDb.close();
-      }
-
-      if (tempDbFile != null && tempDbFile.exists()) {
-        tempDbFile.delete(); // ignore result, assume deleted
-      }
-    }
+    tempDbFile.delete();
+    return true;
   }
 
   /** Checks if a table exists in the given database (that needs to be in a opened state). */
