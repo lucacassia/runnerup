@@ -25,7 +25,6 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Build;
 import android.text.format.DateUtils;
-import android.util.Log;
 import androidx.preference.PreferenceManager;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -80,27 +79,15 @@ public class Formatter implements OnSharedPreferenceChangeListener {
   }
 
   public static boolean getUseMetric(Resources res, SharedPreferences prefs, Editor editor) {
-    boolean _km;
     String unit = prefs.getString(res.getString(R.string.pref_unit), null);
-    if (unit == null) _km = guessDefaultUnit(res, editor);
-    else if (unit.contentEquals("km")) _km = true;
-    else if (unit.contentEquals("mi")) _km = false;
-    else _km = guessDefaultUnit(res, editor);
-
-    return _km;
+    if (unit == null) return useKm(res, editor);
+    if (unit.contentEquals("km")) return true;
+    if (unit.contentEquals("mi")) return false;
+    return useKm(res, editor);
   }
 
-  private static boolean guessDefaultUnit(Resources res, Editor editor) {
-    String countryCode = Locale.getDefault().getCountry();
-    Log.i("Formatter", "guessDefaultUnit: countryCode: " + countryCode);
-    if (countryCode.isEmpty()) return true; // km;
-    String key = res.getString(R.string.pref_unit);
-    if ("US".contentEquals(countryCode) || "GB".contentEquals(countryCode)) {
-      if (editor != null) editor.putString(key, "mi");
-      return false;
-    } else {
-      if (editor != null) editor.putString(key, "km");
-    }
+  private static boolean useKm(Resources res, Editor editor) {
+    if (editor != null) editor.putString(res.getString(R.string.pref_unit), "km");
     return true;
   }
 
