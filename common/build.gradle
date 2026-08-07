@@ -59,6 +59,7 @@ android {
             java.srcDirs = ['src/main']
             if (rootProject.ext.enableWear) {
                java.srcDirs += ['src/wear']
+               kotlin.srcDirs += ['src/wear']
             }
         }
     }
