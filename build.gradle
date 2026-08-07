@@ -119,7 +119,7 @@ allprojects {
 }
 
 spotless {
-    lineEndings 'UNIX'
+    lineEndings = 'UNIX'
     java {
         googleJavaFormat()
         target '**/*.java'
