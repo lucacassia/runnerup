@@ -693,7 +693,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
   }
 
   /** True when the database contains a live activity that is still being recorded. */
-  private static boolean hasOngoingActivity(Context context) {
+  static boolean hasOngoingActivity(Context context) {
     try (Cursor cursor =
         getReadableDatabase(context)
             .query(
@@ -725,15 +725,10 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
       return;
     }
 
-    final DBHelper mDBHelper = DBHelper.getHelper(ctx);
-    final SQLiteDatabase db = mDBHelper.getWritableDatabase();
-    db.close();
-    mDBHelper.close();
-
-    DialogInterface.OnClickListener listener = (dialog, which) -> dialog.dismiss();
-
-    if (!isValidRunnerUpDatabase(ctx, from)) {
+    File tempDbFile = copyToTempDb(ctx, from);
+    if (tempDbFile == null) {
       Log.e(TAG, "Selected Uri is not a valid RunnerUp database: " + from);
+      DialogInterface.OnClickListener listener = (dialog, which) -> dialog.dismiss();
       new MaterialAlertDialogBuilder(ctx)
           .setTitle("Import " + DBNAME)
           .setMessage(org.runnerup.common.R.string.import_error_invalid_database)
@@ -742,35 +737,54 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
       return;
     }
 
+    DialogInterface.OnClickListener listener = (dialog, which) -> dialog.dismiss();
     new MaterialAlertDialogBuilder(ctx)
-        .setTitle("Overwrite database")
-        .setMessage("This will overwrite your current database. Are you sure?")
+        .setTitle(R.string.import_choice_title)
+        .setMessage(R.string.import_choice_message)
         .setPositiveButton(
-            android.R.string.yes,
-            (dialog, which) -> {
-              try {
-                Uri to = getDbUri(ctx);
-                int cnt = FileUtil.copyFile(ctx, to, from);
-                new MaterialAlertDialogBuilder(ctx)
-                    .setTitle("Import " + DBNAME)
-                    .setMessage(
-                        "Copied "
-                            + cnt
-                            + " bytes from "
-                            + Uri.decode(from.toString())
-                            + "Restart app to use the database")
-                    .setPositiveButton(org.runnerup.common.R.string.OK, listener)
-                    .show();
-              } catch (IOException | NullPointerException e) {
-                new MaterialAlertDialogBuilder(ctx)
-                    .setTitle("Import " + DBNAME)
-                    .setMessage("Exception: " + e + " for " + from)
-                    .setNegativeButton(org.runnerup.common.R.string.Cancel, listener)
-                    .show();
-              }
-            })
-        .setNegativeButton(android.R.string.no, listener)
+            R.string.import_choice_merge, (dialog, which) -> mergeDatabase(ctx, tempDbFile))
+        .setNegativeButton(
+            R.string.import_choice_replace,
+            (dialog, which) -> replaceDatabase(ctx, from, tempDbFile))
+        .setNeutralButton(org.runnerup.common.R.string.Cancel, listener)
         .show();
+  }
+
+  /** Replaces the live database file with the imported one and requires an app restart. */
+  private static void replaceDatabase(Context ctx, Uri from, File tempDbFile) {
+    DialogInterface.OnClickListener listener = (dialog, which) -> dialog.dismiss();
+    final DBHelper mDBHelper = DBHelper.getHelper(ctx);
+    final SQLiteDatabase db = mDBHelper.getWritableDatabase();
+    db.close();
+    mDBHelper.close();
+
+    try {
+      Uri to = getDbUri(ctx);
+      int cnt = FileUtil.copyFile(ctx, to, Uri.fromFile(tempDbFile));
+      new MaterialAlertDialogBuilder(ctx)
+          .setTitle("Import " + DBNAME)
+          .setMessage(
+              "Copied "
+                  + cnt
+                  + " bytes from "
+                  + Uri.decode(from.toString())
+                  + "Restart app to use the database")
+          .setPositiveButton(org.runnerup.common.R.string.OK, listener)
+          .show();
+    } catch (IOException | NullPointerException e) {
+      new MaterialAlertDialogBuilder(ctx)
+          .setTitle("Import " + DBNAME)
+          .setMessage("Exception: " + e + " for " + from)
+          .setNegativeButton(org.runnerup.common.R.string.Cancel, listener)
+          .show();
+    } finally {
+      tempDbFile.delete();
+    }
+  }
+
+  /** Merges the imported database file into the current database. */
+  public static void mergeDatabase(Context ctx, File tempDbFile) {
+    DatabaseImporter.merge(ctx, tempDbFile);
   }
 
   public static void exportDatabase(Context ctx, Uri to) {
@@ -825,6 +839,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
         tempDbFile = null;
         return null;
       }
+      tempDb.close();
       return tempDbFile;
     } catch (Exception e) {
       Log.e(TAG, "Unexpected error during db validation. URI: " + uri);
@@ -836,23 +851,6 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
       }
       return null;
     }
-  }
-
-  /**
-   * Checks if the content at the given Uri is a valid RunnerUp SQLite database by attempting to
-   * open the database and query its schema.
-   *
-   * @param context The Context used to obtain a ContentResolver for opening the Uri.
-   * @param uri The Uri to check.
-   * @return true if the Uri is a valid RunnerUp database, false otherwise.
-   */
-  private static boolean isValidRunnerUpDatabase(Context context, Uri uri) {
-    File tempDbFile = copyToTempDb(context, uri);
-    if (tempDbFile == null) {
-      return false;
-    }
-    tempDbFile.delete();
-    return true;
   }
 
   /** Checks if a table exists in the given database (that needs to be in a opened state). */

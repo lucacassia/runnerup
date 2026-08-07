@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!--~ Copyright (C) 2014 jonas.oreland@gmail.com
     ~
     ~  This program is free software: you can redistribute it and/or modify
@@ -30,4 +30,12 @@
     <string name="import_blocked_activity_in_progress">
         Cannot import while a run is in progress. Stop the run first.
     </string>
+    <string name="import_choice_title">Import database</string>
+    <string name="import_choice_message">Choose how to import the selected database.</string>
+    <string name="import_choice_merge">Merge</string>
+    <string name="import_choice_replace">Replace</string>
+    <string name="import_result_message" tools:ignore="PluralsCandidate">
+        Merged: %1$d imported, %2$d kept, %3$d overwritten, %4$d duplicated, %5$d deleted skipped
+    </string>
+    <string name="import_recompute_merged">Recompute aggregates for merged activities</string>
 </resources>
