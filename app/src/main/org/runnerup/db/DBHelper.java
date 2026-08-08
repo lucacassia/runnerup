@@ -768,7 +768,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
             R.string.import_choice_merge, (dialog, which) -> mergeDatabase(ctx, tempDbFile))
         .setNegativeButton(
             R.string.import_choice_replace,
-            (dialog, which) -> replaceDatabase(ctx, from, tempDbFile))
+            (dialog, which) -> DatabaseImporter.merge(ctx, tempDbFile, true))
         .setNeutralButton(org.runnerup.common.R.string.Cancel, listener)
         .show();
   }
@@ -779,38 +779,6 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
         .setMessage(messageRes)
         .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
         .show();
-  }
-
-  /** Replaces the live database file with the imported one and requires an app restart. */
-  private static void replaceDatabase(Context ctx, Uri from, File tempDbFile) {
-    DialogInterface.OnClickListener listener = (dialog, which) -> dialog.dismiss();
-    final DBHelper mDBHelper = DBHelper.getHelper(ctx);
-    final SQLiteDatabase db = mDBHelper.getWritableDatabase();
-    db.close();
-    mDBHelper.close();
-
-    try {
-      Uri to = getDbUri(ctx);
-      int cnt = FileUtil.copyFile(ctx, to, Uri.fromFile(tempDbFile));
-      new MaterialAlertDialogBuilder(ctx)
-          .setTitle("Import " + DBNAME)
-          .setMessage(
-              "Copied "
-                  + cnt
-                  + " bytes from "
-                  + Uri.decode(from.toString())
-                  + "Restart app to use the database")
-          .setPositiveButton(org.runnerup.common.R.string.OK, listener)
-          .show();
-    } catch (IOException | NullPointerException e) {
-      new MaterialAlertDialogBuilder(ctx)
-          .setTitle("Import " + DBNAME)
-          .setMessage("Exception: " + e + " for " + from)
-          .setNegativeButton(org.runnerup.common.R.string.Cancel, listener)
-          .show();
-    } finally {
-      tempDbFile.delete();
-    }
   }
 
   /** Merges the imported database file into the current database. */
