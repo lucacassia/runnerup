@@ -714,14 +714,37 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
     }
   }
 
+  public static boolean clearAllActivities(Context ctx) {
+    if (hasOngoingActivity(ctx)) {
+      showBlockedDialog(
+          ctx,
+          ctx.getString(R.string.delete_all_confirm_title),
+          R.string.delete_blocked_activity_in_progress);
+      return false;
+    }
+
+    SQLiteDatabase db = getWritableDatabase(ctx);
+    db.beginTransaction();
+    try {
+      clearAllActivities(db);
+      db.setTransactionSuccessful();
+    } finally {
+      db.endTransaction();
+    }
+    return true;
+  }
+
+  static void clearAllActivities(SQLiteDatabase db) {
+    db.delete(DB.EXPORT.TABLE, null, null);
+    db.delete(DB.LOCATION.TABLE, null, null);
+    db.delete(DB.LAP.TABLE, null, null);
+    db.delete(DB.FEED.TABLE, null, null);
+    db.delete(DB.ACTIVITY.TABLE, null, null);
+  }
+
   public static void importDatabase(Context ctx, Uri from) {
     if (hasOngoingActivity(ctx)) {
-      DialogInterface.OnClickListener listener = (dialog, which) -> dialog.dismiss();
-      new MaterialAlertDialogBuilder(ctx)
-          .setTitle("Import " + DBNAME)
-          .setMessage(R.string.import_blocked_activity_in_progress)
-          .setPositiveButton(org.runnerup.common.R.string.OK, listener)
-          .show();
+      showBlockedDialog(ctx, "Import " + DBNAME, R.string.import_blocked_activity_in_progress);
       return;
     }
 
@@ -747,6 +770,14 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
             R.string.import_choice_replace,
             (dialog, which) -> replaceDatabase(ctx, from, tempDbFile))
         .setNeutralButton(org.runnerup.common.R.string.Cancel, listener)
+        .show();
+  }
+
+  private static void showBlockedDialog(Context ctx, String title, int messageRes) {
+    new MaterialAlertDialogBuilder(ctx)
+        .setTitle(title)
+        .setMessage(messageRes)
+        .setPositiveButton(org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
         .show();
   }
 

@@ -44,4 +44,8 @@
     <string name="import_conflict_keep_both">Keep both</string>
     <string name="import_conflict_keep_old">Keep old</string>
     <string name="import_cancel_import">Cancel import</string>
+    <string name="delete_all_confirm_title">Delete all activities</string>
+    <string name="delete_blocked_activity_in_progress">
+        Cannot delete while a run is in progress. Stop the run first.
+    </string>
 </resources>
