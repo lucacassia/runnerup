@@ -44,8 +44,8 @@
 
         <Preference
             android:key="@string/pref_prunedb"
-            android:summary="@string/Pruning_deleted_activities_from_database"
-            android:title="@string/Prune"
+            android:summary="@string/delete_all_summary"
+            android:title="@string/delete_all_confirm_title"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
     <!--CheckBoxPreference

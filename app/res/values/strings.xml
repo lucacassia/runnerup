@@ -48,4 +48,10 @@
     <string name="delete_blocked_activity_in_progress">
         Cannot delete while a run is in progress. Stop the run first.
     </string>
+    <string name="delete_all_confirm_message">
+        This will permanently delete all activities and their laps, locations and upload history. This cannot be undone.
+    </string>
+    <string name="delete_all_confirm_ok">Delete</string>
+    <string name="delete_all_done">All activities deleted</string>
+    <string name="delete_all_summary">Delete all activities and their laps, locations and upload history from the database</string>
 </resources>

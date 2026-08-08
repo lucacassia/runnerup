@@ -14,9 +14,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.runnerup.R;
 import org.runnerup.db.DBHelper;
-import org.runnerup.util.M3ProgressDialog;
 
 public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
 
@@ -98,11 +98,24 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
       };
   private final Preference.OnPreferenceClickListener onPruneClick =
       preference -> {
-        final M3ProgressDialog dialog = new M3ProgressDialog(requireContext());
-        dialog.setTitle(org.runnerup.common.R.string.Pruning_deleted_activities_from_database);
-        dialog.show();
-        DBHelper.purgeDeletedActivities(requireContext(), dialog, dialog::dismiss);
-        return false;
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.delete_all_confirm_title)
+            .setMessage(R.string.delete_all_confirm_message)
+            .setPositiveButton(
+                R.string.delete_all_confirm_ok,
+                (dialog, which) -> {
+                  if (DBHelper.clearAllActivities(requireContext())) {
+                    new MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.delete_all_confirm_title)
+                        .setMessage(R.string.delete_all_done)
+                        .setPositiveButton(org.runnerup.common.R.string.OK, (d, w) -> d.dismiss())
+                        .show();
+                  }
+                })
+            .setNegativeButton(
+                org.runnerup.common.R.string.Cancel, (dialog, which) -> dialog.dismiss())
+            .show();
+        return true;
       };
 
   @Override
