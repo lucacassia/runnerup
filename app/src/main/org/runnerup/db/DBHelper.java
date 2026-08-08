@@ -24,8 +24,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -33,8 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.runnerup.R;
@@ -50,7 +46,6 @@ import org.runnerup.export.RunningAHEADSynchronizer;
 import org.runnerup.export.StravaSynchronizer;
 import org.runnerup.export.WebDavSynchronizer;
 import org.runnerup.util.FileUtil;
-import org.runnerup.util.M3ProgressDialog;
 import org.runnerup.workout.FileFormats;
 
 public class DBHelper extends SQLiteOpenHelper implements Constants {
@@ -613,58 +608,6 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
     db.delete(DB.LOCATION.TABLE, DB.LOCATION.ACTIVITY + " = ?", args);
     db.delete(DB.LAP.TABLE, DB.LAP.ACTIVITY + " = ?", args);
     db.delete(DB.ACTIVITY.TABLE, "_id = ?", args);
-  }
-
-  public static void purgeDeletedActivities(
-      Context ctx, final M3ProgressDialog dialog, final Runnable onComplete) {
-
-    final DBHelper mDBHelper = DBHelper.getHelper(ctx);
-    final SQLiteDatabase db = mDBHelper.getWritableDatabase();
-    String[] from = {"_id"};
-    Cursor c = db.query(DB.ACTIVITY.TABLE, from, "deleted <> 0", null, null, null, null, null);
-    final ArrayList<Long> list = new ArrayList<>(10);
-    if (c.moveToFirst()) {
-      do {
-        list.add(c.getLong(0));
-      } while (c.moveToNext());
-    }
-    c.close();
-
-    if (!list.isEmpty()) {
-      ExecutorService executor = Executors.newSingleThreadExecutor();
-      Handler handler = new Handler(Looper.getMainLooper());
-
-      // Pre-execution step (runs on the current/main thread)
-      dialog.setMax(list.size());
-
-      executor.execute(
-          () -> {
-            int currentProgress = 0;
-            for (Long id : list) {
-              deleteActivity(db, id);
-              currentProgress++;
-              final int progressToShow = currentProgress;
-              handler.post(() -> dialog.setProgress(progressToShow));
-            }
-
-            // Post-execution step (runs on the main thread)
-            handler.post(
-                () -> {
-                  db.close();
-                  mDBHelper.close();
-                  if (onComplete != null) {
-                    onComplete.run();
-                  }
-                });
-          });
-    } else {
-      // No activities to delete, just clean up
-      db.close();
-      mDBHelper.close();
-      if (onComplete != null) {
-        onComplete.run();
-      }
-    }
   }
 
   public static int bulkInsert(List<? extends DBEntity> objectList, SQLiteDatabase db) {
