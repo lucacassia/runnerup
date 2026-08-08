@@ -100,3 +100,15 @@ New app-local strings (app `res/values/strings.xml`):
   - R1. Replace import → old activities gone, imported present, no restart, no crash, result
     dialog shows imported count.
   - G1. Wipe and Replace are blocked while an in-progress run exists.
+
+## Known limitation (deferred, 2026-08-08)
+
+The in-progress guard (`hasOngoingActivity` → `time IS NULL AND distance IS NULL`) can be
+defeated if the user opens the History tab while a run is recording: the pre-existing
+`HistoryFragment.onViewCreated` → `ActivityCleaner.conditionalRecompute` rewrites the last
+activity's NULL time/distance to `0`/`0.0` (its purpose is repairing crash-leftover
+activities, which are indistinguishable in the DB from an in-progress run). After that the
+guard no longer matches and a subsequent wipe/import is not blocked during the run. All other
+scenarios verified PASS. Deferred hardening (chosen 2026-08-08): introduce a global recording
+flag set by `Tracker.start()`/save/stop and have the guard (or `conditionalRecompute`) consult
+it, so "blocked while running" is reliable regardless of navigation.
