@@ -58,6 +58,10 @@ class DatabaseImporter implements Constants {
   private DatabaseImporter() {}
 
   static void merge(Context ctx, File tempDbFile) {
+    merge(ctx, tempDbFile, false);
+  }
+
+  static void merge(Context ctx, File tempDbFile, boolean clearFirst) {
     if (DBHelper.hasOngoingActivity(ctx)) {
       showBlockedDialog(ctx);
       tempDbFile.delete();
@@ -82,7 +86,7 @@ class DatabaseImporter implements Constants {
             return;
           }
           try {
-            MergeResult result = doMerge(ctx, tempDbFile, handler);
+            MergeResult result = doMerge(ctx, tempDbFile, handler, clearFirst);
             handler.post(
                 () -> {
                   progress.dismiss();
@@ -125,39 +129,47 @@ class DatabaseImporter implements Constants {
         .show();
   }
 
-  private static MergeResult doMerge(Context ctx, File tempDbFile, Handler handler)
-      throws Exception {
+  private static MergeResult doMerge(
+      Context ctx, File tempDbFile, Handler handler, boolean clearFirst) throws Exception {
     SQLiteDatabase live = DBHelper.getWritableDatabase(ctx);
     SQLiteDatabase imported =
         SQLiteDatabase.openDatabase(
             tempDbFile.getAbsolutePath(), null, SQLiteDatabase.OPEN_READONLY);
     MergeResult result = new MergeResult();
     try {
-      Map<String, Long> localIndex = readLocalIndex(live);
       List<ImportedActivity> importedActivities =
           readActivities(imported, tableColumns(live, DB.ACTIVITY.TABLE));
 
       List<ImportedActivity> toImport = new ArrayList<>();
-      List<Conflict> conflicts = new ArrayList<>();
       for (ImportedActivity activity : importedActivities) {
         if (activity.deleted) {
           result.skippedDeleted++;
           continue;
         }
-        if (isDuplicate(localIndex, activity.startTime, activity.type)) {
-          conflicts.add(
-              new Conflict(activity, localIndex.get(key(activity.startTime, activity.type))));
-        } else {
-          toImport.add(activity);
-        }
+        toImport.add(activity);
       }
 
+      List<Conflict> conflicts = new ArrayList<>();
       List<Decision> decisions = Collections.emptyList();
-      if (!conflicts.isEmpty()) {
-        decisions = resolveConflicts(ctx, conflicts, handler);
-        if (containsAbort(decisions)) {
-          result.cancelled = true;
-          return result;
+      if (!clearFirst) {
+        Map<String, Long> localIndex = readLocalIndex(live);
+        List<ImportedActivity> distinct = new ArrayList<>();
+        for (ImportedActivity activity : toImport) {
+          if (isDuplicate(localIndex, activity.startTime, activity.type)) {
+            conflicts.add(
+                new Conflict(activity, localIndex.get(key(activity.startTime, activity.type))));
+          } else {
+            distinct.add(activity);
+          }
+        }
+        toImport = distinct;
+
+        if (!conflicts.isEmpty()) {
+          decisions = resolveConflicts(ctx, conflicts, handler);
+          if (containsAbort(decisions)) {
+            result.cancelled = true;
+            return result;
+          }
         }
       }
 
@@ -170,6 +182,10 @@ class DatabaseImporter implements Constants {
 
       live.beginTransaction();
       try {
+        if (clearFirst) {
+          DBHelper.clearAllActivities(live);
+        }
+
         for (ImportedActivity activity : toImport) {
           long newId = live.insert(DB.ACTIVITY.TABLE, null, activity.values);
           idMap.put(activity.oldId, newId);
