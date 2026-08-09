@@ -73,8 +73,7 @@ public class MainLayout extends AppCompatActivity {
     SAME
   }
 
-  public static final String EXTRA_INITIAL_PAGE =
-      "org.runnerup.view.MainLayout.initial_page";
+  public static final String EXTRA_INITIAL_PAGE = "org.runnerup.view.MainLayout.initial_page";
   public static final int PAGE_SETTINGS = 2;
   private static final String STATE_PAGE = "state_page";
 
