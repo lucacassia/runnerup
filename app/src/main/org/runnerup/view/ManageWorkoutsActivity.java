@@ -631,7 +631,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
       RadioButton cb = holder.checkbox;
       cb.setText(workout.workoutName());
       cb.setChecked(selection.getSelected() == workout);
-      cb.setOnClickListener(v -> onWorkoutChecked(workout, cb.isChecked()));
+      cb.setOnClickListener(v -> onWorkoutChecked(workout, selection.getSelected() != workout));
     }
 
     final Callback onSynchronizerConfiguredCallback =
