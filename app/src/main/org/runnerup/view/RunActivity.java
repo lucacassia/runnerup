@@ -54,6 +54,10 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.OnApplyWindowInsetsListener;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -139,6 +143,19 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
     setContentView(R.layout.run);
+    View rootView = findViewById(R.id.start_view);
+    ViewCompat.setOnApplyWindowInsetsListener(
+        rootView,
+        new OnApplyWindowInsetsListener() {
+          @NonNull
+          @Override
+          public WindowInsetsCompat onApplyWindowInsets(
+              @NonNull View v, @NonNull WindowInsetsCompat windowInsets) {
+            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(insets.left, v.getPaddingTop(), insets.right, insets.bottom);
+            return WindowInsetsCompat.CONSUMED;
+          }
+        });
     formatter = new Formatter(this);
     // HRZones hrZones = new HRZones(this);
     TextView velocity = findViewById(R.id.velocity_label);
