@@ -73,6 +73,11 @@ public class MainLayout extends AppCompatActivity {
     SAME
   }
 
+  public static final String EXTRA_INITIAL_PAGE =
+      "org.runnerup.view.MainLayout.initial_page";
+  public static final int PAGE_SETTINGS = 2;
+  private static final String STATE_PAGE = "state_page";
+
   private ViewPager2 pager;
 
   @Override
@@ -149,6 +154,16 @@ public class MainLayout extends AppCompatActivity {
     BottomNavFragmentStateAdapter adapter = new BottomNavFragmentStateAdapter(this);
     pager.setAdapter(adapter);
 
+    int requestedPage = getIntent().getIntExtra(EXTRA_INITIAL_PAGE, -1);
+    if (requestedPage >= 0) {
+      pager.setCurrentItem(requestedPage, false);
+    } else if (savedInstanceState != null) {
+      int savedPage = savedInstanceState.getInt(STATE_PAGE, -1);
+      if (savedPage >= 0) {
+        pager.setCurrentItem(savedPage, false);
+      }
+    }
+
     // Allows swiping between tabs
     pager.setUserInputEnabled(true);
 
@@ -217,6 +232,14 @@ public class MainLayout extends AppCompatActivity {
 
     // Handle back navigation
     getOnBackPressedDispatcher().addCallback(this, onBackPressed);
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    if (pager != null) {
+      outState.putInt(STATE_PAGE, pager.getCurrentItem());
+    }
   }
 
   private boolean isLargeScreen() {
