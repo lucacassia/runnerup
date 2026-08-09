@@ -35,7 +35,8 @@ import, ever.
 4. **"Replace" = wipe + fresh import**, not a byte-for-byte file restore. Consequences the user
    accepted: local accounts/audio schemes survive; imported `report` rows are remapped to local
    accounts by name and silently skipped when no name matches; imported soft-deleted activities
-   are skipped (they are not restored). This semantic change is inherent to dropping the file
+   are skipped (they are not restored); the `feed` table is wiped and not re-imported (the
+   import never writes feed rows). This semantic change is inherent to dropping the file
    swap.
 
 ## Design
