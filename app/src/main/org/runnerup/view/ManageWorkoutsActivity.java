@@ -35,6 +35,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -49,6 +50,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -87,12 +89,15 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
   private final HashSet<String> loadedProviders = new HashSet<>();
   private WorkoutListAdapter adapter = null;
 
+  private final WorkoutSelection selection = new WorkoutSelection();
   private boolean uploading = false;
-  private WorkoutRef selectedWorkout = null;
   private Button deleteButton = null;
   private Button shareButton = null;
   private Button editButton = null;
-  private Button createButton = null;
+  private FloatingActionButton createButton = null;
+  private View actionBar = null;
+  private TextView selectedNameText = null;
+  private ImageButton closeButton = null;
 
   private SyncManager syncManager = null;
 
@@ -138,7 +143,12 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     editButton = findViewById(R.id.edit_workout_button);
     editButton.setOnClickListener(editButtonClick);
 
-    handleButtons();
+    actionBar = findViewById(R.id.workout_action_bar);
+    selectedNameText = findViewById(R.id.selected_workout_name);
+    closeButton = findViewById(R.id.close_selection_button);
+    closeButton.setOnClickListener(v -> clearSelection());
+
+    updateSelectionUI();
 
     requery();
     listLocal();
@@ -290,24 +300,24 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     listLocal();
   }
 
-  private void handleButtons() {
-    if (selectedWorkout == null) {
-      deleteButton.setEnabled(false);
-      shareButton.setEnabled(false);
-      editButton.setEnabled(false);
-      createButton.setEnabled(true);
-      return;
+  private void updateSelectionUI() {
+    WorkoutRef selected = selection.getSelected();
+    boolean hasSelection = selected != null;
+    actionBar.setVisibility(hasSelection ? View.VISIBLE : View.GONE);
+    createButton.setVisibility(hasSelection ? View.GONE : View.VISIBLE);
+    boolean phone = hasSelection && PHONE_STRING.contentEquals(selected.synchronizer());
+    deleteButton.setEnabled(phone);
+    shareButton.setEnabled(phone);
+    editButton.setEnabled(phone);
+    if (hasSelection) {
+      selectedNameText.setText(selected.workoutName());
     }
+  }
 
-    if (PHONE_STRING.contentEquals(selectedWorkout.synchronizer())) {
-      deleteButton.setEnabled(true);
-      shareButton.setEnabled(true);
-      editButton.setEnabled(true);
-    } else {
-      deleteButton.setEnabled(false);
-      shareButton.setEnabled(false);
-      editButton.setEnabled(false);
-    }
+  private void clearSelection() {
+    selection.clear();
+    adapter.refresh();
+    updateSelectionUI();
   }
 
   private void listLocal() {
@@ -426,9 +436,9 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
   private final OnClickListener deleteButtonClick =
       v -> {
-        if (selectedWorkout == null) return;
+        if (selection.getSelected() == null) return;
 
-        final WorkoutRef selected = selectedWorkout;
+        final WorkoutRef selected = selection.getSelected();
         new MaterialAlertDialogBuilder(ManageWorkoutsActivity.this)
             .setTitle(
                 getString(org.runnerup.common.R.string.Delete_workout)
@@ -459,16 +469,17 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
             pref.getString(getResources().getString(R.string.pref_advanced_workout), ""))) {
       pref.edit().putString(getResources().getString(R.string.pref_advanced_workout), "").apply();
     }
-    selectedWorkout = null;
+    selection.clear();
     listLocal();
+    updateSelectionUI();
   }
 
   private final OnClickListener shareButtonClick =
       v -> {
-        if (selectedWorkout == null) return;
+        if (selection.getSelected() == null) return;
 
         final AppCompatActivity context = ManageWorkoutsActivity.this;
-        final WorkoutRef selected = selectedWorkout;
+        final WorkoutRef selected = selection.getSelected();
         final String name = selected.workoutName();
         final Intent intent = new Intent(Intent.ACTION_SEND);
 
@@ -488,9 +499,9 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
   private final OnClickListener editButtonClick =
       v -> {
-        if (selectedWorkout == null) return;
+        if (selection.getSelected() == null) return;
 
-        final WorkoutRef selected = selectedWorkout;
+        final WorkoutRef selected = selection.getSelected();
         final Intent intent = new Intent(ManageWorkoutsActivity.this, CreateAdvancedWorkout.class);
 
         intent.putExtra(WORKOUT_NAME, selected.workoutName());
@@ -499,12 +510,9 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
       };
 
   private void onWorkoutChecked(WorkoutRef workout, boolean isChecked) {
-    if (isChecked) {
-      selectedWorkout = workout;
-    } else if (selectedWorkout == workout) {
-      selectedWorkout = null;
-    }
-    handleButtons();
+    selection.onChecked(workout, isChecked);
+    adapter.refresh();
+    updateSelectionUI();
   }
 
   class WorkoutListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -560,9 +568,11 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
     void collapseGroup(String name) {
       setGroupExpanded(name, false);
-      if (selectedWorkout != null && selectedWorkout.synchronizer().contentEquals(name)) {
-        selectedWorkout = null;
-        handleButtons();
+      if (selection.getSelected() != null
+          && selection.getSelected().synchronizer().contentEquals(name)) {
+        selection.clear();
+        updateSelectionUI();
+        adapter.refresh();
       }
     }
 
@@ -620,7 +630,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     private void bindWorkout(WorkoutViewHolder holder, WorkoutRef workout) {
       RadioButton cb = holder.checkbox;
       cb.setText(workout.workoutName());
-      cb.setChecked(selectedWorkout == workout);
+      cb.setChecked(selection.getSelected() == workout);
       cb.setOnClickListener(v -> onWorkoutChecked(workout, cb.isChecked()));
     }
 
