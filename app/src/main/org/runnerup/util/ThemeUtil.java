@@ -1,13 +1,11 @@
 package org.runnerup.util;
 
-import android.app.Application;
 import android.app.UiModeManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
-import com.google.android.material.color.DynamicColors;
 import org.runnerup.R;
 
 public class ThemeUtil {
@@ -18,17 +16,6 @@ public class ThemeUtil {
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
     String mode = prefs.getString(context.getString(R.string.pref_theme_mode), "system");
     applyNightMode(context, mode);
-    applyDynamicColor(context, prefs);
-  }
-
-  public static void applyDynamicColor(Context context, SharedPreferences prefs) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-      return;
-    }
-    boolean enabled = prefs.getBoolean(context.getString(R.string.pref_dynamic_color), false);
-    if (enabled && context instanceof Application) {
-      DynamicColors.applyToActivitiesIfAvailable((Application) context);
-    }
   }
 
   public static void applyNightMode(Context context, String mode) {
