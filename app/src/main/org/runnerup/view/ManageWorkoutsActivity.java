@@ -40,6 +40,7 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -123,6 +124,22 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     MaterialToolbar toolbar = findViewById(R.id.actionbar);
     setSupportActionBar(toolbar);
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+    if (isTaskRoot()) {
+      getOnBackPressedDispatcher()
+          .addCallback(
+              this,
+              new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                  startActivity(
+                      new Intent(ManageWorkoutsActivity.this, MainLayout.class)
+                          .putExtra(MainLayout.EXTRA_INITIAL_PAGE, MainLayout.PAGE_SETTINGS)
+                          .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+                  finish();
+                }
+              });
+    }
 
     mDB = DBHelper.getReadableDatabase(this);
     syncManager = new SyncManager(this);
@@ -291,6 +308,19 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
             .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
     startActivity(intent);
     finish();
+  }
+
+  @Override
+  public boolean onSupportNavigateUp() {
+    if (isTaskRoot()) {
+      startActivity(
+          new Intent(this, MainLayout.class)
+              .putExtra(MainLayout.EXTRA_INITIAL_PAGE, MainLayout.PAGE_SETTINGS)
+              .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
+      finish();
+      return true;
+    }
+    return super.onSupportNavigateUp();
   }
 
   @Override
