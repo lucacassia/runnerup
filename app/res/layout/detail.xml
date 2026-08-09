@@ -258,10 +258,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="24dp"
                 android:contentDescription="@string/Resume"
-                runnerup:backgroundTint="?attr/colorPrimaryContainer"
+                runnerup:backgroundTint="?attr/colorPrimary"
                 runnerup:fabSize="normal"
                 runnerup:srcCompat="@drawable/ic_play_arrow"
-                runnerup:tint="?attr/colorOnPrimaryContainer" />
+                runnerup:tint="?attr/colorOnPrimary" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/save_button"
@@ -269,20 +269,20 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="24dp"
                 android:contentDescription="@string/Save"
-                runnerup:backgroundTint="@color/btn_green"
+                runnerup:backgroundTint="?attr/colorPrimary"
                 runnerup:fabSize="normal"
                 runnerup:srcCompat="@drawable/ic_check"
-                runnerup:tint="@android:color/white" />
+                runnerup:tint="?attr/colorOnPrimary" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/discard_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:contentDescription="@string/Discard"
-                runnerup:backgroundTint="?attr/colorErrorContainer"
+                runnerup:backgroundTint="?attr/colorError"
                 runnerup:fabSize="normal"
                 runnerup:srcCompat="@drawable/ic_delete"
-                runnerup:tint="?attr/colorOnErrorContainer" />
+                runnerup:tint="?attr/colorOnError" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton

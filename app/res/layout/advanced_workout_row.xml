@@ -35,7 +35,7 @@
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:layout_gravity="center"
-        app:backgroundTint="@color/btn_green"
+        app:backgroundTint="?attr/colorPrimary"
         android:gravity="center_vertical|center_horizontal"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"

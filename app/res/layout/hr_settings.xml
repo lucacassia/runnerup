@@ -120,7 +120,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        app:backgroundTint="@color/btn_green"
+        app:backgroundTint="?attr/colorPrimary"
         android:text="@string/Connect" />
 
 </RelativeLayout>

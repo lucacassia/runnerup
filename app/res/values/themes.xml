@@ -19,9 +19,44 @@
     <!-- Base application theme. Follows the system light/dark setting. -->
     <style name="AppTheme" parent="Theme.Material3.DayNight">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay.Material3</item>
+
+        <item name="colorPrimary">#00639B</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorPrimaryContainer">#D4E3FF</item>
+        <item name="colorOnPrimaryContainer">#001D36</item>
+        <item name="colorPrimaryInverse">#AFD0FF</item>
+        <item name="colorSecondary">#535F70</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#D6E3F7</item>
+        <item name="colorOnSecondaryContainer">#101C2B</item>
+        <item name="colorTertiary">#6A5779</item>
+        <item name="colorOnTertiary">#FFFFFF</item>
+        <item name="colorTertiaryContainer">#F0DAFF</item>
+        <item name="colorOnTertiaryContainer">#241532</item>
+        <item name="colorError">#BA1A1A</item>
+        <item name="colorOnError">#FFFFFF</item>
+        <item name="colorErrorContainer">#FFDAD6</item>
+        <item name="colorOnErrorContainer">#410002</item>
+        <item name="colorSurface">#F9F9FF</item>
+        <item name="colorOnSurface">#191C20</item>
+        <item name="colorSurfaceVariant">#E1E2EC</item>
+        <item name="colorOnSurfaceVariant">#44474F</item>
+        <item name="colorSurfaceContainerLowest">#FFFFFF</item>
+        <item name="colorSurfaceContainerLow">#F3F3FA</item>
+        <item name="colorSurfaceContainer">#EDEDF4</item>
+        <item name="colorSurfaceContainerHigh">#E8E8EF</item>
+        <item name="colorSurfaceContainerHighest">#E2E2E9</item>
+        <item name="colorSurfaceBright">#F9F9FF</item>
+        <item name="colorSurfaceDim">#DADAE0</item>
+        <item name="colorOutline">#75777F</item>
+        <item name="colorOutlineVariant">#C5C6D0</item>
+        <item name="colorSurfaceInverse">#2E3135</item>
+        <item name="colorOnSurfaceInverse">#F0F0F7</item>
     </style>
 
-    <style name="AppTheme.NoActionBar" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="AppTheme.NoActionBar" parent="@style/AppTheme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="MainLayoutTheme" parent="AppTheme.NoActionBar">

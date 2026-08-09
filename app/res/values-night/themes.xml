@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base application theme. Dark color roles (override values/themes.xml). -->
+    <style name="AppTheme" parent="Theme.Material3.DayNight">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.Material3</item>
+
+        <item name="colorPrimary">#AFD0FF</item>
+        <item name="colorOnPrimary">#003258</item>
+        <item name="colorPrimaryContainer">#004A78</item>
+        <item name="colorOnPrimaryContainer">#D4E3FF</item>
+        <item name="colorPrimaryInverse">#00639B</item>
+        <item name="colorSecondary">#BAC8DC</item>
+        <item name="colorOnSecondary">#242F40</item>
+        <item name="colorSecondaryContainer">#3A4657</item>
+        <item name="colorOnSecondaryContainer">#D6E3F7</item>
+        <item name="colorTertiary">#D4BEE4</item>
+        <item name="colorOnTertiary">#392B47</item>
+        <item name="colorTertiaryContainer">#50415F</item>
+        <item name="colorOnTertiaryContainer">#F0DAFF</item>
+        <item name="colorError">#FFB4AB</item>
+        <item name="colorOnError">#690005</item>
+        <item name="colorErrorContainer">#93000A</item>
+        <item name="colorOnErrorContainer">#FFDAD6</item>
+        <item name="colorSurface">#101318</item>
+        <item name="colorOnSurface">#E0E2E9</item>
+        <item name="colorSurfaceVariant">#44474F</item>
+        <item name="colorOnSurfaceVariant">#C5C6D0</item>
+        <item name="colorSurfaceContainerLowest">#0B0D11</item>
+        <item name="colorSurfaceContainerLow">#16181D</item>
+        <item name="colorSurfaceContainer">#1A1C21</item>
+        <item name="colorSurfaceContainerHigh">#24262B</item>
+        <item name="colorSurfaceContainerHighest">#2F3035</item>
+        <item name="colorSurfaceBright">#36383D</item>
+        <item name="colorSurfaceDim">#101318</item>
+        <item name="colorOutline">#8F9099</item>
+        <item name="colorOutlineVariant">#44474F</item>
+        <item name="colorSurfaceInverse">#E0E2E9</item>
+        <item name="colorOnSurfaceInverse">#2E3135</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="@style/AppTheme">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="MainLayoutTheme" parent="AppTheme.NoActionBar">
+    </style>
+
+</resources>

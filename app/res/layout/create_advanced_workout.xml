@@ -61,7 +61,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                runnerup:backgroundTint="@color/btn_green"
+                runnerup:backgroundTint="?attr/colorPrimary"
                 android:text="@string/Save" />
 
             <com.google.android.material.button.MaterialButton

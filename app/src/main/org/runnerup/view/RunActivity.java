@@ -26,10 +26,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.os.Build;
@@ -61,7 +59,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.color.MaterialColors;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -416,24 +413,13 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   }
 
   private void setPauseButtonEnabled(boolean enabled) {
-    if (enabled) {
-      pauseButton.setImageResource(R.drawable.ic_pause);
-      pauseButton.setBackgroundTintList(
-          ColorStateList.valueOf(
-              MaterialColors.getColor(
-                  this, com.google.android.material.R.attr.colorPrimaryContainer, 0)));
-      pauseButton.setImageTintList(
-          ColorStateList.valueOf(
-              MaterialColors.getColor(
-                  this, com.google.android.material.R.attr.colorOnPrimaryContainer, 0)));
-      pauseButton.setContentDescription(getString(org.runnerup.common.R.string.Pause));
-    } else {
-      pauseButton.setImageResource(R.drawable.ic_play_arrow);
-      pauseButton.setBackgroundTintList(
-          ColorStateList.valueOf(ContextCompat.getColor(this, R.color.btn_green)));
-      pauseButton.setImageTintList(ColorStateList.valueOf(Color.WHITE));
-      pauseButton.setContentDescription(getString(org.runnerup.common.R.string.Resume));
+    if (pauseButton == null) {
+      return;
     }
+    pauseButton.setImageResource(enabled ? R.drawable.ic_pause : R.drawable.ic_play_arrow);
+    pauseButton.setContentDescription(
+        getString(
+            enabled ? org.runnerup.common.R.string.Pause : org.runnerup.common.R.string.Resume));
   }
 
   private void togglePause() {
