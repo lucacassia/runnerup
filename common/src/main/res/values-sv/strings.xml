@@ -246,8 +246,6 @@
   <string name="Manual_activity_title">Lägg till manuell aktivitet</string>
   <string name="Add_manual_entry">Lägg till manuell aktivitet</string>
   <string name="Add_workout_notes">Lägg till noteringar</string>
-  <string name="Pruning_deleted_activities_from_database">Radera borttagna aktiviteter</string>
-  <string name="Prune">Radera</string>
   <string name="Heartrate_zones_distribution">Pulszon fördelning</string>
   <string name="Battery_level">Batterinivå</string>
   <string name="Activity_ready">Aktivitet redo</string>

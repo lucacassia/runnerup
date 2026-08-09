@@ -225,8 +225,6 @@
   <string name="Manual_activity_title">Dodaj pozycję ręcznie</string>
   <string name="Add_manual_entry">Dodaj pozycję ręcznie</string>
   <string name="Add_workout_notes">Dodaj notatki</string>
-  <string name="Pruning_deleted_activities_from_database">Wyczyść usunięte aktywności</string>
-  <string name="Prune">Trwałe usunięcie</string>
   <string name="Heartrate_zones_distribution">Rozkład stref tętna</string>
   <string name="Battery_level">Poziom baterii</string>
   <string name="Activity_ready">Gotowy</string>

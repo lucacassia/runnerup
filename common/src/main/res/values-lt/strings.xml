@@ -240,8 +240,6 @@
   <string name="Manual_activity_title">Pridėti rankinį įrašą </string>
   <string name="Add_manual_entry">Pridėti rankinį įrašą </string>
   <string name="Add_workout_notes">Pridėti treniruotės pastabas</string>
-  <string name="Pruning_deleted_activities_from_database">Išvalyti pašalintas veiklas</string>
-  <string name="Prune">Ištrinti visam laikui</string>
   <string name="Heartrate_zones_distribution">Širdies ritmo zonų paskirstymas</string>
   <string name="Battery_level">Baterijos lygis</string>
   <string name="Activity_ready">Veikla paruošta</string>

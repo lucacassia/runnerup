@@ -240,8 +240,6 @@
   <string name="Manual_activity_title">Introducere manuală</string>
   <string name="Add_manual_entry">Introducere manuală</string>
   <string name="Add_workout_notes">Adăugați note de antrenament</string>
-  <string name="Pruning_deleted_activities_from_database">Curăță activitățile șterse</string>
-  <string name="Prune">Șterge definitiv</string>
   <string name="Heartrate_zones_distribution">Distribuția zonei ritmului cardiac</string>
   <string name="Battery_level">Nivelul bateriei</string>
   <string name="Activity_ready">Activitate gata</string>

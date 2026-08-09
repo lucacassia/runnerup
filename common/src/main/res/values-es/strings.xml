@@ -240,8 +240,6 @@
   <string name="Manual_activity_title">Añadir entrada manual</string>
   <string name="Add_manual_entry">Añadir entrada manual</string>
   <string name="Add_workout_notes">Añadir notas al entremamiento</string>
-  <string name="Pruning_deleted_activities_from_database">Limpiar actividades eliminadas</string>
-  <string name="Prune">Eliminar definitivamente</string>
   <string name="Heartrate_zones_distribution">Distribución de zonas de frecuencia cardiaca</string>
   <string name="Battery_level">Nivel batería</string>
   <string name="Activity_ready">Actividad preparada</string>

@@ -227,8 +227,6 @@
   <string name="Manual_activity_title">Item handmatig toevoegen</string>
   <string name="Add_manual_entry">Item handmatig toevoegen</string>
   <string name="Add_workout_notes">Trainingnotities toevoegen</string>
-  <string name="Pruning_deleted_activities_from_database">Ruim verwijderde activiteiten op</string>
-  <string name="Prune">Verwijder permanent</string>
   <string name="Heartrate_zones_distribution">Distributie hartslagzones</string>
   <string name="Battery_level">Batterijniveau</string>
   <string name="Activity_ready">Activiteit is gereed</string>

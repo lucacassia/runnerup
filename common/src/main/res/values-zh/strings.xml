@@ -243,8 +243,6 @@
   <string name="Manual_activity_title">手动添加条目</string>
   <string name="Add_manual_entry">手动添加条目</string>
   <string name="Add_workout_notes">添加训练备注</string>
-  <string name="Pruning_deleted_activities_from_database">从数据库中清理已经删除的活动</string>
-  <string name="Prune">永久删除</string>
   <string name="Heartrate_zones_distribution">心率区间分布</string>
   <string name="Battery_level">电池剩余电量</string>
   <string name="Activity_ready">活动准备好了</string>

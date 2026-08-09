@@ -244,8 +244,6 @@
   <string name="Manual_activity_title">Ajouter une entrée manuelle</string>
   <string name="Add_manual_entry">Ajouter une entrée manuelle</string>
   <string name="Add_workout_notes">Ajouter des notes à l\'entraînement</string>
-  <string name="Pruning_deleted_activities_from_database">Nettoyer les séances supprimées</string>
-  <string name="Prune">Nettoyer</string>
   <string name="Heartrate_zones_distribution">Distribution des zones de fréq. cardiaque</string>
   <string name="Battery_level">Niveau de batterie</string>
   <string name="Activity_ready">Séance prête</string>

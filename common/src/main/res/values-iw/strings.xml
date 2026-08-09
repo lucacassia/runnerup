@@ -243,8 +243,6 @@
   <string name="Manual_activity_title">הזנת ערך ידני</string>
   <string name="Add_manual_entry">הזנת ערך ידני</string>
   <string name="Add_workout_notes">הזנת הערות אימון</string>
-  <string name="Pruning_deleted_activities_from_database">ניקוי פעילויות שנמחקו</string>
-  <string name="Prune">מחיקה לצמיתות</string>
   <string name="Heartrate_zones_distribution">התפלגות אזור הדופק</string>
   <string name="Battery_level">רמת הסוללה</string>
   <string name="Activity_ready">פעילות מוכנה</string>

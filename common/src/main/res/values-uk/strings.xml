@@ -240,8 +240,6 @@
   <string name="Manual_activity_title">Додати активність вручну</string>
   <string name="Add_manual_entry">Додати активність вручну</string>
   <string name="Add_workout_notes">Додати примітки про тренування</string>
-  <string name="Pruning_deleted_activities_from_database">Очистити базу від видалених активностей</string>
-  <string name="Prune">Видалити назавжди</string>
   <string name="Heartrate_zones_distribution">Розподіл пульсових зон</string>
   <string name="Battery_level">Рівень батареї</string>
   <string name="Activity_ready">Активність готова</string>

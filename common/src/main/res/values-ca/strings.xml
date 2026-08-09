@@ -240,8 +240,6 @@
   <string name="Manual_activity_title">Entrada manual</string>
   <string name="Add_manual_entry">Entrada manual</string>
   <string name="Add_workout_notes">Afegiu notes d\'entrenament</string>
-  <string name="Pruning_deleted_activities_from_database">Elimineu definitivament les activitats suprimides</string>
-  <string name="Prune">Elimina definitivament</string>
   <string name="Heartrate_zones_distribution">Distribució de zones de freqüència cardíaca</string>
   <string name="Battery_level">Nivell de la bateria</string>
   <string name="Activity_ready">Activitat a punt</string>

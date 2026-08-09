@@ -207,8 +207,6 @@
   <string name="Manual_activity_title">Добавить ручной ввод</string>
   <string name="Add_manual_entry">Добавить ручной ввод</string>
   <string name="Add_workout_notes">Добавить примечание</string>
-  <string name="Pruning_deleted_activities_from_database">Очистить удаленные действия</string>
-  <string name="Prune">Удалить навсегда</string>
   <string name="Heartrate_zones_distribution">Распределение тренировки по зонам ЧСС  </string>
   <string name="Battery_level">Уровень заряда</string>
   <string name="Activity_ready">Готово</string>

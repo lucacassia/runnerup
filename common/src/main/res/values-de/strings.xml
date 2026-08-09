@@ -243,8 +243,6 @@
   <string name="Manual_activity_title">Manuelles Training</string>
   <string name="Add_manual_entry">Manuelles Training hinzufügen</string>
   <string name="Add_workout_notes">Notizen zur Trainingseinheit hinzufügen</string>
-  <string name="Pruning_deleted_activities_from_database">Bereinige gelöschte Aktivitäten aus der Datenbank</string>
-  <string name="Prune">Endgültig Löschen</string>
   <string name="Heartrate_zones_distribution">HR-Zonenverteilung</string>
   <string name="Battery_level">Batteriespannung</string>
   <string name="Activity_ready">Aktivität fertig</string>
