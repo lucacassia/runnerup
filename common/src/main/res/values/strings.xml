@@ -89,6 +89,7 @@
     <string name="Start_tracker">Start tracker</string>
     <string name="Duration">Duration</string>
     <string name="Cancel">Cancel</string>
+    <string name="Close">Close</string>
     <string name="value">value</string>
     <string name="Select_all">Select all</string>
     <string name="Clear_all">Clear all</string>

@@ -13,7 +13,7 @@
   ~
   ~  You should have received a copy of the GNU General Public License
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
--->
+  -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/manage_workouts_view"
@@ -32,69 +32,95 @@
         android:id="@+id/workout_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/manage_button_table"
+        android:layout_above="@id/manage_workout_actions"
         android:layout_alignParentStart="true"
         android:layout_below="@id/actionbar"
         android:layout_alignParentEnd="true" />
 
-    <TableLayout
-        android:id="@+id/manage_button_table"
+    <LinearLayout
+        android:id="@+id/manage_workout_actions"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true">
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical">
 
-        <TableRow
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/workout_action_bar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="?attr/colorSurfaceContainer"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/share_workout_button"
-                style="@style/ButtonText"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                app:backgroundTint="?attr/colorPrimary"
-                android:text="@string/Share"
-                android:textSize="16sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="8dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="8dp">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/edit_workout_button"
-                style="@style/ButtonText"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                app:backgroundTint="?attr/colorPrimary"
-                android:text="@string/Edit"
-                android:textSize="16sp" />
-        </TableRow>
+                <ImageButton
+                    android:id="@+id/close_selection_button"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="@string/Close"
+                    android:src="@drawable/ic_close"
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
-        <TableRow
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+                <TextView
+                    android:id="@+id/selected_workout_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/create_workout_button"
-                style="@style/ButtonText"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                app:backgroundTint="?attr/colorPrimary"
-                android:clickable="false"
-                android:text="@string/Create"
-                android:textSize="16sp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/edit_workout_button"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/Edit" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/delete_workout_button"
-                style="@style/ButtonText"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                app:backgroundTint="?attr/colorError"
-                android:text="@string/Delete"
-                android:textSize="16sp" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/share_workout_button"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/Share" />
 
-        </TableRow>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/delete_workout_button"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/Delete"
+                    android:textColor="?attr/colorError" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-    </TableLayout>
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/create_workout_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_margin="16dp"
+            android:contentDescription="@string/Create_new_workout"
+            app:backgroundTint="?attr/colorPrimaryContainer"
+            app:fabSize="normal"
+            app:srcCompat="@drawable/ic_add_white_24dp"
+            app:tint="?attr/colorOnPrimaryContainer" />
+    </LinearLayout>
 
 </RelativeLayout>
