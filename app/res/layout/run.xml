@@ -338,6 +338,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:clipToPadding="false"
         android:gravity="center"
         android:orientation="horizontal"
         android:paddingStart="16dp"
