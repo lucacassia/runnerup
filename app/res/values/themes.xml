@@ -20,38 +20,39 @@
     <style name="AppTheme" parent="Theme.Material3.DayNight">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay.Material3</item>
 
-        <item name="colorPrimary">#00639B</item>
+        <item name="colorPrimary">#3B7DD8</item>
         <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorPrimaryContainer">#D4E3FF</item>
-        <item name="colorOnPrimaryContainer">#001D36</item>
-        <item name="colorPrimaryInverse">#AFD0FF</item>
-        <item name="colorSecondary">#535F70</item>
+        <item name="colorPrimaryContainer">#F5F5F5</item>
+        <item name="colorOnPrimaryContainer">#1A1A1A</item>
+        <item name="colorPrimaryInverse">#FAB283</item>
+        <item name="colorSecondary">#7B5BB6</item>
         <item name="colorOnSecondary">#FFFFFF</item>
-        <item name="colorSecondaryContainer">#D6E3F7</item>
-        <item name="colorOnSecondaryContainer">#101C2B</item>
-        <item name="colorTertiary">#6A5779</item>
-        <item name="colorOnTertiary">#FFFFFF</item>
-        <item name="colorTertiaryContainer">#F0DAFF</item>
-        <item name="colorOnTertiaryContainer">#241532</item>
-        <item name="colorError">#BA1A1A</item>
+        <item name="colorSecondaryContainer">#F5F5F5</item>
+        <item name="colorOnSecondaryContainer">#1A1A1A</item>
+        <item name="colorTertiary">#D68C27</item>
+        <item name="colorOnTertiary">#1A1A1A</item>
+        <item name="colorTertiaryContainer">#F5F5F5</item>
+        <item name="colorOnTertiaryContainer">#1A1A1A</item>
+        <item name="colorError">#D1383D</item>
         <item name="colorOnError">#FFFFFF</item>
-        <item name="colorErrorContainer">#FFDAD6</item>
-        <item name="colorOnErrorContainer">#410002</item>
-        <item name="colorSurface">#F9F9FF</item>
-        <item name="colorOnSurface">#191C20</item>
-        <item name="colorSurfaceVariant">#E1E2EC</item>
-        <item name="colorOnSurfaceVariant">#44474F</item>
+        <item name="colorErrorContainer">#EBEBEB</item>
+        <item name="colorOnErrorContainer">#1A1A1A</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="android:colorBackground">?attr/colorSurface</item>
+        <item name="colorOnSurface">#1A1A1A</item>
+        <item name="colorSurfaceVariant">#FAFAFA</item>
+        <item name="colorOnSurfaceVariant">#595959</item>
         <item name="colorSurfaceContainerLowest">#FFFFFF</item>
-        <item name="colorSurfaceContainerLow">#F3F3FA</item>
-        <item name="colorSurfaceContainer">#EDEDF4</item>
-        <item name="colorSurfaceContainerHigh">#E8E8EF</item>
-        <item name="colorSurfaceContainerHighest">#E2E2E9</item>
-        <item name="colorSurfaceBright">#F9F9FF</item>
-        <item name="colorSurfaceDim">#DADAE0</item>
-        <item name="colorOutline">#75777F</item>
-        <item name="colorOutlineVariant">#C5C6D0</item>
-        <item name="colorSurfaceInverse">#2E3135</item>
-        <item name="colorOnSurfaceInverse">#F0F0F7</item>
+        <item name="colorSurfaceContainerLow">#FAFAFA</item>
+        <item name="colorSurfaceContainer">#F5F5F5</item>
+        <item name="colorSurfaceContainerHigh">#EBEBEB</item>
+        <item name="colorSurfaceContainerHighest">#E1E1E1</item>
+        <item name="colorSurfaceBright">#FFFFFF</item>
+        <item name="colorSurfaceDim">#EBEBEB</item>
+        <item name="colorOutline">#B8B8B8</item>
+        <item name="colorOutlineVariant">#D4D4D4</item>
+        <item name="colorSurfaceInverse">#0A0A0A</item>
+        <item name="colorOnSurfaceInverse">#EEEEEE</item>
     </style>
 
     <style name="AppTheme.NoActionBar" parent="@style/AppTheme">
