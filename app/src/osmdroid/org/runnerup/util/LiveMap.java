@@ -9,6 +9,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import androidx.appcompat.content.res.AppCompatResources;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ public class LiveMap {
   private boolean following = true;
   private boolean backfilled = false;
   private boolean suppressScroll = false;
+  private boolean pinching = false;
   private boolean overlaysAdded = false;
   private double lastLat = Double.NaN;
   private double lastLng = Double.NaN;
@@ -76,11 +78,20 @@ public class LiveMap {
     mapView.setTileSource(TileSourceFactory.MAPNIK);
     mapView.getZoomController().setVisibility(CustomZoomButtonsController.Visibility.NEVER);
     mapView.setMultiTouchControls(true);
+    mapView.setOnTouchListener(
+        (v, event) -> {
+          int action = event.getActionMasked();
+          pinching =
+              action != MotionEvent.ACTION_UP
+                  && action != MotionEvent.ACTION_CANCEL
+                  && event.getPointerCount() >= 2;
+          return false;
+        });
     mapView.addMapListener(
         new MapListener() {
           @Override
           public boolean onScroll(ScrollEvent event) {
-            if (!suppressScroll) {
+            if (!suppressScroll && !pinching) {
               stopFollowing();
             }
             return false;
@@ -103,14 +114,25 @@ public class LiveMap {
           final RouteData route = loadRoute(mDB, activityId);
           mapView.post(
               () -> {
-                points.addAll(route.points);
+                boolean hadLivePoints = !points.isEmpty();
+                if (hadLivePoints) {
+                  points.addAll(0, route.points);
+                } else {
+                  points.addAll(route.points);
+                }
                 ensureOverlaysAdded();
                 for (Marker marker : route.markers) {
                   mapView.getOverlays().add(marker);
                 }
+                if (hadLivePoints) {
+                  mapView.getOverlays().remove(currentMarker);
+                  mapView.getOverlays().add(currentMarker);
+                }
                 track.setPoints(points);
                 edge.setPoints(points);
-                mapView.getController().setZoom(15.);
+                if (!hadLivePoints) {
+                  mapView.getController().setZoom(15.);
+                }
                 if (!points.isEmpty()) {
                   ensureCurrentMarker();
                   GeoPoint last = points.get(points.size() - 1);
