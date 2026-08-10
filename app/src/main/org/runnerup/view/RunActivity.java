@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Typeface;
@@ -35,16 +36,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -60,14 +60,12 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.common.tracker.TrackerState;
 import org.runnerup.tracker.Tracker;
@@ -85,18 +83,13 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Tracker mTracker = null;
   private final Handler handler = new Handler();
 
-  private final ActivityResultLauncher<Intent> resumeLauncher =
+  private final ActivityResultLauncher<Intent> saveLauncher =
       registerForActivityResult(
           new ActivityResultContracts.StartActivityForResult(),
-          result -> onWorkoutResult(result.getResultCode(), result.getData(), true));
+          result -> onWorkoutResult(result.getResultCode(), result.getData()));
 
-  private final ActivityResultLauncher<Intent> pausedLauncher =
-      registerForActivityResult(
-          new ActivityResultContracts.StartActivityForResult(),
-          result -> onWorkoutResult(result.getResultCode(), result.getData(), false));
-
-  private FloatingActionButton pauseButton = null;
-  private FloatingActionButton newLapButton = null;
+  private ExtendedFloatingActionButton pauseButton = null;
+  private ExtendedFloatingActionButton nextLapButton = null;
   private TextView activityTime = null;
   private TextView activityDistance = null;
   private TextView activityPace = null;
@@ -109,9 +102,38 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Formatter formatter = null;
   private TextView currentHr;
   private TextView hrDebug;
-  // A circular buffer for tap events
-  private final long[] mTapArray = {0, 0, 0, 0};
-  private int mTapIndex = 0;
+
+  static final class ButtonState {
+    final int leftText;
+    final int leftIcon;
+    final int rightText;
+    final int rightIcon;
+    final boolean rightIsError;
+
+    ButtonState(int leftText, int leftIcon, int rightText, int rightIcon, boolean rightIsError) {
+      this.leftText = leftText;
+      this.leftIcon = leftIcon;
+      this.rightText = rightText;
+      this.rightIcon = rightIcon;
+      this.rightIsError = rightIsError;
+    }
+  }
+
+  static ButtonState buttonState(boolean paused) {
+    return paused
+        ? new ButtonState(
+            org.runnerup.common.R.string.Resume,
+            R.drawable.ic_play_arrow,
+            org.runnerup.common.R.string.Stop,
+            R.drawable.ic_stop,
+            /* rightIsError= */ true)
+        : new ButtonState(
+            org.runnerup.common.R.string.Pause,
+            R.drawable.ic_pause,
+            org.runnerup.common.R.string.NextLap,
+            R.drawable.ic_skip_next,
+            /* rightIsError= */ false);
+  }
 
   class WorkoutRow {
     org.runnerup.workout.Step step = null;
@@ -145,11 +167,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         });
     formatter = new Formatter(this);
 
-    final FloatingActionButton stopButton = findViewById(R.id.stop_button);
-    stopButton.setOnClickListener(stopButtonClick);
     pauseButton = findViewById(R.id.pause_button);
     pauseButton.setOnClickListener(pauseButtonClick);
-    newLapButton = findViewById(R.id.new_lap_button);
+    nextLapButton = findViewById(R.id.next_lap_button);
     activityTime = findViewById(R.id.run_activity_time);
     activityDistance = findViewById(R.id.run_activity_distance);
     activityPace = findViewById(R.id.run_activity_pace);
@@ -167,7 +187,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
     final Resources res = this.getResources();
     final KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-    final boolean active = prefs.getBoolean(res.getString(R.string.pref_lock_run), false);
     final boolean showOnLockScreen =
         prefs.getBoolean(res.getString(R.string.pref_show_on_lock_screen), true);
     final boolean keepScreenOn =
@@ -177,33 +196,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       hrDebug = null;
     }
 
-    View t = findViewById(R.id.table_layout1);
-    t.setOnTouchListener(
-        (v, event) -> {
-          // Detect tapping on the header
-          int action = event.getAction();
-          if (active && action == MotionEvent.ACTION_DOWN) {
-            final int maxTapTime = 1000;
-            long time = event.getEventTime();
-            if (mTapArray[mTapIndex] != 0 && time - mTapArray[mTapIndex] < maxTapTime) {
-              boolean enabled = !pauseButton.isEnabled();
-              pauseButton.setEnabled(enabled);
-              stopButton.setEnabled(enabled);
-              Arrays.fill(mTapArray, 0);
-            } else {
-              if (mTapIndex == 0) {
-                Toast.makeText(
-                        getApplicationContext(),
-                        res.getString(org.runnerup.common.R.string.Lock_activity_buttons_message),
-                        Toast.LENGTH_SHORT)
-                    .show();
-              }
-              mTapArray[mTapIndex] = time;
-              mTapIndex = (mTapIndex + 1) % mTapArray.length;
-            }
-          }
-          return false;
-        });
     bindGpsTracker();
 
     getOnBackPressedDispatcher()
@@ -279,7 +271,8 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     startTimer();
 
     populateWorkoutList();
-    newLapButton.setOnClickListener(newLapButtonClick);
+    nextLapButton.setOnClickListener(nextLapButtonClick);
+    updateButtons();
     mTracker.displayNotificationState();
   }
 
@@ -333,7 +326,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
   }
 
-  private void onWorkoutResult(int resultCode, Intent data, boolean wasRunning) {
+  private void onWorkoutResult(int resultCode, Intent data) {
     if (workout == null) {
       // "should not happen"
       finish();
@@ -353,24 +346,16 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       }
       mTracker = null;
       finish();
-    } else if (resultCode == AppCompatActivity.RESULT_CANCELED) {
+    } else {
       /*
        * they discarded
        */
       workout.onComplete(Scope.ACTIVITY, workout);
-      mTracker.completeActivity(/* save= */ false, /* manualDistance= */ null);
+      if (mTracker != null) {
+        mTracker.completeActivity(/* save= */ false, /* manualDistance= */ null);
+      }
       mTracker = null;
       finish();
-    } else if (resultCode == AppCompatActivity.RESULT_FIRST_USER) {
-      startTimer();
-      if (wasRunning) {
-        workout.onResume(workout);
-        // else: we were paused before stopButtonClick...don't resume
-      }
-    } else {
-      if (BuildConfig.DEBUG) {
-        throw new AssertionError();
-      }
     }
   }
 
@@ -380,14 +365,30 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
   }
 
-  private void setPauseButtonEnabled(boolean enabled) {
-    if (pauseButton == null) {
+  private ColorStateList themeColor(int attr) {
+    TypedValue tv = new TypedValue();
+    getTheme().resolveAttribute(attr, tv, true);
+    return ColorStateList.valueOf(tv.data);
+  }
+
+  private Boolean buttonsPaused = null;
+
+  private void updateButtons() {
+    boolean paused = workout.isPaused();
+    if (buttonsPaused != null && buttonsPaused == paused) {
       return;
     }
-    pauseButton.setImageResource(enabled ? R.drawable.ic_pause : R.drawable.ic_play_arrow);
-    pauseButton.setContentDescription(
-        getString(
-            enabled ? org.runnerup.common.R.string.Pause : org.runnerup.common.R.string.Resume));
+    buttonsPaused = paused;
+    ButtonState s = buttonState(paused);
+    pauseButton.setIconResource(s.leftIcon);
+    pauseButton.setText(s.leftText);
+    nextLapButton.setIconResource(s.rightIcon);
+    nextLapButton.setText(s.rightText);
+    ColorStateList tint =
+        themeColor(s.rightIsError ? android.R.attr.colorError : android.R.attr.colorPrimary);
+    nextLapButton.setBackgroundTintList(tint);
+    nextLapButton.setIconTint(tint);
+    nextLapButton.setTextColor(tint);
   }
 
   private void togglePause() {
@@ -401,7 +402,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     } else {
       workout.onPause(workout);
     }
-    setPauseButtonEnabled(!workout.isPaused());
+    updateButtons();
   }
 
   private void doStop() {
@@ -416,17 +417,19 @@ public class RunActivity extends AppCompatActivity implements TickListener {
        */
       intent.putExtra("mode", "save");
       intent.putExtra("ID", mTracker.getActivityId());
-      if (workout.isPaused()) {
-        pausedLauncher.launch(intent);
-      } else {
-        resumeLauncher.launch(intent);
-      }
+      saveLauncher.launch(intent);
     }
   }
 
-  private final OnClickListener newLapButtonClick = v -> newLap();
   private final OnClickListener pauseButtonClick = v -> togglePause();
-  private final OnClickListener stopButtonClick = v -> doStop();
+  private final OnClickListener nextLapButtonClick =
+      v -> {
+        if (workout != null && workout.isPaused()) {
+          doStop();
+        } else {
+          newLap();
+        }
+      };
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -487,7 +490,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         return;
       }
 
-      setPauseButtonEnabled(!workout.isPaused());
+      updateButtons();
       double ad = workout.getDistance(Scope.ACTIVITY);
       double at = workout.getTime(Scope.ACTIVITY);
       double ap = workout.getSpeed(Scope.ACTIVITY);
