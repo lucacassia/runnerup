@@ -262,26 +262,56 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/workout_list"
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/run_tab_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/run_table_row1"
+        android:layout_below="@id/table_layout1"
+        app:tabMode="fixed" />
+
+    <RelativeLayout
+        android:id="@+id/run_tab_content"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_above="@id/run_table_row1"
-        android:layout_below="@id/table_layout1"
-        android:clipToPadding="false"
-        android:paddingStart="16dp"
-        android:paddingTop="4dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="8dp" />
+        android:layout_below="@id/run_tab_layout">
 
-    <TextView
-        android:id="@+id/hr_debug"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_alignTop="@id/workout_list"
-        android:layout_alignBottom="@id/workout_list"
-        android:scrollbars="vertical"
-        android:visibility="gone" />
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/workout_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="16dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp" />
+
+        <org.runnerup.util.MapViewWrapper
+            android:id="@+id/run_mapview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/hr_debug"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scrollbars="vertical"
+            android:visibility="gone" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/recenter_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="@string/Recenter"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_recenter"
+            app:tint="?attr/colorOnPrimaryContainer" />
+    </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/run_table_row1"
