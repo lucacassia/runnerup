@@ -117,7 +117,6 @@ In `app/res/layout/run.xml`, replace the whole `workout_list` `RecyclerView` blo
         android:id="@+id/run_tab_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/run_table_row1"
         android:layout_below="@id/table_layout1"
         app:tabMode="fixed" />
 
@@ -166,6 +165,8 @@ In `app/res/layout/run.xml`, replace the whole `workout_list` `RecyclerView` blo
 ```
 
 Keep the rest of the file unchanged (stats card `table_layout1` above, buttons `run_table_row1` below).
+
+> NOTE (post-review fix, Task 7 smoke test): the TabLayout must NOT have `layout_above` set. In a `RelativeLayout`, a child with BOTH `layout_above` and `layout_below` is measured EXACTLY to fill the whole anchored span (its `layout_height` is ignored), so the tab bar stretched over the full screen and `run_tab_content` collapsed to 0. With only `layout_below`, the strip keeps its natural height and `run_tab_content` fills the space below it.
 
 - [ ] **Step 2: Verify osmdroid build**
 

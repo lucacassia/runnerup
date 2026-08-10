@@ -266,7 +266,6 @@
         android:id="@+id/run_tab_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@id/run_table_row1"
         android:layout_below="@id/table_layout1"
         app:tabMode="fixed" />
 
