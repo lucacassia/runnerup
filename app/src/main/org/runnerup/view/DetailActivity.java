@@ -60,7 +60,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -109,9 +109,8 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   private boolean edit = false;
   private boolean uploading = false;
 
-  private FloatingActionButton saveButton = null;
+  private ExtendedFloatingActionButton saveButton = null;
   private Button uploadButton = null;
-  private FloatingActionButton resumeButton = null;
   private TextView activityTime = null;
   private TextView activityPace = null;
   private View activityPaceSeparator = null;
@@ -185,8 +184,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     }
 
     saveButton = findViewById(R.id.save_button);
-    FloatingActionButton discardButton = findViewById(R.id.discard_button);
-    resumeButton = findViewById(R.id.resume_button);
+    ExtendedFloatingActionButton discardButton = findViewById(R.id.discard_button);
     uploadButton = findViewById(R.id.upload_button);
     activityTime = findViewById(R.id.activity_time);
     activityDistance = findViewById(R.id.activity_distance);
@@ -300,7 +298,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
                   return;
                 }
                 if (mode == MODE_SAVE) {
-                  resumeButtonClick.onClick(resumeButton);
+                  return;
                 } else {
                   finish();
                 }
@@ -345,11 +343,9 @@ public class DetailActivity extends AppCompatActivity implements Constants {
             this, graphTabLayout, hrzonesBarLayout, formatter, mDB, mID, use_distance_as_x);
 
     if (this.mode == MODE_SAVE) {
-      resumeButton.setOnClickListener(resumeButtonClick);
       discardButton.setOnClickListener(discardButtonClick);
       setEdit(true);
     } else if (this.mode == MODE_DETAILS) {
-      resumeButton.setVisibility(View.GONE);
       discardButton.setVisibility(View.GONE);
       setEdit(false);
     }
@@ -978,12 +974,6 @@ public class DetailActivity extends AppCompatActivity implements Constants {
                   // Do nothing but close the dialog
                   (dialog, which) -> dialog.dismiss())
               .show();
-
-  private final OnClickListener resumeButtonClick =
-      v -> {
-        DetailActivity.this.setResult(RESULT_FIRST_USER);
-        DetailActivity.this.finish();
-      };
 
   private final OnClickListener uploadButtonClick =
       v -> {
