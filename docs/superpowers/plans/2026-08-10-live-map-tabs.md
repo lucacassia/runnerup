@@ -906,7 +906,7 @@ Committed: `c2816d2b` (round 1), reworked via plan amendment `20390fc4` and re-c
 - Consumes: `LiveMap(MapViewWrapper, View)`, `onCreate(Bundle)`, `onFirstShow(SQLiteDatabase, long)`, `onLocationChanged(Location)`, `onResume()`, `onPause()`, `onDestroy()`; `MapViewWrapper`; `MapWrapper.start(Context)`; `DBHelper.getReadableDatabase(Context)`; `@id/run_tab_layout`, `@id/run_mapview`, `@id/recenter_button`; `org.runnerup.common.R.string.Workout` / `Map`.
 - Produces: tabs (Workout always; Map only when maps enabled), content visibility toggling, one-time backfill on first Map selection.
 
-- [ ] **Step 1: Add imports**
+- [x] **Step 1: Add imports**
 
 Add to the existing import groups (keep googleJavaFormat alphabetical order within each group):
 
@@ -924,7 +924,7 @@ import org.runnerup.util.MapWrapper;
 ```
 in the `org.runnerup.*` group (`BuildConfig` before `R`; `DBHelper` after `org.runnerup.R`; `LiveMap` between `Formatter` and `TickListener`; `MapViewWrapper` and `MapWrapper` after `LiveMap`, before `ViewUtil`).
 
-- [ ] **Step 2: Add fields**
+- [x] **Step 2: Add fields**
 
 After `private TextView hrDebug;` add:
 
@@ -937,7 +937,7 @@ After `private TextView hrDebug;` add:
 
 `mapTabActive` gates live location feeding: points are appended to the map ONLY while the Map tab is selected, so the one-time DB backfill in `onFirstShow` (which covers everything recorded before the tab was opened) never duplicates points already appended live.
 
-- [ ] **Step 3: Call `MapWrapper.start` before `setContentView`**
+- [x] **Step 3: Call `MapWrapper.start` before `setContentView`**
 
 In `onCreate`, change:
 
@@ -966,7 +966,7 @@ to:
     setContentView(R.layout.run);
 ```
 
-- [ ] **Step 4: Set up tabs and LiveMap in `onCreate`**
+- [x] **Step 4: Set up tabs and LiveMap in `onCreate`**
 
 After `workoutList.setAdapter(adapter);` add:
 
@@ -992,7 +992,7 @@ After `workoutList.setAdapter(adapter);` add:
     runMapview.setVisibility(View.GONE);
 ```
 
-- [ ] **Step 5: Add the tab listener and selection handler**
+- [x] **Step 5: Add the tab listener and selection handler**
 
 Add these members (near the `onRunTabSelectedListener`-style code; place after `onCreate` or among the click handlers):
 
@@ -1022,7 +1022,7 @@ Add these members (near the `onRunTabSelectedListener`-style code; place after `
   }
 ```
 
-- [ ] **Step 6: Feed locations in `onTick`**
+- [x] **Step 6: Feed locations in `onTick`**
 
 Change the `if (mTracker != null)` block in `onTick`:
 
@@ -1038,7 +1038,7 @@ Change the `if (mTracker != null)` block in `onTick`:
       }
 ```
 
-- [ ] **Step 7: Forward lifecycle methods**
+- [x] **Step 7: Forward lifecycle methods**
 
 In `onPause()`:
 
@@ -1068,7 +1068,7 @@ In `onDestroy()`, after `stopTimer();` add:
     }
 ```
 
-- [ ] **Step 8: Verify osmdroid and nomap builds**
+- [x] **Step 8: Verify osmdroid and nomap builds**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD SUCCESSFUL (compiles osmdroid `LiveMap`).
@@ -1076,7 +1076,7 @@ Expected: BUILD SUCCESSFUL (compiles osmdroid `LiveMap`).
 Run: `./gradlew :app:assembleLatestDebug -Porg.runnerup.nomap`
 Expected: BUILD SUCCESSFUL (compiles nomap `LiveMap` stub; RunActivity references only the shared API).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add app/src/main/org/runnerup/view/RunActivity.java
