@@ -252,37 +252,29 @@
             android:paddingEnd="16dp"
             android:paddingBottom="16dp">
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/resume_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="24dp"
-                android:contentDescription="@string/Resume"
-                runnerup:backgroundTint="?attr/colorPrimary"
-                runnerup:fabSize="normal"
-                runnerup:srcCompat="@drawable/ic_play_arrow"
-                runnerup:tint="?attr/colorOnPrimary" />
-
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/save_button"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="24dp"
-                android:contentDescription="@string/Save"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="@string/Save"
                 runnerup:backgroundTint="?attr/colorPrimary"
-                runnerup:fabSize="normal"
-                runnerup:srcCompat="@drawable/ic_check"
-                runnerup:tint="?attr/colorOnPrimary" />
+                runnerup:icon="@drawable/ic_check"
+                runnerup:iconTint="?attr/colorOnPrimary"
+                runnerup:textColor="?attr/colorOnPrimary" />
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
+            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/discard_button"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:contentDescription="@string/Discard"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="@string/Discard"
                 runnerup:backgroundTint="?attr/colorError"
-                runnerup:fabSize="normal"
-                runnerup:srcCompat="@drawable/ic_delete"
-                runnerup:tint="?attr/colorOnError" />
+                runnerup:icon="@drawable/ic_delete"
+                runnerup:iconTint="?attr/colorOnError"
+                runnerup:textColor="?attr/colorOnError" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
