@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - No new dependencies. Reuse the osmdroid/mapbox libs already wired in the build.
-- `RunActivity` (main source set) may only call `LiveMap` methods that exist in ALL three variants: `LiveMap(MapViewWrapper, View)`, `onCreate(Bundle)`, `onFirstShow(SQLiteDatabase, long)`, `onLocationChanged(Location)`, `onResume()`, `onPause()`, `onDestroy()`.
+- `RunActivity` (main source set) may only call `LiveMap` methods that exist in ALL three variants: `LiveMap(MapViewWrapper, View)`, `onCreate(Bundle)`, `onFirstShow(SQLiteDatabase, long)`, `onLocationChanged(Location)`, `onResume()`, `onPause()`, `onDestroy()`, `onMapVisibilityChanged(boolean)`.
 - Map tab is added only when `BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED` (same gate as `DetailActivity`).
 - The nomap build (`./gradlew :app:assembleLatestDebug -Porg.runnerup.nomap`) must compile and the layout must inflate.
 - No comments added to code unless asked. Google Java Format (spotless) enforced.
@@ -155,8 +155,9 @@ In `app/res/layout/run.xml`, replace the whole `workout_list` `RecyclerView` blo
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
+            android:layout_alignParentEnd="true"
             android:layout_marginBottom="16dp"
+            android:layout_marginEnd="16dp"
             android:contentDescription="@string/Recenter"
             android:visibility="gone"
             app:srcCompat="@drawable/ic_recenter"
@@ -220,6 +221,8 @@ public class LiveMap {
   public void onPause() {}
 
   public void onDestroy() {}
+
+  public void onMapVisibilityChanged(boolean visible) {}
 }
 ```
 
@@ -435,6 +438,10 @@ public class LiveMap {
 
   public void onDestroy() {
     executor.shutdown();
+  }
+
+  public void onMapVisibilityChanged(boolean visible) {
+    recenterButton.setVisibility(visible && !following ? View.VISIBLE : View.GONE);
   }
 
   private RouteData loadRoute(SQLiteDatabase mDB, long activityId) {
@@ -774,6 +781,10 @@ public class LiveMap {
     executor.shutdown();
   }
 
+  public void onMapVisibilityChanged(boolean visible) {
+    recenterButton.setVisibility(visible && !following ? View.VISIBLE : View.GONE);
+  }
+
   private void redrawTrack() {
     if (polylineAnnotationManager == null || points.size() < 2) {
       return;
@@ -904,7 +915,7 @@ Committed: `c2816d2b` (round 1), reworked via plan amendment `20390fc4` and re-c
 - Modify: `app/src/main/org/runnerup/view/RunActivity.java`
 
 **Interfaces:**
-- Consumes: `LiveMap(MapViewWrapper, View)`, `onCreate(Bundle)`, `onFirstShow(SQLiteDatabase, long)`, `onLocationChanged(Location)`, `onResume()`, `onPause()`, `onDestroy()`; `MapViewWrapper`; `MapWrapper.start(Context)`; `DBHelper.getReadableDatabase(Context)`; `@id/run_tab_layout`, `@id/run_mapview`, `@id/recenter_button`; `org.runnerup.common.R.string.Workout` / `Map`.
+- Consumes: `LiveMap(MapViewWrapper, View)`, `onCreate(Bundle)`, `onFirstShow(SQLiteDatabase, long)`, `onLocationChanged(Location)`, `onResume()`, `onPause()`, `onDestroy()`, `onMapVisibilityChanged(boolean)`; `MapViewWrapper`; `MapWrapper.start(Context)`; `DBHelper.getReadableDatabase(Context)`; `@id/run_tab_layout`, `@id/run_mapview`, `@id/recenter_button`; `org.runnerup.common.R.string.Workout` / `Map`.
 - Produces: tabs (Workout always; Map only when maps enabled), content visibility toggling, one-time backfill on first Map selection.
 
 - [x] **Step 1: Add imports**
@@ -1016,6 +1027,9 @@ Add these members (near the `onRunTabSelectedListener`-style code; place after `
     mapTabActive = "map".contentEquals(tag);
     workoutList.setVisibility(mapTabActive ? View.GONE : View.VISIBLE);
     runMapview.setVisibility(mapTabActive ? View.VISIBLE : View.GONE);
+    if (liveMap != null) {
+      liveMap.onMapVisibilityChanged(mapTabActive);
+    }
     if (mapTabActive && liveMap != null) {
       liveMap.onFirstShow(
           DBHelper.getReadableDatabase(this), mTracker != null ? mTracker.getActivityId() : -1);
@@ -1083,6 +1097,19 @@ Expected: BUILD SUCCESSFUL (compiles nomap `LiveMap` stub; RunActivity reference
 git add app/src/main/org/runnerup/view/RunActivity.java
 git commit -m "feat: wire workout/map tabs and live map into RunActivity"
 ```
+
+> **Post-completion fix (`onMapVisibilityChanged`, recenter position).** Two bugs
+> found in user testing of Task 7's output:
+> 1. The recenter FAB was drawn at bottom-**center** of the map (Task 2 spec used
+>    `layout_centerHorizontal="true"`). It is now bottom-**right**
+>    (`layout_alignParentEnd="true"` + `layout_marginEnd="16dp"`).
+> 2. After a pan the FAB stayed visible on top of the Workout tab when switching
+>    tabs, because `recenter_button` visibility was owned only by `LiveMap` while
+>    `selectRunTab` toggled just `workout_list`/`run_mapview`. Fix: `LiveMap` now
+>    exposes `onMapVisibilityChanged(boolean)` (all three variants) and
+>    `selectRunTab` calls it — the FAB is hidden whenever the Map tab is deselected
+>    and restored on re-entry (`following ? GONE : VISIBLE`), so it only ever
+>    appears on top of the map.
 
 ---
 
