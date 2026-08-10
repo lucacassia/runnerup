@@ -259,10 +259,10 @@
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
                 android:text="@string/Save"
+                android:textColor="?attr/colorOnPrimary"
                 runnerup:backgroundTint="?attr/colorPrimary"
                 runnerup:icon="@drawable/ic_check"
-                runnerup:iconTint="?attr/colorOnPrimary"
-                runnerup:textColor="?attr/colorOnPrimary" />
+                runnerup:iconTint="?attr/colorOnPrimary" />
 
             <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
                 android:id="@+id/discard_button"
@@ -271,10 +271,10 @@
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="@string/Discard"
+                android:textColor="?attr/colorOnError"
                 runnerup:backgroundTint="?attr/colorError"
                 runnerup:icon="@drawable/ic_delete"
-                runnerup:iconTint="?attr/colorOnError"
-                runnerup:textColor="?attr/colorOnError" />
+                runnerup:iconTint="?attr/colorOnError" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton

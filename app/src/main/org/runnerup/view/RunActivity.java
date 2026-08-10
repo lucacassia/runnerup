@@ -108,14 +108,17 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     final int leftIcon;
     final int rightText;
     final int rightIcon;
-    final boolean rightIsError;
+    final int rightBg;
+    final int rightFg;
 
-    ButtonState(int leftText, int leftIcon, int rightText, int rightIcon, boolean rightIsError) {
+    ButtonState(
+        int leftText, int leftIcon, int rightText, int rightIcon, int rightBg, int rightFg) {
       this.leftText = leftText;
       this.leftIcon = leftIcon;
       this.rightText = rightText;
       this.rightIcon = rightIcon;
-      this.rightIsError = rightIsError;
+      this.rightBg = rightBg;
+      this.rightFg = rightFg;
     }
   }
 
@@ -126,13 +129,15 @@ public class RunActivity extends AppCompatActivity implements TickListener {
             R.drawable.ic_play_arrow,
             org.runnerup.common.R.string.Stop,
             R.drawable.ic_stop,
-            /* rightIsError= */ true)
+            androidx.appcompat.R.attr.colorError,
+            com.google.android.material.R.attr.colorOnError)
         : new ButtonState(
             org.runnerup.common.R.string.Pause,
             R.drawable.ic_pause,
             org.runnerup.common.R.string.NextLap,
             R.drawable.ic_skip_next,
-            /* rightIsError= */ false);
+            androidx.appcompat.R.attr.colorPrimary,
+            com.google.android.material.R.attr.colorOnPrimary);
   }
 
   class WorkoutRow {
@@ -384,11 +389,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     pauseButton.setText(s.leftText);
     nextLapButton.setIconResource(s.rightIcon);
     nextLapButton.setText(s.rightText);
-    ColorStateList tint =
-        themeColor(s.rightIsError ? android.R.attr.colorError : android.R.attr.colorPrimary);
-    nextLapButton.setBackgroundTintList(tint);
-    nextLapButton.setIconTint(tint);
-    nextLapButton.setTextColor(tint);
+    nextLapButton.setBackgroundTintList(themeColor(s.rightBg));
+    nextLapButton.setIconTint(themeColor(s.rightFg));
+    nextLapButton.setTextColor(themeColor(s.rightFg));
   }
 
   private void togglePause() {

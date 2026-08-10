@@ -1,8 +1,6 @@
 package org.runnerup.view;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 import org.runnerup.R;
@@ -16,7 +14,8 @@ public class RunButtonStateTest {
     assertEquals(R.drawable.ic_pause, s.leftIcon);
     assertEquals(org.runnerup.common.R.string.NextLap, s.rightText);
     assertEquals(R.drawable.ic_skip_next, s.rightIcon);
-    assertFalse(s.rightIsError);
+    assertEquals(androidx.appcompat.R.attr.colorPrimary, s.rightBg);
+    assertEquals(com.google.android.material.R.attr.colorOnPrimary, s.rightFg);
   }
 
   @Test
@@ -26,6 +25,7 @@ public class RunButtonStateTest {
     assertEquals(R.drawable.ic_play_arrow, s.leftIcon);
     assertEquals(org.runnerup.common.R.string.Stop, s.rightText);
     assertEquals(R.drawable.ic_stop, s.rightIcon);
-    assertTrue(s.rightIsError);
+    assertEquals(androidx.appcompat.R.attr.colorError, s.rightBg);
+    assertEquals(com.google.android.material.R.attr.colorOnError, s.rightFg);
   }
 }
