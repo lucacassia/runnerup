@@ -61,16 +61,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.common.tracker.TrackerState;
+import org.runnerup.db.DBHelper;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerHRM;
 import org.runnerup.util.Formatter;
+import org.runnerup.util.LiveMap;
+import org.runnerup.util.MapViewWrapper;
+import org.runnerup.util.MapWrapper;
 import org.runnerup.util.TickListener;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.Intensity;
@@ -102,6 +108,10 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Formatter formatter = null;
   private TextView currentHr;
   private TextView hrDebug;
+  private TabLayout runTabLayout = null;
+  private MapViewWrapper runMapview = null;
+  private LiveMap liveMap = null;
+  private boolean mapTabActive = false;
 
   static final class ButtonState {
     final int leftText;
@@ -156,6 +166,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (!isLargeScreen()) {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
+    if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
+      MapWrapper.start(this);
+    }
     setContentView(R.layout.run);
     View rootView = findViewById(R.id.start_view);
     ViewCompat.setOnApplyWindowInsetsListener(
@@ -188,6 +201,22 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     workoutList.setLayoutManager(new LinearLayoutManager(this));
     WorkoutAdapter adapter = new WorkoutAdapter(workoutRows);
     workoutList.setAdapter(adapter);
+    runTabLayout = findViewById(R.id.run_tab_layout);
+    runMapview = findViewById(R.id.run_mapview);
+    runTabLayout.addTab(
+        runTabLayout
+            .newTab()
+            .setText(getString(org.runnerup.common.R.string.Workout))
+            .setTag("workout"));
+    if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
+      runTabLayout.addTab(
+          runTabLayout.newTab().setText(getString(org.runnerup.common.R.string.Map)).setTag("map"));
+      liveMap = new LiveMap(runMapview, findViewById(R.id.recenter_button));
+      liveMap.onCreate(savedInstanceState);
+    }
+    runTabLayout.addOnTabSelectedListener(onRunTabSelectedListener);
+    workoutList.setVisibility(View.VISIBLE);
+    runMapview.setVisibility(View.GONE);
 
     final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
     final Resources res = this.getResources();
@@ -241,6 +270,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   @Override
   public void onPause() {
     super.onPause();
+    if (liveMap != null) {
+      liveMap.onPause();
+    }
   }
 
   @Override
@@ -252,6 +284,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
     super.onResume();
     showOnLockScreen(showOnLockScreen);
+    if (liveMap != null) {
+      liveMap.onResume();
+    }
   }
 
   @Override
@@ -259,6 +294,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     super.onDestroy();
     unbindGpsTracker();
     stopTimer();
+    if (liveMap != null) {
+      liveMap.onDestroy();
+    }
   }
 
   private void onGpsTrackerBound() {
@@ -327,7 +365,34 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         if (l2 != null && !l2.equals(l)) {
           l = l2;
         }
+        if (liveMap != null && mapTabActive) {
+          liveMap.onLocationChanged(l2);
+        }
       }
+    }
+  }
+
+  private final TabLayout.OnTabSelectedListener onRunTabSelectedListener =
+      new TabLayout.OnTabSelectedListener() {
+        @Override
+        public void onTabSelected(TabLayout.Tab tab) {
+          selectRunTab((String) tab.getTag());
+        }
+
+        @Override
+        public void onTabUnselected(TabLayout.Tab tab) {}
+
+        @Override
+        public void onTabReselected(TabLayout.Tab tab) {}
+      };
+
+  private void selectRunTab(String tag) {
+    mapTabActive = "map".contentEquals(tag);
+    workoutList.setVisibility(mapTabActive ? View.GONE : View.VISIBLE);
+    runMapview.setVisibility(mapTabActive ? View.VISIBLE : View.GONE);
+    if (mapTabActive && liveMap != null) {
+      liveMap.onFirstShow(
+          DBHelper.getReadableDatabase(this), mTracker != null ? mTracker.getActivityId() : -1);
     }
   }
 
