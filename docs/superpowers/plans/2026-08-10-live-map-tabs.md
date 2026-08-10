@@ -567,10 +567,12 @@ import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
 import androidx.preference.PreferenceManager;
+import com.mapbox.common.Cancelable;
 import com.mapbox.geojson.Point;
+import com.mapbox.maps.CameraChangedCallback;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.MapView;
-import com.mapbox.maps.OnCameraChangeListener;
+import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor;
 import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor;
 import com.mapbox.maps.plugin.Plugin;
 import com.mapbox.maps.plugin.annotation.AnnotationConfig;
@@ -611,6 +613,7 @@ public class LiveMap {
   private double lastLat = Double.NaN;
   private double lastLng = Double.NaN;
   private double lastZoom = Double.NaN;
+  private Cancelable cameraSubscription = null;
 
   private static final class RouteData {
     final List<Point> path;
@@ -673,24 +676,22 @@ public class LiveMap {
                   false);
               styleReady = true;
             });
-    mapView
-        .getMapboxMap()
-        .addOnCameraChangeListener(
-            new OnCameraChangeListener() {
-              @Override
-              public void onCameraChanged(com.mapbox.maps.CameraChanged cameraChanged) {
-                if (Double.isNaN(lastZoom)) {
-                  lastZoom = cameraChanged.getCameraState().getZoom();
-                  return;
-                }
-                double zoom = cameraChanged.getCameraState().getZoom();
-                boolean zoomChanged = Math.abs(zoom - lastZoom) > 0.01;
-                lastZoom = zoom;
-                if (!suppressCamera && !zoomChanged) {
-                  stopFollowing();
-                }
-              }
-            });
+    cameraSubscription =
+        mapView
+            .getMapboxMap()
+            .subscribeCameraChanged(
+                cameraChanged -> {
+                  if (Double.isNaN(lastZoom)) {
+                    lastZoom = cameraChanged.getCameraState().getZoom();
+                    return;
+                  }
+                  double zoom = cameraChanged.getCameraState().getZoom();
+                  boolean zoomChanged = Math.abs(zoom - lastZoom) > 0.01;
+                  lastZoom = zoom;
+                  if (!suppressCamera && !zoomChanged) {
+                    stopFollowing();
+                  }
+                });
   }
 
   public void onFirstShow(SQLiteDatabase mDB, long activityId) {
@@ -766,6 +767,9 @@ public class LiveMap {
   public void onPause() {}
 
   public void onDestroy() {
+    if (cameraSubscription != null) {
+      cameraSubscription.cancel();
+    }
     executor.shutdown();
   }
 
@@ -779,7 +783,10 @@ public class LiveMap {
     if (trackAnnotation == null) {
       trackAnnotation = polylineAnnotationManager.create(options);
     } else {
-      polylineAnnotationManager.update(trackAnnotation, options);
+      trackAnnotation.setPoints(points);
+      trackAnnotation.setLineColorInt(android.graphics.Color.RED);
+      trackAnnotation.setLineWidth(3.0);
+      polylineAnnotationManager.update(trackAnnotation);
     }
   }
 
@@ -791,14 +798,20 @@ public class LiveMap {
         new PointAnnotationOptions()
             .withPoint(point)
             .withIconImage("current")
-            .withIconAnchor(com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor.CENTER)
+            .withIconAnchor(IconAnchor.CENTER)
             .withTextField("")
             .withTextAnchor(TextAnchor.CENTER)
             .withTextOffset(new ArrayList<>() {{ add(0.0); add(0.0); }});
     if (currentAnnotation == null) {
       currentAnnotation = pointAnnotationManager.create(options);
     } else {
-      pointAnnotationManager.update(currentAnnotation, options);
+      currentAnnotation.setPoint(point);
+      currentAnnotation.setIconImage("current");
+      currentAnnotation.setIconAnchor(IconAnchor.CENTER);
+      currentAnnotation.setTextAnchor(TextAnchor.CENTER);
+      currentAnnotation.setTextField("");
+      currentAnnotation.setTextOffset(new ArrayList<>() {{ add(0.0); add(0.0); }});
+      pointAnnotationManager.update(currentAnnotation);
     }
   }
 
@@ -812,7 +825,7 @@ public class LiveMap {
           new PointAnnotationOptions()
               .withPoint(point)
               .withIconImage(first ? "start" : "lap")
-              .withIconAnchor(com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor.CENTER)
+              .withIconAnchor(IconAnchor.CENTER)
               .withTextField("")
               .withTextAnchor(TextAnchor.CENTER)
               .withTextOffset(new ArrayList<>() {{ add(0.0); add(0.0); }});
@@ -865,6 +878,8 @@ public class LiveMap {
 Notes for the implementer:
 - The mapbox port is a faithful mirror of Task 4: same backfill (track + start/lap markers), same live behavior, same follow/recenter semantics. The marker text popups that the saved-activity mapbox `MapWrapper` shows are intentionally omitted here (the osmdroid `LiveMap` has none either).
 - This file cannot be compiled locally (mapbox SDK requires `mapbox.properties`). Treat the osmdroid variant (Task 4) as the source of truth for behavior.
+- The two mapbox API corrections in this code (verified against the mapbox-maps-android v11.17.1 sources): (1) the camera listener is `MapboxMap.subscribeCameraChanged(CameraChangedCallback)` returning `com.mapbox.common.Cancelable` — `OnCameraChangeListener` does not exist in 11.17.1, and the subscription must be cancelled in `onDestroy`; (2) `AnnotationManager` has only `update(annotation)` / `update(annotations)`, so the track and current-point annotations are updated by mutating their properties (`setPoints`, `setPoint`, `setLineColorInt`, `setIconAnchor`, …) and then calling the one-arg `update(annotation)`.
+- The Java block above must be transcribed with every line break preserved. Extract the fenced ```java``` block that follows the "Step 1: Create `LiveMap.java`" heading from this file (or from the generated task brief) programmatically — e.g. a small `python3`/`awk`/`sed` snippet that copies the block verbatim to `app/src/mapbox/org/runnerup/util/LiveMap.java` — rather than re-typing it. If any line ends up over 120 characters after `spotlessApply`, the transcription collapsed newlines and must be redone.
 
 - [ ] **Step 2: Review-only verification**
 
