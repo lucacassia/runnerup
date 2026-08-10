@@ -74,15 +74,17 @@ public class Workout implements WorkoutComponent, WorkoutInfo {
     @SuppressWarnings("UnusedReturnValue")
     boolean end() {
       --depth;
-      if (depth == 0 && Workout.this.textToSpeech != null) {
+      if (depth == 0) {
         set.clear();
-        try {
-          Workout.this.textToSpeech.emit();
-        } catch (Exception ex) {
-          // make sure that no small mistake crashes a workout...
-          Log.w(getClass().getName(), "PendingFeedback:end: " + ex);
+        if (Workout.this.textToSpeech != null) {
+          try {
+            Workout.this.textToSpeech.emit();
+          } catch (Exception ex) {
+            // make sure that no small mistake crashes a workout...
+            Log.w(getClass().getName(), "PendingFeedback:end: " + ex);
+          }
+          return true;
         }
-        return true;
       }
       return false;
     }
@@ -95,7 +97,6 @@ public class Workout implements WorkoutComponent, WorkoutInfo {
   private RUTextToSpeech textToSpeech = null;
 
   public static final String KEY_TTS = "tts";
-  public static final String KEY_COUNTER_VIEW = "CountdownView";
   public static final String KEY_FORMATTER = "Formatter";
   public static final String KEY_HRZONES = "HrZones";
   public static final String KEY_MUTE = "mute";

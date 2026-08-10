@@ -21,8 +21,12 @@ import static org.runnerup.util.Formatter.Format.TXT_SHORT;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import androidx.appcompat.content.res.AppCompatResources;
 import java.util.ArrayList;
@@ -57,6 +61,9 @@ public class MapWrapper implements Constants {
   private static final int TRACK_EDGE_COLOR = Color.parseColor("#FFB680");
   private static final float TRACK_WIDTH_PX = 10.f;
   private static final float TRACK_EDGE_WIDTH_PX = 20.f;
+  private static final float MARKER_DIAMETER_PX = 3 * TRACK_WIDTH_PX;
+  private static final float MARKER_ICON_VIEWPORT = 24f;
+  private static final float MARKER_CIRCLE_VIEWPORT = 18f;
 
   public MapWrapper(
       Context context,
@@ -172,10 +179,20 @@ public class MapWrapper implements Constants {
   private Marker newIconMarker(int drawableRes, GeoPoint point) {
     Marker marker = new Marker(mapView);
     marker.setPosition(point);
-    marker.setIcon(AppCompatResources.getDrawable(mapView.getContext(), drawableRes));
-    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+    marker.setIcon(scaleMarkerIcon(drawableRes));
+    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
     marker.setInfoWindow(null);
     return marker;
+  }
+
+  private Drawable scaleMarkerIcon(int drawableRes) {
+    Drawable icon = AppCompatResources.getDrawable(mapView.getContext(), drawableRes);
+    int size = Math.round(MARKER_DIAMETER_PX * MARKER_ICON_VIEWPORT / MARKER_CIRCLE_VIEWPORT);
+    Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+    Canvas canvas = new Canvas(bitmap);
+    icon.setBounds(0, 0, size, size);
+    icon.draw(canvas);
+    return new BitmapDrawable(mapView.getContext().getResources(), bitmap);
   }
 
   private Polyline newPolyline(int color, float width) {

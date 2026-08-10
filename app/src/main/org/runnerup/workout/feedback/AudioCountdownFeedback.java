@@ -57,7 +57,7 @@ public class AudioCountdownFeedback extends Feedback {
   public void emit(Workout w, Context ctx) {
     double remaining = w.getRemaining(scope, dimension); // SI
 
-    if (remaining > 0) {
+    if (remaining > 0 && textToSpeech != null) {
       String msg = formatter.formatRemaining(Formatter.Format.CUE_SHORT, dimension, remaining);
       textToSpeech.speak(msg, UtterancePrio.PRIO_COUNTDOWN, /* flush= */ true, null);
     }

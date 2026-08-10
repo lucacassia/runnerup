@@ -37,7 +37,6 @@ import org.runnerup.workout.Workout.StepListEntry;
 import org.runnerup.workout.feedback.AudioCountdownFeedback;
 import org.runnerup.workout.feedback.AudioFeedback;
 import org.runnerup.workout.feedback.CoachFeedback;
-import org.runnerup.workout.feedback.CountdownFeedback;
 import org.runnerup.workout.feedback.HRMStateChangeFeedback;
 
 public class WorkoutBuilder {
@@ -283,16 +282,7 @@ public class WorkoutBuilder {
       }
 
       if (step.durationType != null) {
-        // GUI countdown
-        IntervalTrigger trigger = new IntervalTrigger();
-        trigger.dimension = step.durationType;
-        trigger.first = 1;
-        trigger.interval = 1;
-        trigger.scope = Scope.STEP;
-        trigger.triggerAction.add(new CountdownFeedback(Scope.STEP, step.durationType));
-        step.triggers.add(trigger);
-
-        // Audio feedback
+        // Audio countdown cues
         createAudioCountdown(step);
       }
 

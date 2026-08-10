@@ -58,11 +58,11 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -70,7 +70,6 @@ import java.util.TimerTask;
 import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.common.tracker.TrackerState;
-import org.runnerup.common.util.Constants;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerHRM;
 import org.runnerup.util.Formatter;
@@ -104,20 +103,11 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private TextView lapTime = null;
   private TextView lapDistance = null;
   private TextView lapPace = null;
-  private TextView intervalTime = null;
-  private TextView intervalDistance = null;
-  private TextView intervalPace = null;
   private TextView currentPace = null;
-  private TextView countdownView = null;
   private RecyclerView workoutList = null;
-  private View tableRowInterval = null;
   private org.runnerup.workout.Step currentStep = null;
   private Formatter formatter = null;
-  private TextView activityHr;
-  private TextView lapHr;
-  private TextView intervalHr;
   private TextView currentHr;
-  private TextView activityHeaderHr;
   private TextView hrDebug;
   // A circular buffer for tap events
   private final long[] mTapArray = {0, 0, 0, 0};
@@ -154,32 +144,20 @@ public class RunActivity extends AppCompatActivity implements TickListener {
           }
         });
     formatter = new Formatter(this);
-    // HRZones hrZones = new HRZones(this);
-    TextView velocity = findViewById(R.id.velocity_label);
-    velocity.setText(formatter.formatVelocityLabel());
 
     final FloatingActionButton stopButton = findViewById(R.id.stop_button);
     stopButton.setOnClickListener(stopButtonClick);
     pauseButton = findViewById(R.id.pause_button);
     pauseButton.setOnClickListener(pauseButtonClick);
     newLapButton = findViewById(R.id.new_lap_button);
-    activityHeaderHr = findViewById(R.id.activity_header_hr);
     activityTime = findViewById(R.id.run_activity_time);
     activityDistance = findViewById(R.id.run_activity_distance);
     activityPace = findViewById(R.id.run_activity_pace);
-    activityHr = findViewById(R.id.activity_hr);
     lapTime = findViewById(R.id.lap_time);
     lapDistance = findViewById(R.id.lap_distance);
     lapPace = findViewById(R.id.lap_pace);
-    lapHr = findViewById(R.id.lap_hr);
-    intervalTime = findViewById(R.id.run_interval_time);
-    intervalDistance = findViewById(R.id.intervall_distance);
-    tableRowInterval = findViewById(R.id.table_row_interval);
-    intervalPace = findViewById(R.id.interval_pace);
-    intervalHr = findViewById(R.id.interval_hr);
     currentPace = findViewById(R.id.current_pace);
     currentHr = findViewById(R.id.current_hr);
-    countdownView = findViewById(R.id.countdown_text_view);
     workoutList = findViewById(R.id.workout_list);
     hrDebug = findViewById(R.id.hr_debug);
     workoutList.setLayoutManager(new LinearLayoutManager(this));
@@ -296,16 +274,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (workout == null) {
       // should not happen
       return;
-    }
-
-    {
-      /*
-       * Countdown view can't be bound until RunActivity is started
-       *   since it's not created until then
-       */
-      HashMap<String, Object> bindValues = new HashMap<>();
-      bindValues.put(Workout.KEY_COUNTER_VIEW, countdownView);
-      workout.onBind(workout, bindValues);
     }
 
     startTimer();
@@ -532,56 +500,22 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       double lt = workout.getTime(Scope.LAP);
       double lp = workout.getSpeed(Scope.LAP);
       lapTime.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(lt)));
-      lapDistance.setText(formatter.formatDistance(Formatter.Format.TXT_LONG, Math.round(ld)));
+      lapDistance.setText(formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(ld)));
       lapPace.setText(formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, lp));
-
-      if (tableRowInterval != null
-          && this.currentStep != null
-          && workout.getWorkoutType() != Constants.WORKOUT_TYPE.BASIC
-          && this.currentStep.getIntensity() == Intensity.ACTIVE) {
-        double id = workout.getDistance(Scope.STEP);
-        double it = workout.getTime(Scope.STEP);
-        double ip = workout.getSpeed(Scope.STEP);
-
-        tableRowInterval.setVisibility(View.VISIBLE);
-        intervalTime.setText(
-            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(it)));
-        intervalDistance.setText(
-            formatter.formatDistance(Formatter.Format.TXT_LONG, Math.round(id)));
-        intervalPace.setText(
-            formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, ip));
-      } else {
-        // Do not show Interval Step row if no reason
-        tableRowInterval.setVisibility(View.GONE);
-      }
 
       double cp = workout.getSpeed(Scope.CURRENT);
       currentPace.setText(formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, cp));
 
       if (mTracker.isComponentConnected(TrackerHRM.NAME)) {
-        double ahr = workout.getHeartRate(Scope.ACTIVITY);
-        double ihr = workout.getHeartRate(Scope.STEP);
-        double lhr = workout.getHeartRate(Scope.LAP);
         double chr = workout.getHeartRate(Scope.CURRENT);
-        lapHr.setText(formatter.formatHeartRate(Formatter.Format.TXT_SHORT, lhr));
-        intervalHr.setText(formatter.formatHeartRate(Formatter.Format.TXT_SHORT, ihr));
         currentHr.setText(formatter.formatHeartRate(Formatter.Format.TXT_SHORT, chr));
-        activityHr.setText(formatter.formatHeartRate(Formatter.Format.TXT_SHORT, ahr));
-        activityHr.setVisibility(View.VISIBLE);
-        lapHr.setVisibility(View.VISIBLE);
-        intervalHr.setVisibility(View.VISIBLE);
         currentHr.setVisibility(View.VISIBLE);
-        activityHeaderHr.setVisibility(View.VISIBLE);
         if (hrDebug != null) {
           hrDebug.setVisibility(View.VISIBLE);
           mTracker.setHrDebug(hrDebug);
         }
       } else {
-        activityHr.setVisibility(View.GONE);
-        lapHr.setVisibility(View.GONE);
-        intervalHr.setVisibility(View.GONE);
         currentHr.setVisibility(View.GONE);
-        activityHeaderHr.setVisibility(View.GONE);
       }
 
       Step curr = workout.getCurrentStep();
@@ -589,8 +523,10 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         ((WorkoutAdapter) workoutList.getAdapter()).notifyDataSetChanged();
         currentStep = curr;
         if (workoutList.getLayoutManager() instanceof LinearLayoutManager) {
-          ((LinearLayoutManager) workoutList.getLayoutManager())
-              .scrollToPosition(getPosition(workoutRows, currentStep));
+          LinearLayoutManager lm = (LinearLayoutManager) workoutList.getLayoutManager();
+          RecyclerView.SmoothScroller scroller = new LinearSmoothScroller(this);
+          scroller.setTargetPosition(getPosition(workoutRows, currentStep));
+          lm.startSmoothScroll(scroller);
         }
       }
     }

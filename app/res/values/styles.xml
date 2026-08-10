@@ -60,6 +60,12 @@
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
+    <style name="RunStatLabel" parent="android:Widget.TextView">
+        <item name="android:textAppearance">?attr/textAppearanceLabelMedium</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:textAllCaps">true</item>
+    </style>
+
     <style name="ListCategoryHeading">
         <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
         <item name="android:textColor">?attr/colorPrimary</item>
