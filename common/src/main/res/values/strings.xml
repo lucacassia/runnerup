@@ -64,6 +64,7 @@
     <string name="Total">Total</string>
     <string name="Interval">Interval</string>
     <string name="Lap">Lap</string>
+    <string name="NextLap">Next Lap</string>
     <string name="LapDistance">Lap Distance</string>
     <string name="LapPace">Lap Pace</string>
     <string name="LapTime">Lap Time</string>
