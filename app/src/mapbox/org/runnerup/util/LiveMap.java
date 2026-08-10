@@ -8,10 +8,11 @@ import android.location.Location;
 import android.os.Bundle;
 import android.view.View;
 import androidx.preference.PreferenceManager;
+import com.mapbox.common.Cancelable;
 import com.mapbox.geojson.Point;
 import com.mapbox.maps.CameraOptions;
 import com.mapbox.maps.MapView;
-import com.mapbox.maps.OnCameraChangeListener;
+import com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor;
 import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor;
 import com.mapbox.maps.plugin.Plugin;
 import com.mapbox.maps.plugin.annotation.AnnotationConfig;
@@ -52,6 +53,7 @@ public class LiveMap {
   private double lastLat = Double.NaN;
   private double lastLng = Double.NaN;
   private double lastZoom = Double.NaN;
+  private Cancelable cameraSubscription = null;
 
   private static final class RouteData {
     final List<Point> path;
@@ -115,24 +117,22 @@ public class LiveMap {
                   false);
               styleReady = true;
             });
-    mapView
-        .getMapboxMap()
-        .addOnCameraChangeListener(
-            new OnCameraChangeListener() {
-              @Override
-              public void onCameraChanged(com.mapbox.maps.CameraChanged cameraChanged) {
-                if (Double.isNaN(lastZoom)) {
-                  lastZoom = cameraChanged.getCameraState().getZoom();
-                  return;
-                }
-                double zoom = cameraChanged.getCameraState().getZoom();
-                boolean zoomChanged = Math.abs(zoom - lastZoom) > 0.01;
-                lastZoom = zoom;
-                if (!suppressCamera && !zoomChanged) {
-                  stopFollowing();
-                }
-              }
-            });
+    cameraSubscription =
+        mapView
+            .getMapboxMap()
+            .subscribeCameraChanged(
+                cameraChanged -> {
+                  if (Double.isNaN(lastZoom)) {
+                    lastZoom = cameraChanged.getCameraState().getZoom();
+                    return;
+                  }
+                  double zoom = cameraChanged.getCameraState().getZoom();
+                  boolean zoomChanged = Math.abs(zoom - lastZoom) > 0.01;
+                  lastZoom = zoom;
+                  if (!suppressCamera && !zoomChanged) {
+                    stopFollowing();
+                  }
+                });
   }
 
   public void onFirstShow(SQLiteDatabase mDB, long activityId) {
@@ -204,6 +204,9 @@ public class LiveMap {
   public void onPause() {}
 
   public void onDestroy() {
+    if (cameraSubscription != null) {
+      cameraSubscription.cancel();
+    }
     executor.shutdown();
   }
 
@@ -219,7 +222,10 @@ public class LiveMap {
     if (trackAnnotation == null) {
       trackAnnotation = polylineAnnotationManager.create(options);
     } else {
-      polylineAnnotationManager.update(trackAnnotation, options);
+      trackAnnotation.setPoints(points);
+      trackAnnotation.setLineColorInt(android.graphics.Color.RED);
+      trackAnnotation.setLineWidth(3.0);
+      polylineAnnotationManager.update(trackAnnotation);
     }
   }
 
@@ -231,8 +237,7 @@ public class LiveMap {
         new PointAnnotationOptions()
             .withPoint(point)
             .withIconImage("current")
-            .withIconAnchor(
-                com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor.CENTER)
+            .withIconAnchor(IconAnchor.CENTER)
             .withTextField("")
             .withTextAnchor(TextAnchor.CENTER)
             .withTextOffset(
@@ -245,7 +250,19 @@ public class LiveMap {
     if (currentAnnotation == null) {
       currentAnnotation = pointAnnotationManager.create(options);
     } else {
-      pointAnnotationManager.update(currentAnnotation, options);
+      currentAnnotation.setPoint(point);
+      currentAnnotation.setIconImage("current");
+      currentAnnotation.setIconAnchor(IconAnchor.CENTER);
+      currentAnnotation.setTextAnchor(TextAnchor.CENTER);
+      currentAnnotation.setTextField("");
+      currentAnnotation.setTextOffset(
+          new ArrayList<>() {
+            {
+              add(0.0);
+              add(0.0);
+            }
+          });
+      pointAnnotationManager.update(currentAnnotation);
     }
   }
 
@@ -259,8 +276,7 @@ public class LiveMap {
           new PointAnnotationOptions()
               .withPoint(point)
               .withIconImage(first ? "start" : "lap")
-              .withIconAnchor(
-                  com.mapbox.maps.extension.style.layers.properties.generated.IconAnchor.CENTER)
+              .withIconAnchor(IconAnchor.CENTER)
               .withTextField("")
               .withTextAnchor(TextAnchor.CENTER)
               .withTextOffset(
