@@ -390,6 +390,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     mapTabActive = "map".contentEquals(tag);
     workoutList.setVisibility(mapTabActive ? View.GONE : View.VISIBLE);
     runMapview.setVisibility(mapTabActive ? View.VISIBLE : View.GONE);
+    if (liveMap != null) {
+      liveMap.onMapVisibilityChanged(mapTabActive);
+    }
     if (mapTabActive && liveMap != null) {
       liveMap.onFirstShow(
           DBHelper.getReadableDatabase(this), mTracker != null ? mTracker.getActivityId() : -1);

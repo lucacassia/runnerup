@@ -183,6 +183,10 @@ public class LiveMap {
     executor.shutdown();
   }
 
+  public void onMapVisibilityChanged(boolean visible) {
+    recenterButton.setVisibility(visible && !following ? View.VISIBLE : View.GONE);
+  }
+
   private RouteData loadRoute(SQLiteDatabase mDB, long activityId) {
     List<GeoPoint> routePoints = new ArrayList<>();
     List<Marker> routeMarkers = new ArrayList<>();

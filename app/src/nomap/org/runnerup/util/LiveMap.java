@@ -20,4 +20,6 @@ public class LiveMap {
   public void onPause() {}
 
   public void onDestroy() {}
+
+  public void onMapVisibilityChanged(boolean visible) {}
 }

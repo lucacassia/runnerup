@@ -210,6 +210,10 @@ public class LiveMap {
     executor.shutdown();
   }
 
+  public void onMapVisibilityChanged(boolean visible) {
+    recenterButton.setVisibility(visible && !following ? View.VISIBLE : View.GONE);
+  }
+
   private void redrawTrack() {
     if (polylineAnnotationManager == null || points.size() < 2) {
       return;
