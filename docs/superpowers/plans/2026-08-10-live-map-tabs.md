@@ -308,7 +308,15 @@ public class LiveMap {
   private double lastLat = Double.NaN;
   private double lastLng = Double.NaN;
 
-  private record RouteData(List<GeoPoint> points, List<Marker> markers) {}
+  private static final class RouteData {
+    final List<GeoPoint> points;
+    final List<Marker> markers;
+
+    RouteData(List<GeoPoint> points, List<Marker> markers) {
+      this.points = points;
+      this.markers = markers;
+    }
+  }
 
   public LiveMap(MapViewWrapper mapView, View recenterButton) {
     this.mapView = mapView;
@@ -581,7 +589,15 @@ public class LiveMap {
   private double lastLat = Double.NaN;
   private double lastLng = Double.NaN;
 
-  private record RouteData(List<Point> path, List<Point> markers) {}
+  private static final class RouteData {
+    final List<Point> path;
+    final List<Point> markers;
+
+    RouteData(List<Point> path, List<Point> markers) {
+      this.path = path;
+      this.markers = markers;
+    }
+  }
 
   public LiveMap(MapViewWrapper mapView, View recenterButton) {
     this.context = mapView.getContext();
