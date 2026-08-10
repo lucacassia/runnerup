@@ -296,37 +296,29 @@
         android:paddingEnd="16dp"
         android:paddingBottom="16dp">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/new_lap_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="24dp"
-            android:contentDescription="@string/Lap"
-            app:backgroundTint="?attr/colorPrimary"
-            app:fabSize="mini"
-            app:srcCompat="@drawable/ic_skip_next"
-            app:tint="?attr/colorOnPrimary" />
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
             android:id="@+id/pause_button"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="24dp"
-            android:contentDescription="@string/Pause"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:text="@string/Pause"
             app:backgroundTint="?attr/colorPrimary"
-            app:fabSize="normal"
-            app:srcCompat="@drawable/ic_pause"
-            app:tint="?attr/colorOnPrimary" />
+            app:icon="@drawable/ic_pause"
+            app:iconTint="?attr/colorOnPrimary"
+            app:textColor="?attr/colorOnPrimary" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/stop_button"
-            android:layout_width="wrap_content"
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/next_lap_button"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:contentDescription="@string/Stop"
-            app:backgroundTint="?attr/colorError"
-            app:fabSize="mini"
-            app:srcCompat="@drawable/ic_stop"
-            app:tint="?attr/colorOnError" />
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="@string/NextLap"
+            app:backgroundTint="?attr/colorPrimary"
+            app:icon="@drawable/ic_skip_next"
+            app:iconTint="?attr/colorOnPrimary"
+            app:textColor="?attr/colorOnPrimary" />
     </LinearLayout>
 
 </RelativeLayout>
