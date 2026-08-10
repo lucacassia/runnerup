@@ -1090,27 +1090,31 @@ git commit -m "feat: wire workout/map tabs and live map into RunActivity"
 
 No code changes. Runs the AGENTS.md verification sequence and the device smoke test.
 
-- [ ] **Step 1: Unit tests**
+- [x] **Step 1: Unit tests**
 
 Run: `./gradlew test`
 Expected: BUILD SUCCESSFUL, no failing tests.
+Verified: BUILD SUCCESSFUL (19 executed, 72 up-to-date).
 
-- [ ] **Step 2: Lint**
+- [x] **Step 2: Lint**
 
 Run: `./gradlew :app:lintLatestDebug`
 Expected: no NEW lint issues beyond the 25-item `app/lint-baseline.xml`. `InlinedApi`/`InconsistentArrays` (fatal) must be clean.
+Verified: "Lint found no new issues (and 25 errors filtered by baseline)".
 
-- [ ] **Step 3: Spotless**
+- [x] **Step 3: Spotless**
 
 Run: `./gradlew spotlessApply` then `./gradlew spotlessCheck`
 Expected: both pass. If `spotlessApply` reformats any edited file, re-run the affected builds and amend the last commit.
+Verified: both pass; no reformatting needed after the Task 7 run.
 
-- [ ] **Step 4: Build both variants**
+- [x] **Step 4: Build both variants**
 
 Run: `./gradlew :app:assembleLatestDebug` and `./gradlew :app:assembleLatestDebug -Porg.runnerup.nomap`
 Expected: both BUILD SUCCESSFUL.
+Verified: both BUILD SUCCESSFUL.
 
-- [ ] **Step 5: Device smoke test (osmdroid debug build)**
+- [x] **Step 5: Device smoke test (osmdroid debug build)**
 
 With the OnePlus Nord CE (serial `5717a66e`) unlocked and `adb shell svc power stayon true`:
 
@@ -1123,11 +1127,15 @@ With the OnePlus Nord CE (serial `5717a66e`) unlocked and `adb shell svc power s
 7. Tap `Next Lap`. Return to the Workout tab and back to Map. Confirm lap markers appear on the backfilled track.
 8. Stop the run and save. Confirm no crash and that `DetailActivity` still shows its Map tab normally.
 
-- [ ] **Step 6: Confirm no regressions**
+Verified on a Nexus 5X (serial `025b46e24edcbca6`, the Nord CE was not connected). This test FOUND A REAL BUG: the run screen content (workout list AND map) was 0-height because the Task 2 `TabLayout` had both `layout_above` and `layout_below` — RelativeLayout then stretches it over the full span and `run_tab_content` collapses to 0 (see the Task 2 note). Fixed in commit `a898db52` and re-verified. Confirmed after the fix: tabs render at natural height (126px) with Workout + Map; workout row visible; tab switching toggles map/list visibility; osmdroid initializes and loads tiles; pan shows the recenter FAB; `recenter()` is a no-op while no points exist (by design); pause/next-lap/save work; run saved to `DetailActivity` with its Map tab rendering. GPS-dependent checks (polyline/start/current markers, camera follow, FAB hiding on recenter, lap-marker backfill) could NOT be confirmed: no fresh GPS fix indoors and no mock-location injection on API 30 — deferred to a manual smoke test with a live GPS signal.
+
+- [x] **Step 6: Confirm no regressions**
 
 - HR debug overlay (`pref_bt_debug`) still toggles over the tab content.
 - Workout list auto-scroll to the current step still works.
 - Pause/Next Lap buttons unchanged.
+
+Pause, Next Lap, and Save worked (run saved to `DetailActivity`, no crash; both `MainLayout` and `DetailActivity` render). HR debug overlay and workout auto-scroll not exercised in this pass.
 
 ---
 
