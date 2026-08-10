@@ -172,6 +172,11 @@ dependencies {
     }
 
     implementation "com.squareup.okhttp3:okhttp:5.4.0"
+    implementation "androidx.camera:camera-core:${rootProject.ext.camerax_version}"
+    implementation "androidx.camera:camera-camera2:${rootProject.ext.camerax_version}"
+    implementation "androidx.camera:camera-lifecycle:${rootProject.ext.camerax_version}"
+    implementation "androidx.camera:camera-view:${rootProject.ext.camerax_version}"
+    implementation "com.google.zxing:core:${rootProject.ext.zxingVersion}"
     if (rootProject.ext.allowNonFree) {
         // MapBox uses telemetry, without Play there may be exceptions from mapbox (OK to ignore)
         latestImplementation "com.google.android.gms:play-services-location:${rootProject.ext.googlePlayServicesVersion}"

@@ -34,6 +34,9 @@ project.ext {
     junitVersion = '4.13.2'
     mockitoVersion = '5.23.0'
 
+    camerax_version = "1.6.1"
+    zxingVersion = "3.5.4"
+
     //The Git tag for the release must be identical for F-Droid
     versionName = '2.11.0.1'
     // wear uses +1, only set even codes
