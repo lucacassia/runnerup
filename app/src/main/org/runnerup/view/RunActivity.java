@@ -149,7 +149,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
           public WindowInsetsCompat onApplyWindowInsets(
               @NonNull View v, @NonNull WindowInsetsCompat windowInsets) {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, v.getPaddingTop(), insets.right, insets.bottom);
+            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
             return WindowInsetsCompat.CONSUMED;
           }
         });
