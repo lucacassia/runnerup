@@ -132,11 +132,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
               new OnBackPressedCallback(true) {
                 @Override
                 public void handleOnBackPressed() {
-                  startActivity(
-                      new Intent(ManageWorkoutsActivity.this, MainLayout.class)
-                          .putExtra(MainLayout.EXTRA_INITIAL_PAGE, MainLayout.PAGE_SETTINGS)
-                          .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-                  finish();
+                  navigateBack();
                 }
               });
     }
@@ -310,17 +306,20 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     finish();
   }
 
-  @Override
-  public boolean onSupportNavigateUp() {
+  private void navigateBack() {
     if (isTaskRoot()) {
       startActivity(
           new Intent(this, MainLayout.class)
               .putExtra(MainLayout.EXTRA_INITIAL_PAGE, MainLayout.PAGE_SETTINGS)
               .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP));
-      finish();
-      return true;
     }
-    return super.onSupportNavigateUp();
+    finish();
+  }
+
+  @Override
+  public boolean onSupportNavigateUp() {
+    navigateBack();
+    return true;
   }
 
   @Override
