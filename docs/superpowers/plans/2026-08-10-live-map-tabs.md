@@ -554,7 +554,7 @@ git commit -m "feat: add osmdroid LiveMap"
 - Consumes: `MapViewWrapper` (a `com.mapbox.maps.MapView` in this variant), the mapbox annotation-plugin APIs used by `app/src/mapbox/org/runnerup/util/MapWrapper.java`.
 - IMPORTANT: this variant compiles only when `mapbox.properties` exists (opt-in, non-CI). It CANNOT be compile-verified in this workspace. The gate is: code mirrors the mapbox `MapWrapper`'s known-good API usage and stays behaviorally identical to Task 4. If the mapbox build is ever exercised, fix compile errors there; do not change the Task 6 contract.
 
-- [ ] **Step 1: Create `LiveMap.java`**
+- [x] **Step 1: Create `LiveMap.java`**
 
 ```java
 package org.runnerup.util;
@@ -881,17 +881,19 @@ Notes for the implementer:
 - The two mapbox API corrections in this code (verified against the mapbox-maps-android v11.17.1 sources): (1) the camera listener is `MapboxMap.subscribeCameraChanged(CameraChangedCallback)` returning `com.mapbox.common.Cancelable` — `OnCameraChangeListener` does not exist in 11.17.1, and the subscription must be cancelled in `onDestroy`; (2) `AnnotationManager` has only `update(annotation)` / `update(annotations)`, so the track and current-point annotations are updated by mutating their properties (`setPoints`, `setPoint`, `setLineColorInt`, `setIconAnchor`, …) and then calling the one-arg `update(annotation)`.
 - The Java block above must be transcribed with every line break preserved. Extract the fenced ```java``` block that follows the "Step 1: Create `LiveMap.java`" heading from this file (or from the generated task brief) programmatically — e.g. a small `python3`/`awk`/`sed` snippet that copies the block verbatim to `app/src/mapbox/org/runnerup/util/LiveMap.java` — rather than re-typing it. If any line ends up over 120 characters after `spotlessApply`, the transcription collapsed newlines and must be redone.
 
-- [ ] **Step 2: Review-only verification**
+- [x] **Step 2: Review-only verification**
 
 Run: `./gradlew :app:assembleLatestDebug` and `./gradlew :app:assembleLatestDebug -Porg.runnerup.nomap`
 Expected: both BUILD SUCCESSFUL (neither build compiles `src/mapbox`; this confirms no accidental breakage). The mapbox file itself is verified by review only — confirm every imported symbol appears in `app/src/mapbox/org/runnerup/util/MapWrapper.java` or the mapbox Maps SDK.
+Verified: both builds BUILD SUCCESSFUL; round-2 review approved `842f089a` against the amended brief (token-identical, corrected v11.17.1 APIs). 3 non-blocking Minor notes inherited from the brief (marker z-order in backfill path; zoom-unchanged pan heuristic vs `pinching`; `subscribeCameraChanged` emission-timing assumption to smoke-test when the mapbox build is exercised).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add app/src/mapbox/org/runnerup/util/LiveMap.java
 git commit -m "feat: add mapbox LiveMap"
 ```
+Committed: `c2816d2b` (round 1), reworked via plan amendment `20390fc4` and re-committed `842f089a` after review.
 
 ---
 
