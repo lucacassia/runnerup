@@ -19,6 +19,8 @@ time; it persists across app sessions.
    - **Stored state**: shows the parkrun logo at the top, the barcode rendered
      black-on-white (tall, for reliable scanning by other devices), the raw
      value text, a **Delete** button, and a **Scan new barcode** button.
+     (The logo is shown at the top of the window in both the empty and stored
+     states.)
 3. Scanning (camera): the user points the camera at a Code 128 barcode. On a
    successful read, the app stores the barcode's data.
    - If a barcode was already stored, a confirmation dialog
@@ -116,7 +118,8 @@ Pure render helper, no Android framework state (testable).
 - `encode(String content, int widthPx, int heightPx, int quietZonePx)` →
   `Bitmap` (ARGB_8888): black bars on white, using
   `Code128Writer.encode(content)` → `BitMatrix`. Width is scaled from the
-  matrix so bar ratios are preserved; `heightPx` is the tall target height.
+  matrix so bar ratios are preserved; `heightPx` is the tall target height
+  (target on screen: ~180dp tall, full window width minus padding).
 - Re-encoding from the stored data means the rendered barcode always carries
   exactly the stored value regardless of how it was scanned.
 
