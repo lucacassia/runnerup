@@ -934,20 +934,12 @@ public class StartFragment extends Fragment implements TickListener {
 
   private void toggleStatusDetails() {
     statusDetailsShown = !statusDetailsShown;
-    float bottomMargin;
 
     if (statusDetailsShown) {
       expandIcon.setImageResource(R.drawable.ic_expand_down_white_24dp);
-      bottomMargin = getResources().getDimension(R.dimen.fab_margin_68row);
     } else {
       expandIcon.setImageResource(R.drawable.ic_expand_up_white_24dp);
-      bottomMargin = getResources().getDimension(R.dimen.fab_margin_44row);
     }
-
-    ViewGroup.MarginLayoutParams params =
-        (ViewGroup.MarginLayoutParams) startButton.getLayoutParams();
-    params.setMargins(params.leftMargin, params.topMargin, params.rightMargin, (int) bottomMargin);
-    startButton.setLayoutParams(params);
 
     updateView();
   }

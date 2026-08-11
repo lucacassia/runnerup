@@ -8,8 +8,6 @@
     <dimen name="history_row_margin_v">4dp</dimen>
     <dimen name="history_avatar_size">48dp</dimen>
 
-    <dimen name="fab_margin_44row">20dp</dimen>
-    <dimen name="fab_margin_68row">44dp</dimen>
     <dimen name="dialog_padding_horiz">24dp</dimen>
     <dimen name="dialog_padding_vert">8dp</dimen>
     <dimen name="barcode_height">270dp</dimen>

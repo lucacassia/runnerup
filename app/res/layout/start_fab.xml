@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.floatingactionbutton.FloatingActionButton xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/start_button"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:contentDescription="@string/Start"
-    android:padding="16dp"
-    app:backgroundTint="?attr/colorPrimaryContainer"
-    app:fabSize="normal"
-    app:srcCompat="@drawable/ic_start_white_24dp"
-    app:tint="?attr/colorOnPrimaryContainer" />
+    android:text="@string/Start"
+    android:textColor="?attr/colorOnPrimary"
+    app:backgroundTint="?attr/colorPrimary"
+    app:icon="@drawable/ic_start_white_24dp"
+    app:iconTint="?attr/colorOnPrimary" />
