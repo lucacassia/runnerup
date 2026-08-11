@@ -4,7 +4,7 @@
 
 **Goal:** Restyle `ParkrunBarcodeActivity`'s stored state as a white Material 3 elevated card (logo + full-bleed barcode, centered code text, small icon-only delete FAB) and remove the scan-while-stored / replace-confirm flow.
 
-**Architecture:** Single-file UI restyle. `app/res/layout/parkrun_barcode.xml` wraps the stored state in a `MaterialCardView` (white surface always, `clipToOutline`, elevated style) holding the logo + barcode image area, the code as centered text, and a small `FloatingActionButton` delete action. `ParkrunBarcodeActivity.java` drops the `scan_new_button` wiring and simplifies the scan callback to save directly (a scan is only reachable from the empty state). Three now-dead strings are removed. No rendering, persistence, or scanner logic changes.
+**Architecture:** Single-file UI restyle. `app/res/layout/parkrun_barcode.xml` wraps the stored state in a `MaterialCardView` (white surface always, elevated style; children clip to the rounded corners via CardView's built-in `setClipToOutline(true)`) holding the logo + barcode image area, the code as centered text, and a small `FloatingActionButton` delete action. `ParkrunBarcodeActivity.java` drops the `scan_new_button` wiring and simplifies the scan callback to save directly (a scan is only reachable from the empty state). Three now-dead strings are removed. No rendering, persistence, or scanner logic changes.
 
 **Tech Stack:** Android Views (XML), Material 3 (`com.google.android.material:material:1.14.0`), existing `FloatingActionButton` convention from `start_fab.xml`.
 
@@ -102,7 +102,6 @@ Replace the ENTIRE contents of `app/res/layout/parkrun_barcode.xml` (current 109
                 style="?attr/materialCardViewElevatedStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:clipToOutline="true"
                 android:visibility="gone"
                 app:cardBackgroundColor="@android:color/white">
 
@@ -146,7 +145,7 @@ Replace the ENTIRE contents of `app/res/layout/parkrun_barcode.xml` (current 109
                         android:layout_marginBottom="24dp"
                         android:contentDescription="@string/Delete"
                         app:backgroundTint="?attr/colorPrimaryContainer"
-                        app:fabSize="small"
+                        app:fabSize="mini"
                         app:srcCompat="@drawable/ic_delete"
                         app:tint="?attr/colorOnPrimaryContainer" />
                 </LinearLayout>

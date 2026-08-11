@@ -14,14 +14,14 @@ The stored state (a barcode value exists in the default `SharedPreferences` unde
 
 - **Style/elevation:** `com.google.android.material.card.MaterialCardView` with the M3 elevated style (`?attr/materialCardViewElevatedStyle`), full window width minus the existing 32dp outer padding.
 - **Surface color:** `app:cardBackgroundColor` is white (`@android:color/white`) **in both light and dark themes** for maximum barcode readability.
-- **Corner clipping:** `android:clipToOutline="true"` so the flush barcode follows the card's rounded corners.
+- **Corner clipping:** the flush barcode follows the card's rounded corners automatically — `CardViewApi21Impl.initialize()` calls `View.setClipToOutline(true)` programmatically on API 21+, so the XML attribute `android:clipToOutline="true"` must NOT be added (it is lint-fatal: `UnusedAttribute`, flagged "API level 31 and higher" at this repo's minSdk 28).
 - **Contents (top to bottom, vertical):**
   1. **Image area** — no horizontal padding, so the barcode spans the full card width:
      - `ImageView` `@id/parkrun_logo`, centered, `wrap_content`, `android:paddingTop="24dp"`.
      - `ImageView` `@id/barcode_view`, `match_parent` × `@dimen/barcode_height` (180dp), `background="@android:color/white"`, `scaleType="fitCenter"`, `contentDescription` as today.
   2. **Text section** — `TextView` `@id/barcode_value`: the code only (no label), `20sp` bold, centered, `textIsSelectable`, `textColor="@android:color/black"` (fixed because the surface is always white).
   3. **Bottom action** — a small icon-only `FloatingActionButton` `@id/delete_button`:
-     - `app:fabSize="small"`, `app:srcCompat="@drawable/ic_delete"` (the standard Material design-system trash glyph; no text), `contentDescription="@string/Delete"`.
+     - `app:fabSize="mini"`, `app:srcCompat="@drawable/ic_delete"` (the standard Material design-system trash glyph; no text), `contentDescription="@string/Delete"`. (Material 1.14.0 has no `small` FAB size; `mini` is the icon-only 40dp variant.)
      - Themed via `app:backgroundTint="?attr/colorPrimaryContainer"` and `app:tint="?attr/colorOnPrimaryContainer"` (same convention as `start_fab.xml`), centered at the card bottom.
 
 ## Behavior changes
