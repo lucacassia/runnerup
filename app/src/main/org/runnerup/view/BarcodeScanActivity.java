@@ -22,7 +22,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
-import android.util.Size;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -119,7 +118,6 @@ public class BarcodeScanActivity extends AppCompatActivity {
             ImageAnalysis analysis =
                 new ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .setTargetResolution(new Size(1280, 720))
                     .build();
             analysis.setAnalyzer(analysisExecutor, this::analyze);
 
@@ -183,10 +181,13 @@ public class BarcodeScanActivity extends AppCompatActivity {
     int offset = 0;
     for (int row = 0; row < height; row++) {
       buffer.position(row * rowStride);
-      for (int col = 0; col < width; col++) {
-        y[offset] = buffer.get();
-        offset++;
-        if (pixelStride > 1) {
+      if (pixelStride == 1) {
+        buffer.get(y, offset, width);
+        offset += width;
+      } else {
+        for (int col = 0; col < width; col++) {
+          y[offset] = buffer.get();
+          offset++;
           buffer.position(buffer.position() + pixelStride - 1);
         }
       }
