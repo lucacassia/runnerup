@@ -22,6 +22,10 @@
         android:glEsVersion="0x00020000"
         android:required="true" />
 
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission
@@ -48,6 +52,7 @@
         android:name="android.permission.FOREGROUND_SERVICE_HEALTH"
         android:minSdkVersion="34" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-permission
         android:name="android.permission.BLUETOOTH"
@@ -122,6 +127,11 @@
 
         <activity
             android:name=".view.AudioCueSettingsActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
+            android:name=".view.BarcodeScanActivity"
+            android:label="@string/Scan_parkrun_barcode"
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
