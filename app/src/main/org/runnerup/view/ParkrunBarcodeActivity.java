@@ -122,6 +122,9 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
   private void renderBarcode(String barcode) {
     int heightPx = (int) getResources().getDimension(R.dimen.barcode_height);
     int widthPx = barcodeView.getWidth();
+    if (widthPx <= 0) {
+      return;
+    }
     barcodeView.setImageBitmap(
         Code128Barcode.renderToBitmap(Code128Barcode.encode(barcode), widthPx, heightPx));
   }

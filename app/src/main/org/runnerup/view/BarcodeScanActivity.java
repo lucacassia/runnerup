@@ -63,6 +63,11 @@ public class BarcodeScanActivity extends AppCompatActivity {
           granted -> {
             if (granted) {
               startCamera();
+            } else if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
+              Toast.makeText(
+                      this, org.runnerup.common.R.string.Camera_permission_text, Toast.LENGTH_LONG)
+                  .show();
+              this.cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
             } else {
               Toast.makeText(
                       this, org.runnerup.common.R.string.Camera_permission_text, Toast.LENGTH_LONG)
@@ -102,6 +107,9 @@ public class BarcodeScanActivity extends AppCompatActivity {
         ProcessCameraProvider.getInstance(this);
     providerFuture.addListener(
         () -> {
+          if (isFinishing() || isDestroyed()) {
+            return;
+          }
           try {
             ProcessCameraProvider provider = providerFuture.get();
             if (!provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
@@ -123,7 +131,10 @@ public class BarcodeScanActivity extends AppCompatActivity {
 
             provider.unbindAll();
             provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis);
-          } catch (ExecutionException | InterruptedException | CameraInfoUnavailableException e) {
+          } catch (ExecutionException
+              | InterruptedException
+              | CameraInfoUnavailableException
+              | RuntimeException e) {
             Log.e("BarcodeScanActivity", "failed to start camera", e);
             Toast.makeText(
                     this, org.runnerup.common.R.string.Camera_unavailable_text, Toast.LENGTH_LONG)
