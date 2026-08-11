@@ -122,10 +122,19 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
     } else {
       emptyState.setVisibility(View.GONE);
       storedState.setVisibility(View.VISIBLE);
-      int heightPx = (int) getResources().getDimension(R.dimen.barcode_height);
-      barcodeView.setImageBitmap(
-          Code128Barcode.renderToBitmap(Code128Barcode.encode(barcode), heightPx));
+      if (barcodeView.getWidth() <= 0) {
+        barcodeView.post(() -> renderBarcode(barcode));
+      } else {
+        renderBarcode(barcode);
+      }
       valueView.setText(barcode);
     }
+  }
+
+  private void renderBarcode(String barcode) {
+    int heightPx = (int) getResources().getDimension(R.dimen.barcode_height);
+    int widthPx = barcodeView.getWidth();
+    barcodeView.setImageBitmap(
+        Code128Barcode.renderToBitmap(Code128Barcode.encode(barcode), widthPx, heightPx));
   }
 }

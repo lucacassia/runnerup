@@ -41,24 +41,25 @@ public final class Code128Barcode {
     return new Code128Writer().encode(content, BarcodeFormat.CODE_128, 0, 1, hints);
   }
 
-  public static Bitmap renderToBitmap(BitMatrix matrix, int heightPx) {
-    int width =
-        Math.max(1, (int) Math.round((double) matrix.getWidth() * heightPx / matrix.getHeight()));
-    int[] pixels = new int[width * heightPx];
+  public static Bitmap renderToBitmap(BitMatrix matrix, int widthPx, int heightPx) {
+    if (widthPx <= 0 || heightPx <= 0) {
+      throw new IllegalArgumentException("bitmap width and height must be positive");
+    }
+    int[] pixels = new int[widthPx * heightPx];
     Arrays.fill(pixels, Color.WHITE);
     for (int x = 0; x < matrix.getWidth(); x++) {
       if (matrix.get(x, 0)) {
-        int x0 = x * width / matrix.getWidth();
-        int x1 = (x + 1) * width / matrix.getWidth();
+        int x0 = x * widthPx / matrix.getWidth();
+        int x1 = (x + 1) * widthPx / matrix.getWidth();
         for (int px = x0; px < x1; px++) {
           for (int y = 0; y < heightPx; y++) {
-            pixels[y * width + px] = Color.BLACK;
+            pixels[y * widthPx + px] = Color.BLACK;
           }
         }
       }
     }
-    Bitmap bitmap = Bitmap.createBitmap(width, heightPx, Bitmap.Config.ARGB_8888);
-    bitmap.setPixels(pixels, 0, width, 0, 0, width, heightPx);
+    Bitmap bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888);
+    bitmap.setPixels(pixels, 0, widthPx, 0, 0, widthPx, heightPx);
     return bitmap;
   }
 }

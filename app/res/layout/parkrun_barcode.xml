@@ -90,12 +90,14 @@
 
                     <Button
                         android:id="@+id/scan_new_button"
+                        style="?android:attr/buttonBarButtonStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/Scan_new_barcode" />
 
                     <Button
                         android:id="@+id/delete_button"
+                        style="?android:attr/buttonBarButtonStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
