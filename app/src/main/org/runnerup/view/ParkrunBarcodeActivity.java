@@ -79,6 +79,12 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
     ViewUtil.Insets(findViewById(R.id.parkrun_barcode_root), true);
   }
 
+  @Override
+  public boolean onSupportNavigateUp() {
+    finish();
+    return true;
+  }
+
   private void launchScanner() {
     scanLauncher.launch(new Intent(this, BarcodeScanActivity.class));
   }
