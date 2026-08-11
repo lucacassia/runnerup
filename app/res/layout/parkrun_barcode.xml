@@ -38,7 +38,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:contentDescription="@string/Parkrun_barcode"
-                    android:src="@drawable/parkrun_logo" />
+                    android:src="@drawable/parkrun_logo"
+                    app:tint="?attr/colorOnSurface" />
 
                 <TextView
                     android:id="@+id/empty_text"
