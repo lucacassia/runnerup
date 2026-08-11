@@ -83,7 +83,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/barcode_height"
                         android:layout_marginTop="24dp"
-                        android:background="@android:color/white"
                         android:contentDescription="@string/Parkrun_barcode"
                         android:scaleType="fitCenter" />
 
