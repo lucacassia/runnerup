@@ -1,6 +1,6 @@
 # parkrun Barcode Settings Feature Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add a "parkrun barcode" entry to Settings that lets the user scan a Code 128 barcode with the camera, stores it persistently, and displays a black-on-white rendering of it in a dedicated window.
 
@@ -36,7 +36,7 @@
 - Consumes: nothing.
 - Produces: resolved dependencies `androidx.camera:*` and `com.google.zxing:core` available to `app` (used by Tasks 2-4).
 
-- [ ] **Step 1: Add version variables to root `build.gradle`**
+- [x] **Step 1: Add version variables to root `build.gradle`**
 
 In `build.gradle`, in the `project.ext { ... }` block, after the `mockitoVersion = '5.23.0'` line, add:
 
@@ -45,7 +45,7 @@ In `build.gradle`, in the `project.ext { ... }` block, after the `mockitoVersion
     zxingVersion = "3.5.4"
 ```
 
-- [ ] **Step 2: Add the dependencies to `app/build.gradle`**
+- [x] **Step 2: Add the dependencies to `app/build.gradle`**
 
 In `app/build.gradle`, in the `dependencies { ... }` block, after the `implementation "com.squareup.okhttp3:okhttp:5.4.0"` line, add:
 
@@ -57,12 +57,12 @@ In `app/build.gradle`, in the `dependencies { ... }` block, after the `implement
     implementation "com.google.zxing:core:${rootProject.ext.zxingVersion}"
 ```
 
-- [ ] **Step 3: Build to verify the new dependencies resolve**
+- [x] **Step 3: Build to verify the new dependencies resolve**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: `BUILD SUCCESSFUL` (new artifacts resolve from Google Maven / mavenCentral; no mapbox/play-services conditionals involved).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add build.gradle app/build.gradle
@@ -81,9 +81,9 @@ git commit -m "build: add CameraX and ZXing dependencies for barcode scanning"
 - Consumes: `com.google.zxing:core` (Task 1).
 - Produces:
   - `public static BitMatrix encode(String content)` — Code 128 matrix at natural module scale (1:1) with a 4-module quiet zone on each side; `null`/empty → `IllegalArgumentException`. Used by Task 4 to render.
-  - `public static Bitmap renderToBitmap(BitMatrix matrix, int heightPx)` — scales the matrix to `heightPx`, returns an ARGB_8888 black-on-white `Bitmap`. Used by Task 4.
+  - `public static Bitmap renderToBitmap(BitMatrix matrix, int widthPx, int heightPx)` — stretches the module line to `widthPx` × `heightPx`, returns an ARGB_8888 black-on-white `Bitmap`. Used by Task 4.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `app/test/java/org/runnerup/util/Code128BarcodeTest.java`:
 
@@ -163,12 +163,12 @@ public class Code128BarcodeTest {
 }
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `./gradlew :app:testLatestDebugUnitTest --tests "org.runnerup.util.Code128BarcodeTest"`
 Expected: FAIL — test compilation error: `Code128Barcode` does not exist.
 
-- [ ] **Step 3: Implement `Code128Barcode`**
+- [x] **Step 3: Implement `Code128Barcode`**
 
 Create `app/src/main/org/runnerup/util/Code128Barcode.java`:
 
@@ -221,37 +221,38 @@ public final class Code128Barcode {
     }
   }
 
-  public static Bitmap renderToBitmap(BitMatrix matrix, int heightPx) {
-    int width =
-        Math.max(1, (int) Math.round((double) matrix.getWidth() * heightPx / matrix.getHeight()));
-    int[] pixels = new int[width * heightPx];
+  public static Bitmap renderToBitmap(BitMatrix matrix, int widthPx, int heightPx) {
+    if (widthPx <= 0 || heightPx <= 0) {
+      throw new IllegalArgumentException("bitmap width and height must be positive");
+    }
+    int[] pixels = new int[widthPx * heightPx];
     Arrays.fill(pixels, Color.WHITE);
     for (int x = 0; x < matrix.getWidth(); x++) {
       if (matrix.get(x, 0)) {
-        int x0 = x * width / matrix.getWidth();
-        int x1 = (x + 1) * width / matrix.getWidth();
+        int x0 = x * widthPx / matrix.getWidth();
+        int x1 = (x + 1) * widthPx / matrix.getWidth();
         for (int px = x0; px < x1; px++) {
           for (int y = 0; y < heightPx; y++) {
-            pixels[y * width + px] = Color.BLACK;
+            pixels[y * widthPx + px] = Color.BLACK;
           }
         }
       }
     }
-    Bitmap bitmap = Bitmap.createBitmap(width, heightPx, Bitmap.Config.ARGB_8888);
-    bitmap.setPixels(pixels, 0, width, 0, 0, width, heightPx);
+    Bitmap bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888);
+    bitmap.setPixels(pixels, 0, widthPx, 0, 0, widthPx, heightPx);
     return bitmap;
   }
 }
 ```
 
-Note on `encode`: `Code128Writer` (extends `OneDimensionalCodeWriter`) renders `outputWidth = max(width, contentWidth + quietZone)` with bar scale `outputWidth / fullWidth`. Passing `width = 0` therefore yields the natural 1:1 module scale and a height of 1 row; the quiet zone (from the `MARGIN` hint) is added symmetrically. `renderToBitmap` then upscales to the requested pixel height.
+Note on `encode`: `Code128Writer` (extends `OneDimensionalCodeWriter`) renders `outputWidth = max(width, contentWidth + quietZone)` with bar scale `outputWidth / fullWidth`. Passing `width = 0` therefore yields the natural 1:1 module scale and a height of 1 row; the quiet zone (from the `MARGIN` hint) is added symmetrically. `renderToBitmap` then stretches the module line to the requested `widthPx` × `heightPx`.
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [x] **Step 4: Run the test to verify it passes**
 
 Run: `./gradlew :app:testLatestDebugUnitTest --tests "org.runnerup.util.Code128BarcodeTest"`
 Expected: PASS — all 6 tests green (round-trip for short and long values, deterministic output, white quiet zones, null/empty rejection).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/src/main/org/runnerup/util/Code128Barcode.java app/test/java/org/runnerup/util/Code128BarcodeTest.java
@@ -274,7 +275,7 @@ git commit -m "feat: add Code128Barcode encode and render helpers"
   - `public static final String BarcodeScanActivity.BARCODE_EXTRA` — extra key (`"barcode"`). Launcher sets `RESULT_OK` with the decoded value under this key. Consumed by Task 4's `ActivityResultLauncher<Intent>`.
   - Manifest registrations: `CAMERA` permission, `<uses-feature android.hardware.camera.any required="false">`, `BarcodeScanActivity`.
 
-- [ ] **Step 1: Add scanner strings to `common/src/main/res/values/strings.xml`**
+- [x] **Step 1: Add scanner strings to `common/src/main/res/values/strings.xml`**
 
 Append these lines just before the closing `</resources>` tag:
 
@@ -284,7 +285,7 @@ Append these lines just before the closing `</resources>` tag:
     <string name="Camera_permission_text">RunnerUp needs camera access to scan your parkrun barcode.</string>
 ```
 
-- [ ] **Step 2: Create the scanner layout `app/res/layout/barcode_scan.xml`**
+- [x] **Step 2: Create the scanner layout `app/res/layout/barcode_scan.xml`**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -316,7 +317,7 @@ Append these lines just before the closing `</resources>` tag:
 </LinearLayout>
 ```
 
-- [ ] **Step 3: Create `BarcodeScanActivity`**
+- [x] **Step 3: Create `BarcodeScanActivity`**
 
 Create `app/src/main/org/runnerup/view/BarcodeScanActivity.java`:
 
@@ -537,7 +538,7 @@ public class BarcodeScanActivity extends AppCompatActivity {
 }
 ```
 
-- [ ] **Step 4: Register the permission, feature, and activity in `app/AndroidManifest.xml`**
+- [x] **Step 4: Register the permission, feature, and activity in `app/AndroidManifest.xml`**
 
 (a) After the `<uses-feature android:glEsVersion="0x00020000" android:required="true" />` block (line ~23), add:
 
@@ -562,23 +563,20 @@ public class BarcodeScanActivity extends AppCompatActivity {
             android:theme="@style/AppTheme.NoActionBar" />
 ```
 
-- [ ] **Step 5: Build**
+- [x] **Step 5: Build**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: `BUILD SUCCESSFUL`.
 
-- [ ] **Step 6: Smoke-test the scanner on the device**
+- [x] **Step 6: Smoke-test the scanner on the device**
 
-Install and launch the scanner directly (no settings entry exists yet):
+`BarcodeScanActivity` is non-exported, so it cannot be launched via `adb shell am start`. It is exercised in-app via Settings → "parkrun barcode" → Scan (validated end-to-end in Task 5).
 
-```bash
-./gradlew :app:installLatestDebug
-adb shell am start -n org.runnerup.debug/.view.BarcodeScanActivity
-```
+Install: `./gradlew :app:installLatestDebug`.
 
-Expected: camera permission dialog on first launch; after granting, the camera preview renders and the hint text shows. Point the phone at a printed Code 128 barcode (e.g. generate one at `https://barcode.tec-it.com/en/Code128?data=C1234567` and show it on a laptop screen). A toast with the decoded value appears and the activity finishes. If permission is denied, a toast shows and the activity finishes.
+Expected: opening Settings → "parkrun barcode" and tapping Scan shows the camera permission dialog on first launch; after granting, the camera preview renders and the hint text shows. Point the phone at a printed Code 128 barcode (e.g. generate one at `https://barcode.tec-it.com/en/Code128?data=C1234567` and show it on a laptop screen). A toast with the decoded value appears and the activity finishes. If permission is denied, a toast shows and the activity finishes.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/res/layout/barcode_scan.xml app/src/main/org/runnerup/view/BarcodeScanActivity.java app/AndroidManifest.xml common/src/main/res/values/strings.xml
@@ -603,7 +601,7 @@ git commit -m "feat: add Code 128 camera scanner activity"
 - Consumes: `Code128Barcode.encode/renderToBitmap` (Task 2); `BarcodeScanActivity.BARCODE_EXTRA` + `RESULT_OK` result (Task 3).
 - Produces: Settings row "parkrun barcode" that opens `ParkrunBarcodeActivity`; persistent SharedPreferences value under key `pref_parkrun_barcode`.
 
-- [ ] **Step 1: Add the remaining strings to `common/src/main/res/values/strings.xml`**
+- [x] **Step 1: Add the remaining strings to `common/src/main/res/values/strings.xml`**
 
 Append these lines just before the closing `</resources>` tag (note `\\n` renders as a literal newline in the string value):
 
@@ -617,7 +615,7 @@ Append these lines just before the closing `</resources>` tag (note `\\n` render
     <string name="Delete_barcode_text">The stored parkrun barcode will be removed.</string>
 ```
 
-- [ ] **Step 2: Add the preference key to `app/res/values/pref_keys.xml`**
+- [x] **Step 2: Add the preference key to `app/res/values/pref_keys.xml`**
 
 Append before the closing `</resources>` tag:
 
@@ -625,7 +623,7 @@ Append before the closing `</resources>` tag:
     <string name="pref_parkrun_barcode">pref_parkrun_barcode</string>
 ```
 
-- [ ] **Step 3: Add the barcode height dimension to `app/res/values/dimens.xml`**
+- [x] **Step 3: Add the barcode height dimension to `app/res/values/dimens.xml`**
 
 Append before the closing `</resources>` tag:
 
@@ -633,7 +631,7 @@ Append before the closing `</resources>` tag:
     <dimen name="barcode_height">180dp</dimen>
 ```
 
-- [ ] **Step 4: Download the parkrun logo asset**
+- [x] **Step 4: Download the parkrun logo asset**
 
 ```bash
 mkdir -p app/res/drawable-nodpi
@@ -643,7 +641,7 @@ curl -L -o app/res/drawable-nodpi/parkrun_logo.png \
 
 Verify with `file app/res/drawable-nodpi/parkrun_logo.png` → expect a PNG image (`270 x 126`). If that URL is unreachable, fall back to `https://images.seeklogo.com/logo-png/43/1/parkrun-logo-png_seeklogo-433559.png`. Do NOT commit a much larger logo; the 270x126 asset is sufficient for a display logo.
 
-- [ ] **Step 5: Create the window layout `app/res/layout/parkrun_barcode.xml`**
+- [x] **Step 5: Create the window layout `app/res/layout/parkrun_barcode.xml`**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -738,12 +736,14 @@ Verify with `file app/res/drawable-nodpi/parkrun_logo.png` → expect a PNG imag
 
                     <Button
                         android:id="@+id/scan_new_button"
+                        style="?android:attr/buttonBarButtonStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/Scan_new_barcode" />
 
                     <Button
                         android:id="@+id/delete_button"
+                        style="?android:attr/buttonBarButtonStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
@@ -755,7 +755,7 @@ Verify with `file app/res/drawable-nodpi/parkrun_logo.png` → expect a PNG imag
 </LinearLayout>
 ```
 
-- [ ] **Step 6: Create `ParkrunBarcodeActivity`**
+- [x] **Step 6: Create `ParkrunBarcodeActivity`**
 
 Create `app/src/main/org/runnerup/view/ParkrunBarcodeActivity.java`:
 
@@ -882,14 +882,16 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
       emptyState.setVisibility(View.GONE);
       storedState.setVisibility(View.VISIBLE);
       int heightPx = (int) getResources().getDimension(R.dimen.barcode_height);
-      barcodeView.setImageBitmap(Code128Barcode.renderToBitmap(Code128Barcode.encode(barcode), heightPx));
+      int widthPx = barcodeView.getWidth();
+      barcodeView.setImageBitmap(
+          Code128Barcode.renderToBitmap(Code128Barcode.encode(barcode), widthPx, heightPx));
       valueView.setText(barcode);
     }
   }
 }
 ```
 
-- [ ] **Step 7: Register the activity in `app/AndroidManifest.xml`**
+- [x] **Step 7: Register the activity in `app/AndroidManifest.xml`**
 
 After the `BarcodeScanActivity` activity element added in Task 3, add:
 
@@ -900,7 +902,7 @@ After the `BarcodeScanActivity` activity element added in Task 3, add:
             android:theme="@style/AppTheme.NoActionBar" />
 ```
 
-- [ ] **Step 8: Add the settings row to `app/res/xml/settings.xml`**
+- [x] **Step 8: Add the settings row to `app/res/xml/settings.xml`**
 
 After the Units `</Preference>` block (closing at line 29), insert:
 
@@ -917,18 +919,18 @@ After the Units `</Preference>` block (closing at line 29), insert:
     </Preference>
 ```
 
-- [ ] **Step 9: Build**
+- [x] **Step 9: Build**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: `BUILD SUCCESSFUL`.
 
-- [ ] **Step 10: Smoke-test the window (partial — scanner flow validated in Task 5)**
+- [x] **Step 10: Smoke-test the window (partial — scanner flow validated in Task 5)**
 
 Install and navigate: `./gradlew :app:installLatestDebug`, open the app, go to Settings → "parkrun barcode".
 
 Expected: the window shows the parkrun logo and the empty state ("No parkrun barcode stored yet.…" + a "Scan parkrun barcode" button). Tapping Scan opens `BarcodeScanActivity` (full scan flow validated end-to-end in Task 5). Back returns to Settings.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add common/src/main/res/values/strings.xml app/res/values/pref_keys.xml app/res/values/dimens.xml app/res/drawable-nodpi/parkrun_logo.png app/res/layout/parkrun_barcode.xml app/src/main/org/runnerup/view/ParkrunBarcodeActivity.java app/AndroidManifest.xml app/res/xml/settings.xml
@@ -946,28 +948,28 @@ git commit -m "feat: add parkrun barcode settings entry and display window"
 **Interfaces:**
 - Consumes: Tasks 1-4.
 
-- [ ] **Step 1: Run the full unit test suite**
+- [x] **Step 1: Run the full unit test suite**
 
 Run: `./gradlew test`
 Expected: PASS (includes `Code128BarcodeTest`).
 
-- [ ] **Step 2: Run lint on the debug variant**
+- [x] **Step 2: Run lint on the debug variant**
 
 Run: `./gradlew :app:lintLatestDebug`
 Expected: BUILD SUCCESSFUL; the only permitted lint output is the 25 pre-existing baseline issues. Any NEW issue (e.g. `MissingPermission`, `SetTextI18n`, unused resources) must be fixed before proceeding.
 
-- [ ] **Step 3: Apply and verify formatting**
+- [x] **Step 3: Apply and verify formatting**
 
 Run: `./gradlew spotlessApply`
 Then: `./gradlew spotlessCheck`
 Expected: PASS (CI gate).
 
-- [ ] **Step 4: Verify the F-Droid build still compiles**
+- [x] **Step 4: Verify the F-Droid build still compiles**
 
 Run: `./gradlew :app:assembleLatestDebug -Porg.runnerup.free`
 Expected: BUILD SUCCESSFUL (CameraX + zxing are F-Droid-safe; no free/non-free conditional needed).
 
-- [ ] **Step 5: End-to-end device smoke test**
+- [x] **Step 5: End-to-end device smoke test**
 
 With the test device (OnePlus Nord CE, serial `5717a66e`, already on `latestDebug`):
 
@@ -979,7 +981,7 @@ With the test device (OnePlus Nord CE, serial `5717a66e`, already on `latestDebu
 6. Force-stop the app (`adb shell am force-stop org.runnerup.debug`) and reopen → the stored barcode is still shown (persistence across sessions).
 7. Verify both installable ids still build: `./gradlew :app:assembleLatestDebug -Porg.runnerup.free` (from Step 4) — `org.runnerup.debug` and `org.runnerup.free` remain side-by-side installable.
 
-- [ ] **Step 6: Update the plan and SDD ledger, then commit**
+- [x] **Step 6: Update the plan and SDD ledger, then commit**
 
 Mark all completed steps `[x]` in this plan. Record the implementation in `.superpowers/sdd/2026-08-10-parkrun-barcode/progress.md` (create the directory; this path is gitignored). Then:
 
@@ -994,4 +996,4 @@ git commit -m "docs: mark parkrun barcode plan complete"
 
 - **Spec coverage:** Settings entry (Task 4 Step 8), window with logo / tall black-on-white barcode / raw value / Delete / Scan-new (Tasks 4, 2), scan-into-window flow with replace-confirmation (Task 4 Step 6 + Task 3), delete confirmation (Task 4 Step 6), persistence across sessions (Task 4 `SharedPreferences` + Task 5 Step 5.6), Code 128 only (Task 2 writer + Task 3 `Code128Reader`), F-Droid-safe deps (Task 1, Task 5 Step 4).
 - **Placeholder scan:** All code blocks are concrete; no TBD/TODO.
-- **Type consistency:** `Code128Barcode.encode` → `BitMatrix`, `renderToBitmap(BitMatrix, int)` → `Bitmap` (Task 2) match usage in `ParkrunBarcodeActivity` (Task 4). `BarcodeScanActivity.BARCODE_EXTRA` and `RESULT_OK` (Task 3) match the launcher callback in Task 4. `pref_parkrun_barcode` key defined (Task 4 Step 2) and referenced by both `settings.xml` and `ParkrunBarcodeActivity`.
+- **Type consistency:** `Code128Barcode.encode` → `BitMatrix`, `renderToBitmap(BitMatrix, int, int)` → `Bitmap` (Task 2) match usage in `ParkrunBarcodeActivity` (Task 4). `BarcodeScanActivity.BARCODE_EXTRA` and `RESULT_OK` (Task 3) match the launcher callback in Task 4. `pref_parkrun_barcode` key defined (Task 4 Step 2) and referenced by both `settings.xml` and `ParkrunBarcodeActivity`.
