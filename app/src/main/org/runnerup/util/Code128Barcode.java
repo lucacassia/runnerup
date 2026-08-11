@@ -53,7 +53,7 @@ public final class Code128Barcode {
 
   static int[] pixels(BitMatrix matrix, int widthPx, int heightPx) {
     int[] pixels = new int[widthPx * heightPx];
-    Arrays.fill(pixels, Color.WHITE);
+    Arrays.fill(pixels, Color.TRANSPARENT);
     for (int x = 0; x < matrix.getWidth(); x++) {
       if (matrix.get(x, 0)) {
         int x0 = x * widthPx / matrix.getWidth();

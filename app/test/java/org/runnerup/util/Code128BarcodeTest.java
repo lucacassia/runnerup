@@ -59,15 +59,15 @@ public class Code128BarcodeTest {
   }
 
   @Test
-  public void renderQuietZonesAreWhite() {
+  public void renderQuietZonesAreTransparent() {
     BitMatrix matrix = Code128Barcode.encode("C1234567");
     int widthPx = 200;
     int[] pixels = Code128Barcode.pixels(matrix, widthPx, DECODE_HEIGHT);
     int matrixWidth = matrix.getWidth();
     for (int x = 0; x < 4; x++) {
-      assertColumnsWhite(
+      assertColumnsTransparent(
           pixels, widthPx, x * widthPx / matrixWidth, (x + 1) * widthPx / matrixWidth);
-      assertColumnsWhite(
+      assertColumnsTransparent(
           pixels,
           widthPx,
           (matrixWidth - 1 - x) * widthPx / matrixWidth,
@@ -80,7 +80,10 @@ public class Code128BarcodeTest {
     String value = "C1234567";
     assertEquals(
         value,
-        decode(Code128Barcode.pixels(Code128Barcode.encode(value), 200, DECODE_HEIGHT), 200));
+        decode(
+            overLightBackdrop(
+                Code128Barcode.pixels(Code128Barcode.encode(value), 200, DECODE_HEIGHT)),
+            200));
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -97,12 +100,20 @@ public class Code128BarcodeTest {
     return result.getText();
   }
 
-  private static void assertColumnsWhite(int[] pixels, int widthPx, int x0, int x1) {
+  private static void assertColumnsTransparent(int[] pixels, int widthPx, int x0, int x1) {
     for (int px = x0; px < x1; px++) {
       for (int y = 0; y < DECODE_HEIGHT; y++) {
-        assertEquals(0xFFFFFFFF, pixels[y * widthPx + px]);
+        assertEquals(0x00000000, pixels[y * widthPx + px]);
       }
     }
+  }
+
+  private static int[] overLightBackdrop(int[] pixels) {
+    int[] out = new int[pixels.length];
+    for (int i = 0; i < pixels.length; i++) {
+      out[i] = (pixels[i] & 0xFF000000) == 0 ? 0xFFF5F8FD : pixels[i];
+    }
+    return out;
   }
 
   private static String decode(BitMatrix matrix) throws ReaderException {
