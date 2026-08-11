@@ -23,8 +23,7 @@ public class StopProgressDrawable extends Drawable {
   private final Paint squarePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Paint ringPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final RectF ringBounds =
-      new RectF(
-          12f - RING_RADIUS, 12f - RING_RADIUS, 12f + RING_RADIUS, 12f + RING_RADIUS);
+      new RectF(12f - RING_RADIUS, 12f - RING_RADIUS, 12f + RING_RADIUS, 12f + RING_RADIUS);
   private float progress = 0f;
   private ColorStateList tint = null;
   private PorterDuff.Mode tintMode = PorterDuff.Mode.SRC_IN;
