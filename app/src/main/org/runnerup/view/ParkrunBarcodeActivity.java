@@ -52,18 +52,7 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
             if (scanned == null || scanned.isEmpty()) {
               return;
             }
-            String existing = prefs.getString(getString(R.string.pref_parkrun_barcode), null);
-            if (existing != null && !existing.equals(scanned)) {
-              new MaterialAlertDialogBuilder(this)
-                  .setTitle(org.runnerup.common.R.string.Replace_barcode)
-                  .setMessage(getString(org.runnerup.common.R.string.Replace_barcode_text, scanned))
-                  .setPositiveButton(
-                      org.runnerup.common.R.string.Yes, (dialog, which) -> saveBarcode(scanned))
-                  .setNegativeButton(org.runnerup.common.R.string.No, null)
-                  .show();
-            } else {
-              saveBarcode(scanned);
-            }
+            saveBarcode(scanned);
           });
 
   @Override
@@ -83,7 +72,6 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
     valueView = findViewById(R.id.barcode_value);
 
     findViewById(R.id.empty_scan_button).setOnClickListener(v -> launchScanner());
-    findViewById(R.id.scan_new_button).setOnClickListener(v -> launchScanner());
     findViewById(R.id.delete_button).setOnClickListener(v -> confirmDelete());
 
     refresh();

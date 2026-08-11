@@ -25,13 +25,6 @@
             android:orientation="vertical"
             android:padding="32dp">
 
-            <ImageView
-                android:id="@+id/parkrun_logo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="@string/Parkrun_barcode"
-                android:src="@drawable/parkrun_logo" />
-
             <LinearLayout
                 android:id="@+id/empty_state"
                 android:layout_width="match_parent"
@@ -39,6 +32,13 @@
                 android:gravity="center"
                 android:orientation="vertical"
                 android:paddingTop="32dp">
+
+                <ImageView
+                    android:id="@+id/parkrun_logo_empty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/Parkrun_barcode"
+                    android:src="@drawable/parkrun_logo" />
 
                 <TextView
                     android:id="@+id/empty_text"
@@ -56,54 +56,59 @@
                     android:text="@string/Scan_parkrun_barcode" />
             </LinearLayout>
 
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/stored_state"
+                style="?attr/materialCardViewElevatedStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:paddingTop="32dp"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/barcode_view"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/barcode_height"
-                    android:background="@android:color/white"
-                    android:contentDescription="@string/Parkrun_barcode"
-                    android:scaleType="fitCenter" />
-
-                <TextView
-                    android:id="@+id/barcode_value"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:textIsSelectable="true"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
+                android:visibility="gone"
+                app:cardBackgroundColor="@android:color/white">
 
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:orientation="horizontal">
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical">
 
-                    <Button
-                        android:id="@+id/scan_new_button"
-                        style="?android:attr/buttonBarButtonStyle"
+                    <ImageView
+                        android:id="@+id/parkrun_logo"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/Scan_new_barcode" />
+                        android:contentDescription="@string/Parkrun_barcode"
+                        android:paddingTop="24dp"
+                        android:src="@drawable/parkrun_logo" />
 
-                    <Button
+                    <ImageView
+                        android:id="@+id/barcode_view"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/barcode_height"
+                        android:background="@android:color/white"
+                        android:contentDescription="@string/Parkrun_barcode"
+                        android:scaleType="fitCenter" />
+
+                    <TextView
+                        android:id="@+id/barcode_value"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:textColor="@android:color/black"
+                        android:textIsSelectable="true"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
                         android:id="@+id/delete_button"
-                        style="?android:attr/buttonBarButtonStyle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:text="@string/Delete" />
+                        android:layout_marginTop="16dp"
+                        android:layout_marginBottom="24dp"
+                        android:contentDescription="@string/Delete"
+                        app:backgroundTint="?attr/colorPrimaryContainer"
+                        app:fabSize="mini"
+                        app:srcCompat="@drawable/ic_delete"
+                        app:tint="?attr/colorOnPrimaryContainer" />
                 </LinearLayout>
-            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

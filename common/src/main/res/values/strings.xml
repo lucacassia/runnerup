@@ -397,10 +397,7 @@
     <string name="Camera_permission_text">RunnerUp needs camera access to scan your parkrun barcode.</string>
     <string name="Camera_unavailable_text">No back camera available.</string>
     <string name="Parkrun_barcode">parkrun barcode</string>
-    <string name="Scan_new_barcode">Scan new barcode</string>
     <string name="No_parkrun_barcode_text">No parkrun barcode stored yet.\nScan your barcode so you can show it at events.</string>
-    <string name="Replace_barcode">Replace barcode?</string>
-    <string name="Replace_barcode_text">A parkrun barcode is already stored. Replace it with %1$s?</string>
     <string name="Delete_barcode">Delete barcode?</string>
     <string name="Delete_barcode_text">The stored parkrun barcode will be removed.</string>
 </resources>
