@@ -45,6 +45,13 @@ public final class Code128Barcode {
     if (widthPx <= 0 || heightPx <= 0) {
       throw new IllegalArgumentException("bitmap width and height must be positive");
     }
+    int[] pixels = pixels(matrix, widthPx, heightPx);
+    Bitmap bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888);
+    bitmap.setPixels(pixels, 0, widthPx, 0, 0, widthPx, heightPx);
+    return bitmap;
+  }
+
+  static int[] pixels(BitMatrix matrix, int widthPx, int heightPx) {
     int[] pixels = new int[widthPx * heightPx];
     Arrays.fill(pixels, Color.WHITE);
     for (int x = 0; x < matrix.getWidth(); x++) {
@@ -58,8 +65,6 @@ public final class Code128Barcode {
         }
       }
     }
-    Bitmap bitmap = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888);
-    bitmap.setPixels(pixels, 0, widthPx, 0, 0, widthPx, heightPx);
-    return bitmap;
+    return pixels;
   }
 }

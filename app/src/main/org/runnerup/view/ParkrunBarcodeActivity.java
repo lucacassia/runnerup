@@ -26,10 +26,10 @@ import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.preference.PreferenceManager;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.runnerup.R;
 import org.runnerup.util.Code128Barcode;
 import org.runnerup.util.ViewUtil;
@@ -54,7 +54,7 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
             }
             String existing = prefs.getString(getString(R.string.pref_parkrun_barcode), null);
             if (existing != null && !existing.equals(scanned)) {
-              new AlertDialog.Builder(this)
+              new MaterialAlertDialogBuilder(this)
                   .setTitle(org.runnerup.common.R.string.Replace_barcode)
                   .setMessage(getString(org.runnerup.common.R.string.Replace_barcode_text, scanned))
                   .setPositiveButton(
@@ -101,7 +101,7 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
   }
 
   private void confirmDelete() {
-    new AlertDialog.Builder(this)
+    new MaterialAlertDialogBuilder(this)
         .setTitle(org.runnerup.common.R.string.Delete_barcode)
         .setMessage(org.runnerup.common.R.string.Delete_barcode_text)
         .setPositiveButton(

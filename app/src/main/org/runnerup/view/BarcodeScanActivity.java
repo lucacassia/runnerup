@@ -22,12 +22,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Size;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.camera.core.CameraInfoUnavailableException;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
@@ -103,6 +105,13 @@ public class BarcodeScanActivity extends AppCompatActivity {
         () -> {
           try {
             ProcessCameraProvider provider = providerFuture.get();
+            if (!provider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
+              Toast.makeText(
+                      this, org.runnerup.common.R.string.Camera_unavailable_text, Toast.LENGTH_LONG)
+                  .show();
+              finish();
+              return;
+            }
             PreviewView viewFinder = findViewById(R.id.preview_view);
             Preview preview = new Preview.Builder().build();
             preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
@@ -110,13 +119,17 @@ public class BarcodeScanActivity extends AppCompatActivity {
             ImageAnalysis analysis =
                 new ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .setTargetResolution(new Size(1280, 720))
                     .build();
             analysis.setAnalyzer(analysisExecutor, this::analyze);
 
             provider.unbindAll();
             provider.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, preview, analysis);
-          } catch (ExecutionException | InterruptedException e) {
+          } catch (ExecutionException | InterruptedException | CameraInfoUnavailableException e) {
             Log.e("BarcodeScanActivity", "failed to start camera", e);
+            Toast.makeText(
+                    this, org.runnerup.common.R.string.Camera_unavailable_text, Toast.LENGTH_LONG)
+                .show();
             finish();
           }
         },

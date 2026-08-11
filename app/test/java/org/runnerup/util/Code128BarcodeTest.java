@@ -52,6 +52,59 @@ public class Code128BarcodeTest {
     Code128Barcode.encode("");
   }
 
+  @Test
+  public void renderDimsMatchRequestedSize() {
+    assertEquals(
+        200 * 64, Code128Barcode.pixels(Code128Barcode.encode("C1234567"), 200, 64).length);
+  }
+
+  @Test
+  public void renderQuietZonesAreWhite() {
+    BitMatrix matrix = Code128Barcode.encode("C1234567");
+    int widthPx = 200;
+    int[] pixels = Code128Barcode.pixels(matrix, widthPx, DECODE_HEIGHT);
+    int matrixWidth = matrix.getWidth();
+    for (int x = 0; x < 4; x++) {
+      assertColumnsWhite(
+          pixels, widthPx, x * widthPx / matrixWidth, (x + 1) * widthPx / matrixWidth);
+      assertColumnsWhite(
+          pixels,
+          widthPx,
+          (matrixWidth - 1 - x) * widthPx / matrixWidth,
+          (matrixWidth - x) * widthPx / matrixWidth);
+    }
+  }
+
+  @Test
+  public void renderDecodesBack() throws ReaderException {
+    String value = "C1234567";
+    assertEquals(
+        value,
+        decode(Code128Barcode.pixels(Code128Barcode.encode(value), 200, DECODE_HEIGHT), 200));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void renderGuardRejectsNonPositive() {
+    Code128Barcode.renderToBitmap(Code128Barcode.encode("C1234567"), 0, DECODE_HEIGHT);
+    Code128Barcode.renderToBitmap(Code128Barcode.encode("C1234567"), 200, 0);
+  }
+
+  private static String decode(int[] pixels, int width) throws ReaderException {
+    BinaryBitmap image =
+        new BinaryBitmap(
+            new GlobalHistogramBinarizer(new RGBLuminanceSource(width, DECODE_HEIGHT, pixels)));
+    Result result = new Code128Reader().decode(image);
+    return result.getText();
+  }
+
+  private static void assertColumnsWhite(int[] pixels, int widthPx, int x0, int x1) {
+    for (int px = x0; px < x1; px++) {
+      for (int y = 0; y < DECODE_HEIGHT; y++) {
+        assertEquals(0xFFFFFFFF, pixels[y * widthPx + px]);
+      }
+    }
+  }
+
   private static String decode(BitMatrix matrix) throws ReaderException {
     BinaryBitmap image =
         new BinaryBitmap(new GlobalHistogramBinarizer(toLuminanceSource(matrix, DECODE_HEIGHT)));
