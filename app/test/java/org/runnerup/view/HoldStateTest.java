@@ -78,6 +78,20 @@ public class HoldStateTest {
   }
 
   @Test
+  public void upAtExactlyDurationCompletes() {
+    state.onDown(T0);
+    assertEquals(Result.COMPLETE, state.onUp(T0 + DURATION));
+    assertFalse(state.isPressing());
+  }
+
+  @Test
+  public void upPastDurationCompletes() {
+    state.onDown(T0);
+    assertEquals(Result.COMPLETE, state.onUp(T0 + DURATION + 100L));
+    assertFalse(state.isPressing());
+  }
+
+  @Test
   public void cancelResetsWithoutHintEvent() {
     state.onDown(T0);
     state.onCancel();

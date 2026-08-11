@@ -54,7 +54,7 @@ public final class HoldState {
     }
     boolean early = nowMillis - downMillis < holdDurationMillis;
     downMillis = -1L;
-    return early ? Result.EARLY_RELEASE : Result.NONE;
+    return early ? Result.EARLY_RELEASE : Result.COMPLETE;
   }
 
   public void onCancel() {

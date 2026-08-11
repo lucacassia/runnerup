@@ -523,7 +523,12 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   }
 
   private final OnClickListener pauseButtonClick = v -> togglePause();
-  private final OnClickListener nextLapButtonClick = v -> newLap();
+  private final OnClickListener nextLapButtonClick =
+      v -> {
+        if (workout != null && !workout.isPaused()) {
+          newLap();
+        }
+      };
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {

@@ -39,7 +39,7 @@ public class HoldToStopListener implements View.OnTouchListener {
   @Override
   @SuppressLint("ClickableViewAccessibility")
   public boolean onTouch(View v, MotionEvent event) {
-    return onEvent(event.getActionMasked(), SystemClock.uptimeMillis());
+    return onEvent(event.getActionMasked(), SystemClock.uptimeMillis(), event.getX(), event.getY());
   }
 
   public void cancel() {
@@ -49,7 +49,7 @@ public class HoldToStopListener implements View.OnTouchListener {
     view.invalidate();
   }
 
-  boolean onEvent(int action, long nowMillis) {
+  boolean onEvent(int action, long nowMillis, float x, float y) {
     if (!stopMode.getAsBoolean()) {
       return false;
     }
@@ -67,6 +67,11 @@ public class HoldToStopListener implements View.OnTouchListener {
       case MotionEvent.ACTION_CANCEL:
         cancel();
         return true;
+      case MotionEvent.ACTION_MOVE:
+        if (x < 0f || y < 0f || x > view.getWidth() || y > view.getHeight()) {
+          cancel();
+        }
+        return true;
       default:
         return true;
     }
@@ -75,6 +80,10 @@ public class HoldToStopListener implements View.OnTouchListener {
   boolean tick(long nowMillis) {
     if (!state.isPressing()) {
       return false;
+    }
+    if (!stopMode.getAsBoolean()) {
+      cancel();
+      return true;
     }
     drawable.setProgress(state.progress(nowMillis));
     view.invalidate();
@@ -88,9 +97,7 @@ public class HoldToStopListener implements View.OnTouchListener {
   }
 
   private void startAnimation() {
-    if (state.isPressing()) {
-      view.postOnAnimation(frame);
-    }
+    view.postOnAnimation(frame);
   }
 
   private void stopAnimation() {
@@ -99,8 +106,11 @@ public class HoldToStopListener implements View.OnTouchListener {
 
   private void finishUp(long nowMillis) {
     stopAnimation();
-    if (state.onUp(nowMillis) == HoldState.Result.EARLY_RELEASE) {
+    HoldState.Result result = state.onUp(nowMillis);
+    if (result == HoldState.Result.EARLY_RELEASE) {
       onHint.run();
+    } else if (result == HoldState.Result.COMPLETE) {
+      onComplete.run();
     }
     drawable.setProgress(0f);
     view.invalidate();
