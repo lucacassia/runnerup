@@ -861,7 +861,11 @@ public class StartFragment extends Fragment implements TickListener {
           builder
               .setPositiveButton(
                   org.runnerup.common.R.string.OK,
-                  (dialog, id) -> permissionLauncher.launch(permissions))
+                  (dialog, id) -> {
+                    if (getActivity() != null) {
+                      permissionLauncher.launch(permissions);
+                    }
+                  })
               .setMessage(
                   baseMessage
                       + "\n"
