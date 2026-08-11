@@ -164,4 +164,6 @@
     <string name="pref_importdb">pref_importdb</string>
     <string name="pref_prunedb">pref_prunedb</string>
     <string name="pref_about">pref_about</string>
+
+    <string name="pref_parkrun_barcode">pref_parkrun_barcode</string>
 </resources>

@@ -28,6 +28,17 @@
         app:fragment="org.runnerup.view.SettingsUnitsFragment"
         app:iconSpaceReserved="false" />
 
+    <!--Parkrun barcode -->
+
+    <Preference
+        android:key="@string/pref_parkrun_barcode"
+        android:title="@string/Parkrun_barcode"
+        app:iconSpaceReserved="false">
+        <intent
+            android:targetClass="org.runnerup.view.ParkrunBarcodeActivity"
+            android:targetPackage="@string/applicationIdFull" />
+    </Preference>
+
     <!--Sensors -->
 
     <Preference

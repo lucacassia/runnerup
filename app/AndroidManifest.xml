@@ -135,6 +135,11 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".view.ParkrunBarcodeActivity"
+            android:label="@string/Parkrun_barcode"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".view.DetailActivity"
             android:configChanges="orientation|screenSize|uiMode"
             android:parentActivityName=".view.MainLayout"
