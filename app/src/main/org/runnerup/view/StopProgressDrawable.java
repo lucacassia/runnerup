@@ -1,9 +1,12 @@
 package org.runnerup.view;
 
+import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import androidx.annotation.NonNull;
@@ -23,6 +26,9 @@ public class StopProgressDrawable extends Drawable {
       new RectF(
           12f - RING_RADIUS, 12f - RING_RADIUS, 12f + RING_RADIUS, 12f + RING_RADIUS);
   private float progress = 0f;
+  private ColorStateList tint = null;
+  private PorterDuff.Mode tintMode = PorterDuff.Mode.SRC_IN;
+  private ColorFilter tintFilter = null;
 
   public StopProgressDrawable() {
     squarePaint.setColor(0xffffffff);
@@ -40,6 +46,8 @@ public class StopProgressDrawable extends Drawable {
 
   @Override
   public void draw(@NonNull Canvas canvas) {
+    squarePaint.setColorFilter(tintFilter);
+    ringPaint.setColorFilter(tintFilter);
     canvas.drawRect(SQUARE_LEFT, SQUARE_TOP, SQUARE_RIGHT, SQUARE_BOTTOM, squarePaint);
     if (progress > 0f) {
       canvas.drawArc(ringBounds, -90f, 360f * progress, false, ringPaint);
@@ -55,6 +63,29 @@ public class StopProgressDrawable extends Drawable {
 
   @Override
   public void setColorFilter(@Nullable ColorFilter colorFilter) {}
+
+  @Override
+  public void setTint(int color) {
+    setTintList(ColorStateList.valueOf(color));
+  }
+
+  @Override
+  public void setTintList(@Nullable ColorStateList tint) {
+    this.tint = tint;
+    rebuildTintFilter();
+    invalidateSelf();
+  }
+
+  @Override
+  public void setTintMode(@NonNull PorterDuff.Mode mode) {
+    tintMode = mode;
+    rebuildTintFilter();
+    invalidateSelf();
+  }
+
+  private void rebuildTintFilter() {
+    tintFilter = tint == null ? null : new PorterDuffColorFilter(tint.getDefaultColor(), tintMode);
+  }
 
   @Override
   public int getOpacity() {
