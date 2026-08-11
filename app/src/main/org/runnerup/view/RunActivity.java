@@ -45,6 +45,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -89,6 +90,8 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Tracker mTracker = null;
   private final Handler handler = new Handler();
 
+  private static final long HOLD_TO_STOP_MILLIS = 1500L;
+
   private final ActivityResultLauncher<Intent> saveLauncher =
       registerForActivityResult(
           new ActivityResultContracts.StartActivityForResult(),
@@ -96,6 +99,8 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
   private ExtendedFloatingActionButton pauseButton = null;
   private ExtendedFloatingActionButton nextLapButton = null;
+  private StopProgressDrawable stopProgressDrawable = null;
+  private HoldToStopListener holdToStopListener = null;
   private TextView activityTime = null;
   private TextView activityDistance = null;
   private TextView activityPace = null;
@@ -188,6 +193,16 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     pauseButton = findViewById(R.id.pause_button);
     pauseButton.setOnClickListener(pauseButtonClick);
     nextLapButton = findViewById(R.id.next_lap_button);
+    stopProgressDrawable = new StopProgressDrawable();
+    holdToStopListener =
+        new HoldToStopListener(
+            nextLapButton,
+            stopProgressDrawable,
+            HOLD_TO_STOP_MILLIS,
+            () -> workout != null && workout.isPaused(),
+            this::doStop,
+            this::showPressHoldToStopHint);
+    nextLapButton.setOnTouchListener(holdToStopListener);
     activityTime = findViewById(R.id.run_activity_time);
     activityDistance = findViewById(R.id.run_activity_distance);
     activityPace = findViewById(R.id.run_activity_pace);
@@ -270,6 +285,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   @Override
   public void onPause() {
     super.onPause();
+    if (holdToStopListener != null) {
+      holdToStopListener.cancel();
+    }
     if (liveMap != null) {
       liveMap.onPause();
     }
@@ -292,6 +310,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   @Override
   public void onDestroy() {
     super.onDestroy();
+    if (holdToStopListener != null) {
+      holdToStopListener.cancel();
+    }
     unbindGpsTracker();
     stopTimer();
     if (liveMap != null) {
@@ -438,6 +459,10 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
   }
 
+  private void showPressHoldToStopHint() {
+    Toast.makeText(this, R.string.press_hold_to_stop, Toast.LENGTH_SHORT).show();
+  }
+
   private ColorStateList themeColor(int attr) {
     TypedValue tv = new TypedValue();
     getTheme().resolveAttribute(attr, tv, true);
@@ -455,7 +480,12 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     ButtonState s = buttonState(paused);
     pauseButton.setIconResource(s.leftIcon);
     pauseButton.setText(s.leftText);
-    nextLapButton.setIconResource(s.rightIcon);
+    if (paused) {
+      stopProgressDrawable.setProgress(0f);
+      nextLapButton.setIcon(stopProgressDrawable);
+    } else {
+      nextLapButton.setIconResource(s.rightIcon);
+    }
     nextLapButton.setText(s.rightText);
     nextLapButton.setBackgroundTintList(themeColor(s.rightBg));
     nextLapButton.setIconTint(themeColor(s.rightFg));
@@ -493,14 +523,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   }
 
   private final OnClickListener pauseButtonClick = v -> togglePause();
-  private final OnClickListener nextLapButtonClick =
-      v -> {
-        if (workout != null && workout.isPaused()) {
-          doStop();
-        } else {
-          newLap();
-        }
-      };
+  private final OnClickListener nextLapButtonClick = v -> newLap();
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {

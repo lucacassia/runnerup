@@ -52,4 +52,5 @@
     <string name="delete_all_confirm_ok">Delete</string>
     <string name="delete_all_done">All activities deleted</string>
     <string name="delete_all_summary">Delete all activities and their laps, locations and upload history from the database</string>
+    <string name="press_hold_to_stop">Press and hold to stop</string>
 </resources>
