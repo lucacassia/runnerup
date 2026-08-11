@@ -29,7 +29,7 @@ Small visual polish of the stored-state card in `ParkrunBarcodeActivity`: more s
 
 ### 4. Parkrun logo color
 
-`app/res/drawable-nodpi/parkrun_logo.png`: recolor to pure black. The opaque pixels are currently dark purple `#2B233D`. Set RGB to `(0,0,0)` for every pixel while preserving the alpha channel (keeps anti-aliased edges). File size/geometry (270×126) unchanged; palette mode `P` → saved as RGBA or converted back to palette with a black+alpha palette.
+`app/res/drawable-nodpi/parkrun_logo.png`: recolor to pure black. The opaque pixels are currently dark purple `#2B233D`. Set RGB to `(0,0,0)` for every pixel while preserving the alpha channel (keeps anti-aliased edges). File size/geometry (270×126) unchanged; convert the palette-mode PNG to RGBA and save.
 
 ## Files touched
 
