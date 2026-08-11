@@ -1,6 +1,7 @@
 package org.runnerup.view;
 
 import android.content.res.ColorStateList;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
@@ -13,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 public class StopProgressDrawable extends Drawable {
+  private static final float VIEWPORT = 24f;
   private static final float SQUARE_LEFT = 6f;
   private static final float SQUARE_TOP = 6f;
   private static final float SQUARE_RIGHT = 18f;
@@ -47,10 +49,14 @@ public class StopProgressDrawable extends Drawable {
   public void draw(@NonNull Canvas canvas) {
     squarePaint.setColorFilter(tintFilter);
     ringPaint.setColorFilter(tintFilter);
+    float scale = Math.min(getBounds().width(), getBounds().height()) / VIEWPORT;
+    canvas.save();
+    canvas.scale(scale, scale);
     canvas.drawRect(SQUARE_LEFT, SQUARE_TOP, SQUARE_RIGHT, SQUARE_BOTTOM, squarePaint);
     if (progress > 0f) {
       canvas.drawArc(ringBounds, -90f, 360f * progress, false, ringPaint);
     }
+    canvas.restore();
   }
 
   @Override
@@ -93,11 +99,11 @@ public class StopProgressDrawable extends Drawable {
 
   @Override
   public int getIntrinsicWidth() {
-    return 24;
+    return Math.round(VIEWPORT * Resources.getSystem().getDisplayMetrics().density);
   }
 
   @Override
   public int getIntrinsicHeight() {
-    return 24;
+    return Math.round(VIEWPORT * Resources.getSystem().getDisplayMetrics().density);
   }
 }
