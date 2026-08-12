@@ -315,6 +315,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (holdToStopListener != null) {
       holdToStopListener.cancel();
     }
+    if (liveMap != null) {
+      liveMap.onPause();
+    }
   }
 
   @Override
@@ -326,6 +329,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
     super.onResume();
     showOnLockScreen(showOnLockScreen);
+    if (liveMap != null) {
+      liveMap.onResume();
+    }
   }
 
   @Override
@@ -336,6 +342,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
     unbindGpsTracker();
     stopTimer();
+    if (liveMap != null) {
+      liveMap.onDestroy();
+    }
   }
 
   private void onGpsTrackerBound() {
