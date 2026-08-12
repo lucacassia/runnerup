@@ -76,6 +76,7 @@ import java.util.TimerTask;
 import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.common.tracker.TrackerState;
+import org.runnerup.db.DBHelper;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerHRM;
 import org.runnerup.util.Formatter;
@@ -360,6 +361,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
 
     startTimer();
+    if (liveMap != null) {
+      liveMap.onFirstShow(DBHelper.getReadableDatabase(this), mTracker.getActivityId());
+    }
 
     populateWorkoutList();
     nextLapButton.setOnClickListener(nextLapButtonClick);
