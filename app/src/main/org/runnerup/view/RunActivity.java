@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.common.tracker.TrackerState;
 import org.runnerup.tracker.Tracker;
@@ -186,6 +187,12 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
     setContentView(R.layout.run);
+    if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
+      runMapview = findViewById(R.id.run_mapview);
+      runMapview.setVisibility(View.VISIBLE);
+      liveMap = new LiveMap(runMapview, findViewById(R.id.recenter_button));
+      liveMap.onCreate(savedInstanceState);
+    }
     View rootView = findViewById(R.id.start_view);
     ViewCompat.setOnApplyWindowInsetsListener(
         rootView,
