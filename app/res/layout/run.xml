@@ -14,7 +14,7 @@
   ~  You should have received a copy of the GNU General Public License
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/start_view"
     android:layout_width="fill_parent"
@@ -29,105 +29,226 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="12dp"
         android:layout_marginEnd="16dp"
+        android:clickable="true"
+        android:focusable="true"
         app:cardCornerRadius="@dimen/history_row_corner"
         app:cardElevation="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="vertical"
             android:padding="20dp">
 
-            <LinearLayout
+            <ImageView
+                android:id="@+id/stats_expand_indicator"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="end"
+                android:layout_marginBottom="8dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_expand_down_white_24dp"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <FrameLayout
+                android:id="@+id/stats_3_area"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:baselineAligned="false"
-                android:orientation="horizontal">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:id="@+id/stats_3_horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/run_activity_distance"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:gravity="center_horizontal"
-                        android:textAppearance="?attr/textAppearanceHeadlineLarge"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textStyle="bold"
-                        app:autoSizeMaxTextSize="32sp"
-                        app:autoSizeMinTextSize="16sp"
-                        app:autoSizeStepGranularity="1sp"
-                        app:autoSizeTextType="uniform" />
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                    <TextView
-                        style="@style/RunStatLabel"
-                        android:layout_width="match_parent"
+                        <TextView
+                            android:id="@+id/run_activity_distance"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="32sp"
+                            app:autoSizeMinTextSize="16sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            style="@style/RunStatLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Distance" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:gravity="center_horizontal"
-                        android:text="@string/Distance" />
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/run_activity_time"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="32sp"
+                            app:autoSizeMinTextSize="16sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            style="@style/RunStatLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Time" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/run_activity_pace"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="32sp"
+                            app:autoSizeMinTextSize="16sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            style="@style/RunStatLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Pace" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:id="@+id/stats_3_vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:baselineAligned="false"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
-                    <TextView
-                        android:id="@+id/run_activity_time"
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_horizontal"
-                        android:textAppearance="?attr/textAppearanceHeadlineLarge"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textStyle="bold"
-                        app:autoSizeMaxTextSize="32sp"
-                        app:autoSizeMinTextSize="16sp"
-                        app:autoSizeStepGranularity="1sp"
-                        app:autoSizeTextType="uniform" />
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
 
-                    <TextView
-                        style="@style/RunStatLabel"
+                        <TextView
+                            android:id="@+id/run_activity_distance_expanded"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:maxLines="1"
+                            android:textAppearance="?attr/textAppearanceDisplayMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="64sp"
+                            app:autoSizeMinTextSize="24sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            android:id="@+id/distance_expanded_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Distance" />
+                    </LinearLayout>
+
+                    <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:gravity="center_horizontal"
-                        android:text="@string/Time" />
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/run_activity_time_expanded"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:maxLines="1"
+                            android:textAppearance="?attr/textAppearanceDisplayMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="64sp"
+                            app:autoSizeMinTextSize="24sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            android:id="@+id/time_expanded_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Time" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/run_activity_pace_expanded"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:maxLines="1"
+                            android:textAppearance="?attr/textAppearanceDisplayMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="64sp"
+                            app:autoSizeMinTextSize="24sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            android:id="@+id/pace_expanded_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Pace" />
+                    </LinearLayout>
                 </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/run_activity_pace"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_horizontal"
-                        android:textAppearance="?attr/textAppearanceHeadlineLarge"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textStyle="bold"
-                        app:autoSizeMaxTextSize="32sp"
-                        app:autoSizeMinTextSize="16sp"
-                        app:autoSizeStepGranularity="1sp"
-                        app:autoSizeTextType="uniform" />
-
-                    <TextView
-                        style="@style/RunStatLabel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:gravity="center_horizontal"
-                        android:text="@string/Pace" />
-                </LinearLayout>
-            </LinearLayout>
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -262,62 +383,71 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/run_tab_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/table_layout1"
-        app:tabMode="fixed" />
-
-    <RelativeLayout
-        android:id="@+id/run_tab_content"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:id="@+id/run_sheet_host"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_above="@id/run_table_row1"
-        android:layout_below="@id/run_tab_layout">
+        android:layout_weight="1">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/workout_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingStart="16dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="8dp" />
+         <LinearLayout
+             android:id="@+id/run_bottom_sheet"
+             android:layout_width="match_parent"
+             android:layout_height="match_parent"
+             android:layout_gravity="bottom"
+             android:orientation="vertical"
+             android:background="?attr/colorSurface"
+             app:behavior_hideable="false"
+             app:behavior_peekHeight="@dimen/run_sheet_peek_height"
+             app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
-        <org.runnerup.util.MapViewWrapper
-            android:id="@+id/run_mapview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
+            <View
+                android:layout_width="32dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/bottom_sheet_handle" />
 
-        <TextView
-            android:id="@+id/hr_debug"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:scrollbars="vertical"
-            android:visibility="gone" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/Workout"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/recenter_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:layout_marginBottom="16dp"
-            android:layout_marginEnd="16dp"
-            android:contentDescription="@string/Recenter"
-            android:visibility="gone"
-            app:srcCompat="@drawable/ic_recenter"
-            app:tint="?attr/colorOnPrimaryContainer" />
-    </RelativeLayout>
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/workout_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingStart="16dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/hr_debug"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scrollbars="vertical"
+                    android:visibility="gone" />
+            </FrameLayout>
+        </LinearLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <LinearLayout
         android:id="@+id/run_table_row1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
         android:clipToPadding="false"
         android:gravity="center"
         android:orientation="horizontal"
@@ -351,4 +481,4 @@
             app:iconTint="?attr/colorOnPrimary" />
     </LinearLayout>
 
-</RelativeLayout>
+</LinearLayout>

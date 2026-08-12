@@ -17,6 +17,9 @@
 
 package org.runnerup.view;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.content.ComponentName;
@@ -42,8 +45,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -61,23 +66,18 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.common.tracker.TrackerState;
-import org.runnerup.db.DBHelper;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerHRM;
 import org.runnerup.util.Formatter;
-import org.runnerup.util.LiveMap;
-import org.runnerup.util.MapViewWrapper;
-import org.runnerup.util.MapWrapper;
 import org.runnerup.util.TickListener;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.Intensity;
@@ -104,6 +104,19 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private TextView activityTime = null;
   private TextView activityDistance = null;
   private TextView activityPace = null;
+  private TextView activityTimeExpanded = null;
+  private TextView activityDistanceExpanded = null;
+  private TextView activityPaceExpanded = null;
+  private View statsCard = null;
+  private ImageView statsExpandIndicator = null;
+  private View stats3Horizontal = null;
+  private View stats3Vertical = null;
+  private View stats3Area = null;
+  private boolean statsExpanded = false;
+  private boolean statsAnimating = false;
+  private int statsCardNaturalHeight = 0;
+  private int stats3AreaNaturalHeight = 0;
+  private int statsDelta = 0;
   private TextView lapTime = null;
   private TextView lapDistance = null;
   private TextView lapPace = null;
@@ -113,10 +126,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Formatter formatter = null;
   private TextView currentHr;
   private TextView hrDebug;
-  private TabLayout runTabLayout = null;
-  private MapViewWrapper runMapview = null;
-  private LiveMap liveMap = null;
-  private boolean mapTabActive = false;
+  private BottomSheetBehavior<?> runBottomSheetBehavior = null;
 
   static final class ButtonState {
     final int leftText;
@@ -171,9 +181,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (!isLargeScreen()) {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
-    if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
-      MapWrapper.start(this);
-    }
     setContentView(R.layout.run);
     View rootView = findViewById(R.id.start_view);
     ViewCompat.setOnApplyWindowInsetsListener(
@@ -206,6 +213,15 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     activityTime = findViewById(R.id.run_activity_time);
     activityDistance = findViewById(R.id.run_activity_distance);
     activityPace = findViewById(R.id.run_activity_pace);
+    activityTimeExpanded = findViewById(R.id.run_activity_time_expanded);
+    activityDistanceExpanded = findViewById(R.id.run_activity_distance_expanded);
+    activityPaceExpanded = findViewById(R.id.run_activity_pace_expanded);
+    statsCard = findViewById(R.id.table_layout1);
+    statsExpandIndicator = findViewById(R.id.stats_expand_indicator);
+    stats3Horizontal = findViewById(R.id.stats_3_horizontal);
+    stats3Vertical = findViewById(R.id.stats_3_vertical);
+    stats3Area = findViewById(R.id.stats_3_area);
+    statsCard.setOnClickListener(v -> toggleStatsExpanded());
     lapTime = findViewById(R.id.lap_time);
     lapDistance = findViewById(R.id.lap_distance);
     lapPace = findViewById(R.id.lap_pace);
@@ -216,22 +232,22 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     workoutList.setLayoutManager(new LinearLayoutManager(this));
     WorkoutAdapter adapter = new WorkoutAdapter(workoutRows);
     workoutList.setAdapter(adapter);
-    runTabLayout = findViewById(R.id.run_tab_layout);
-    runMapview = findViewById(R.id.run_mapview);
-    runTabLayout.addTab(
-        runTabLayout
-            .newTab()
-            .setText(getString(org.runnerup.common.R.string.Workout))
-            .setTag("workout"));
-    if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
-      runTabLayout.addTab(
-          runTabLayout.newTab().setText(getString(org.runnerup.common.R.string.Map)).setTag("map"));
-      liveMap = new LiveMap(runMapview, findViewById(R.id.recenter_button));
-      liveMap.onCreate(savedInstanceState);
-    }
-    runTabLayout.addOnTabSelectedListener(onRunTabSelectedListener);
     workoutList.setVisibility(View.VISIBLE);
-    runMapview.setVisibility(View.GONE);
+    runBottomSheetBehavior = BottomSheetBehavior.from(findViewById(R.id.run_bottom_sheet));
+    runBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+    statsCard
+        .getViewTreeObserver()
+        .addOnGlobalLayoutListener(
+            new ViewTreeObserver.OnGlobalLayoutListener() {
+              @Override
+              public void onGlobalLayout() {
+                if (statsCardNaturalHeight > 0) {
+                  statsCard.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                  return;
+                }
+                measureStatsExpansion();
+              }
+            });
 
     final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
     final Resources res = this.getResources();
@@ -288,9 +304,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (holdToStopListener != null) {
       holdToStopListener.cancel();
     }
-    if (liveMap != null) {
-      liveMap.onPause();
-    }
   }
 
   @Override
@@ -302,9 +315,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
     super.onResume();
     showOnLockScreen(showOnLockScreen);
-    if (liveMap != null) {
-      liveMap.onResume();
-    }
   }
 
   @Override
@@ -315,9 +325,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
     unbindGpsTracker();
     stopTimer();
-    if (liveMap != null) {
-      liveMap.onDestroy();
-    }
   }
 
   private void onGpsTrackerBound() {
@@ -386,38 +393,73 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         if (l2 != null && !l2.equals(l)) {
           l = l2;
         }
-        if (liveMap != null && mapTabActive) {
-          liveMap.onLocationChanged(l2);
-        }
       }
     }
   }
 
-  private final TabLayout.OnTabSelectedListener onRunTabSelectedListener =
-      new TabLayout.OnTabSelectedListener() {
-        @Override
-        public void onTabSelected(TabLayout.Tab tab) {
-          selectRunTab((String) tab.getTag());
-        }
+  private void measureStatsExpansion() {
+    View sheetHost = findViewById(R.id.run_sheet_host);
+    statsCardNaturalHeight = statsCard.getHeight();
+    stats3AreaNaturalHeight = stats3Area.getHeight();
+    int hostHeight = sheetHost.getHeight();
+    int peek = runBottomSheetBehavior.getPeekHeight();
+    statsDelta = Math.max(0, hostHeight - peek);
+  }
 
-        @Override
-        public void onTabUnselected(TabLayout.Tab tab) {}
-
-        @Override
-        public void onTabReselected(TabLayout.Tab tab) {}
-      };
-
-  private void selectRunTab(String tag) {
-    mapTabActive = "map".contentEquals(tag);
-    workoutList.setVisibility(mapTabActive ? View.GONE : View.VISIBLE);
-    runMapview.setVisibility(mapTabActive ? View.VISIBLE : View.GONE);
-    if (liveMap != null) {
-      liveMap.onMapVisibilityChanged(mapTabActive);
+  private void toggleStatsExpanded() {
+    if (statsAnimating || statsDelta <= 0 || statsCardNaturalHeight <= 0) {
+      return;
     }
-    if (mapTabActive && liveMap != null) {
-      liveMap.onFirstShow(
-          DBHelper.getReadableDatabase(this), mTracker != null ? mTracker.getActivityId() : -1);
-    }
+    statsAnimating = true;
+    statsExpanded = !statsExpanded;
+
+    final ViewGroup.LayoutParams cardLp = statsCard.getLayoutParams();
+    final ViewGroup.LayoutParams areaLp = stats3Area.getLayoutParams();
+    final int cardNatural = statsCardNaturalHeight;
+    final int areaNatural = stats3AreaNaturalHeight;
+    final int delta = statsDelta;
+
+    final int cardStart = statsExpanded ? cardNatural : cardNatural + delta;
+    final int cardEnd = statsExpanded ? cardNatural + delta : cardNatural;
+    final int areaStart = statsExpanded ? areaNatural : areaNatural + delta;
+    final int areaEnd = statsExpanded ? areaNatural + delta : areaNatural;
+
+    cardLp.height = cardStart;
+    ((ViewGroup.MarginLayoutParams) cardLp).bottomMargin = -(cardStart - cardNatural);
+    statsCard.setLayoutParams(cardLp);
+    areaLp.height = areaStart;
+    stats3Area.setLayoutParams(areaLp);
+
+    final View gone = statsExpanded ? stats3Horizontal : stats3Vertical;
+    final View shown = statsExpanded ? stats3Vertical : stats3Horizontal;
+    gone.animate().alpha(0f).setDuration(150).withEndAction(() -> gone.setVisibility(View.GONE));
+    shown.setAlpha(0f);
+    shown.setVisibility(View.VISIBLE);
+    shown.animate().alpha(1f).setDuration(150).start();
+
+    ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+    animator.setDuration(250);
+    animator.addUpdateListener(
+        a -> {
+          float f = a.getAnimatedFraction();
+          int cardH = Math.round(cardStart + (cardEnd - cardStart) * f);
+          int areaH = Math.round(areaStart + (areaEnd - areaStart) * f);
+          cardLp.height = cardH;
+          ((ViewGroup.MarginLayoutParams) cardLp).bottomMargin = -(cardH - cardNatural);
+          statsCard.setLayoutParams(cardLp);
+          areaLp.height = areaH;
+          stats3Area.setLayoutParams(areaLp);
+        });
+    animator.addListener(
+        new AnimatorListenerAdapter() {
+          @Override
+          public void onAnimationEnd(Animator animation) {
+            statsAnimating = false;
+          }
+        });
+
+    animator.start();
+    statsExpandIndicator.animate().rotation(statsExpanded ? 180f : 0f).setDuration(250).start();
   }
 
   private void onWorkoutResult(int resultCode, Intent data) {
@@ -597,6 +639,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       activityDistance.setText(
           formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(ad)));
       activityPace.setText(formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, ap));
+      activityTimeExpanded.setText(activityTime.getText());
+      activityDistanceExpanded.setText(activityDistance.getText());
+      activityPaceExpanded.setText(activityPace.getText());
 
       double ld = workout.getDistance(Scope.LAP);
       double lt = workout.getTime(Scope.LAP);
