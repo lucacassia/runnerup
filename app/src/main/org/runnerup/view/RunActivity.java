@@ -404,6 +404,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         if (l2 != null && !l2.equals(l)) {
           l = l2;
         }
+        if (liveMap != null) {
+          liveMap.onLocationChanged(l2);
+        }
       }
     }
   }
