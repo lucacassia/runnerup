@@ -78,6 +78,8 @@ import org.runnerup.common.tracker.TrackerState;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerHRM;
 import org.runnerup.util.Formatter;
+import org.runnerup.util.LiveMap;
+import org.runnerup.util.MapViewWrapper;
 import org.runnerup.util.TickListener;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.Intensity;
@@ -127,6 +129,8 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private TextView currentHr;
   private TextView hrDebug;
   private BottomSheetBehavior<?> runBottomSheetBehavior = null;
+  private MapViewWrapper runMapview = null;
+  private LiveMap liveMap = null;
 
   static final class ButtonState {
     final int leftText;
