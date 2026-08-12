@@ -39,7 +39,7 @@ public class BottomNavFragmentStateAdapter extends FragmentStateAdapter {
    */
   @DrawableRes
   private static final int[] ICONS = {
-    R.drawable.ic_tab_main_24dp, R.drawable.ic_tab_history_24dp, R.drawable.ic_tab_settings_24dp
+    R.drawable.ic_tab_record_24dp, R.drawable.ic_tab_history_24dp, R.drawable.ic_tab_settings_24dp
   };
 
   public BottomNavFragmentStateAdapter(@NonNull FragmentActivity fragmentActivity) {
