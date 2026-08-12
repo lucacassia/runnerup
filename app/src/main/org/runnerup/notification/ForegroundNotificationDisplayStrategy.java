@@ -2,6 +2,7 @@ package org.runnerup.notification;
 
 import android.Manifest;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -47,5 +48,8 @@ public class ForegroundNotificationDisplayStrategy implements NotificationDispla
   public void cancel(int notificationId) {
     isForeground = false;
     ServiceCompat.stopForeground(service, ServiceCompat.STOP_FOREGROUND_REMOVE);
+    NotificationManager notificationManager =
+        (NotificationManager) service.getSystemService(Context.NOTIFICATION_SERVICE);
+    notificationManager.cancel(notificationId);
   }
 }
