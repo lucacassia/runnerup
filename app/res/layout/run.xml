@@ -493,16 +493,17 @@
             app:iconTint="?attr/colorOnPrimary" />
     </LinearLayout>
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/recenter_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="16dp"
-            android:contentDescription="@string/Recenter"
-            android:visibility="gone"
-            app:srcCompat="@drawable/ic_recenter"
-            app:tint="?attr/colorOnPrimaryContainer" />
     </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/recenter_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:layout_margin="16dp"
+        android:contentDescription="@string/Recenter"
+        android:visibility="gone"
+        app:srcCompat="@drawable/ic_recenter"
+        app:tint="?attr/colorOnPrimaryContainer" />
 
 </FrameLayout>
