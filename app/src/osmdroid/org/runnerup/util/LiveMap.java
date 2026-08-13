@@ -1,5 +1,6 @@
 package org.runnerup.util;
 
+import android.content.res.Configuration;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -16,11 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import org.osmdroid.config.Configuration;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.CustomZoomButtonsController;
 import org.osmdroid.views.MapView;
@@ -32,8 +31,6 @@ import org.runnerup.db.entities.LocationEntity;
 public class LiveMap {
 
   private static final String OSMDROID_USER_AGENT = "org.runnerup.free";
-  private static final int TRACK_COLOR = Color.parseColor("#FF6D00");
-  private static final int TRACK_EDGE_COLOR = Color.parseColor("#FFB680");
   private static final float TRACK_WIDTH_PX = 10.f;
   private static final float TRACK_EDGE_WIDTH_PX = 20.f;
   private static final float MARKER_DIAMETER_PX = 3 * TRACK_WIDTH_PX;
@@ -44,11 +41,12 @@ public class LiveMap {
 
   private final MapView mapView;
   private final View recenterButton;
+  private final View attribution;
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
   private final List<GeoPoint> points = new ArrayList<>();
-  private final Polyline edge = newPolyline(TRACK_EDGE_COLOR, TRACK_EDGE_WIDTH_PX);
-  private final Polyline track = newPolyline(TRACK_COLOR, TRACK_WIDTH_PX);
+  private final Polyline edge = newPolyline(Color.BLACK, TRACK_EDGE_WIDTH_PX);
+  private final Polyline track = newPolyline(Color.BLACK, TRACK_WIDTH_PX);
   private Marker currentMarker = null;
   private boolean following = true;
   private boolean backfilled = false;
@@ -68,15 +66,21 @@ public class LiveMap {
     }
   }
 
-  public LiveMap(MapViewWrapper mapView, View recenterButton) {
+  public LiveMap(MapViewWrapper mapView, View recenterButton, View attribution) {
     this.mapView = mapView;
     this.recenterButton = recenterButton;
-    Configuration.getInstance().setUserAgentValue(OSMDROID_USER_AGENT);
+    this.attribution = attribution;
+    org.osmdroid.config.Configuration.getInstance().setUserAgentValue(OSMDROID_USER_AGENT);
     recenterButton.setOnClickListener(v -> recenter());
   }
 
   public void onCreate(Bundle savedInstanceState) {
-    mapView.setTileSource(TileSourceFactory.MAPNIK);
+    boolean isNight = isNightMode();
+    mapView.setTileSource(CartoTileSource.forNight(isNight));
+    mapView.setBackgroundColor(mapView.getContext().getColor(R.color.mapBackground));
+    track.getOutlinePaint().setColor(MapTheme.routeColor(isNight));
+    edge.getOutlinePaint().setColor(MapTheme.edgeColor(isNight));
+    attribution.setVisibility(View.VISIBLE);
     mapView.getZoomController().setVisibility(CustomZoomButtonsController.Visibility.NEVER);
     mapView.setMultiTouchControls(true);
     mapView.getController().setZoom(INITIAL_ZOOM);
@@ -104,6 +108,12 @@ public class LiveMap {
             return false;
           }
         });
+  }
+
+  private boolean isNightMode() {
+    return (mapView.getContext().getResources().getConfiguration().uiMode
+            & Configuration.UI_MODE_NIGHT_MASK)
+        == Configuration.UI_MODE_NIGHT_YES;
   }
 
   public void onFirstShow(SQLiteDatabase mDB, long activityId) {
