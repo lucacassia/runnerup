@@ -228,6 +228,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     activityTimeExpanded = findViewById(R.id.run_activity_time_expanded);
     activityDistanceExpanded = findViewById(R.id.run_activity_distance_expanded);
     activityPaceExpanded = findViewById(R.id.run_activity_pace_expanded);
+    activityTimeExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+    activityDistanceExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+    activityPaceExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     statsCard = findViewById(R.id.table_layout1);
     statsExpandIndicator = findViewById(R.id.stats_expand_indicator);
     stats3Horizontal = findViewById(R.id.stats_3_horizontal);
@@ -482,6 +485,10 @@ public class RunActivity extends AppCompatActivity implements TickListener {
           @Override
           public void onAnimationEnd(Animator animation) {
             statsAnimating = false;
+            stats3Vertical.requestLayout();
+            stats3Vertical.invalidate();
+            statsCard.requestLayout();
+            statsCard.invalidate();
           }
         });
 

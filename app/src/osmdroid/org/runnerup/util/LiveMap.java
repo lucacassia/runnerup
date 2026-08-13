@@ -40,6 +40,7 @@ public class LiveMap {
   private static final float MARKER_ICON_VIEWPORT = 24f;
   private static final float MARKER_CIRCLE_VIEWPORT = 18f;
   private static final double SAME_POINT_EPSILON = 1e-7;
+  private static final double INITIAL_ZOOM = 16.;
 
   private final MapView mapView;
   private final View recenterButton;
@@ -78,6 +79,7 @@ public class LiveMap {
     mapView.setTileSource(TileSourceFactory.MAPNIK);
     mapView.getZoomController().setVisibility(CustomZoomButtonsController.Visibility.NEVER);
     mapView.setMultiTouchControls(true);
+    mapView.getController().setZoom(INITIAL_ZOOM);
     mapView.setOnTouchListener(
         (v, event) -> {
           int action = event.getActionMasked();
@@ -131,7 +133,7 @@ public class LiveMap {
                 track.setPoints(points);
                 edge.setPoints(points);
                 if (!hadLivePoints) {
-                  mapView.getController().setZoom(15.);
+                  mapView.getController().setZoom(INITIAL_ZOOM);
                 }
                 if (!points.isEmpty()) {
                   ensureCurrentMarker();

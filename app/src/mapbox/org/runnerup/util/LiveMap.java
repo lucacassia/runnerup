@@ -36,6 +36,8 @@ import org.runnerup.db.entities.LocationEntity;
 
 public class LiveMap {
 
+  private static final double INITIAL_ZOOM = 16.0;
+
   private final Context context;
   private final MapView mapView;
   private final View recenterButton;
@@ -73,6 +75,7 @@ public class LiveMap {
   }
 
   public void onCreate(Bundle savedInstanceState) {
+    mapView.getMapboxMap().setCamera(new CameraOptions.Builder().zoom(INITIAL_ZOOM).build());
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
     Resources res = context.getResources();
     String val =
@@ -165,7 +168,8 @@ public class LiveMap {
                   try {
                     mapView
                         .getMapboxMap()
-                        .setCamera(new CameraOptions.Builder().center(last).zoom(15.0).build());
+                        .setCamera(
+                            new CameraOptions.Builder().center(last).zoom(INITIAL_ZOOM).build());
                   } finally {
                     suppressCamera = false;
                   }

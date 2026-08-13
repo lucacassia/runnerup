@@ -3,7 +3,8 @@
     <dimen name="margin_for_fab">88dp</dimen>
     <dimen name="activity_margin">16dp</dimen>
 
-    <dimen name="run_sheet_peek_height">56dp</dimen>
+    <dimen name="run_sheet_peek_height">48dp</dimen>
+    <dimen name="run_recenter_bottom_margin">136dp</dimen>
 
     <dimen name="history_row_corner">12dp</dimen>
     <dimen name="history_row_margin_h">16dp</dimen>
