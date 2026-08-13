@@ -2,4 +2,12 @@
 <resources>
     <color name="colorPrimary">#FAB283</color>
     <color name="colorText">#EEEEEE</color>
+
+    <color name="mapBackground">#0a0a0a</color>
+    <color name="mapAttributionBg">#66000000</color>
+    <color name="markerCurrent">#fab283</color>
+    <color name="markerCurrentStroke">#ffc09f</color>
+    <color name="markerStart">#7fd88f</color>
+    <color name="markerStartStroke">#4fae62</color>
+    <color name="markerLap">#e5c07b</color>
 </resources>
