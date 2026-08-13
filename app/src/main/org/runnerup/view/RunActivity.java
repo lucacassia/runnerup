@@ -191,7 +191,11 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       runMapview = findViewById(R.id.run_mapview);
       runMapview.setVisibility(View.VISIBLE);
-      liveMap = new LiveMap(runMapview, findViewById(R.id.recenter_button));
+      liveMap =
+          new LiveMap(
+              runMapview,
+              findViewById(R.id.recenter_button),
+              findViewById(R.id.map_attribution));
       liveMap.onCreate(savedInstanceState);
     }
     View rootView = findViewById(R.id.start_view);

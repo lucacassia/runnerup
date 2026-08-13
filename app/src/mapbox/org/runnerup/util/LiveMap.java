@@ -41,6 +41,7 @@ public class LiveMap {
   private final Context context;
   private final MapView mapView;
   private final View recenterButton;
+  private final View attribution;
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
   private final List<Point> points = new ArrayList<>();
@@ -67,10 +68,11 @@ public class LiveMap {
     }
   }
 
-  public LiveMap(MapViewWrapper mapView, View recenterButton) {
+  public LiveMap(MapViewWrapper mapView, View recenterButton, View attribution) {
     this.context = mapView.getContext();
     this.mapView = mapView;
     this.recenterButton = recenterButton;
+    this.attribution = attribution;
     recenterButton.setOnClickListener(v -> recenter());
   }
 
@@ -136,6 +138,7 @@ public class LiveMap {
                     stopFollowing();
                   }
                 });
+    attribution.setVisibility(View.VISIBLE);
   }
 
   public void onFirstShow(SQLiteDatabase mDB, long activityId) {
