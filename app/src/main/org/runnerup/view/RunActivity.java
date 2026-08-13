@@ -193,9 +193,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       runMapview.setVisibility(View.VISIBLE);
       liveMap =
           new LiveMap(
-              runMapview,
-              findViewById(R.id.recenter_button),
-              findViewById(R.id.map_attribution));
+              runMapview, findViewById(R.id.recenter_button), findViewById(R.id.map_attribution));
       liveMap.onCreate(savedInstanceState);
     }
     View rootView = findViewById(R.id.start_view);
