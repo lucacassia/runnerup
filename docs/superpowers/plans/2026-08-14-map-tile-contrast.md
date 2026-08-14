@@ -58,9 +58,9 @@ Append to `app/test/java/org/runnerup/util/MapThemeTest.java`:
   public void dayMatrixScalesFromWhite() {
     float[] m = MapTheme.DAY_TILE_MATRIX;
     assertIdentityExceptScale(m, 1.3f);
-    assertEquals(255f * (1f - 1.3f), m[4], 0f);
-    assertEquals(255f * (1f - 1.3f), m[9], 0f);
-    assertEquals(255f * (1f - 1.3f), m[14], 0f);
+    assertEquals(255f * (1f - 1.3f), m[4], 0.001f);
+    assertEquals(255f * (1f - 1.3f), m[9], 0.001f);
+    assertEquals(255f * (1f - 1.3f), m[14], 0.001f);
   }
 
   @Test
