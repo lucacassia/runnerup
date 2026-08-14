@@ -258,6 +258,16 @@
     <string name="Record">Record</string>
     <string name="History">History</string>
     <string name="Statistics">Statistics</string>
+    <string name="Statistics_7_days">Last 7 days</string>
+    <string name="Statistics_30_days">Last 30 days</string>
+    <string name="Statistics_365_days">Last 365 days</string>
+    <string name="Statistics_day">Day</string>
+    <string name="Statistics_week">Week</string>
+    <string name="Statistics_month">Month</string>
+    <string name="Statistics_last_14_days">Last 14 days</string>
+    <string name="Statistics_last_8_weeks">Last 8 weeks</string>
+    <string name="Statistics_last_12_months">Last 12 months</string>
+    <string name="Statistics_no_activities">No activities yet</string>
     <string name="Basic">Basic</string>
     <string name="Advanced">Advanced</string>
     <string name="Manual_activity_title">Add manual entry</string>

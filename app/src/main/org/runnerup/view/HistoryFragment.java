@@ -23,6 +23,8 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,14 +44,21 @@ import androidx.loader.content.Loader;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.tabs.TabLayout;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.db.ActivityCleaner;
 import org.runnerup.db.DBHelper;
+import org.runnerup.db.Statistics;
+import org.runnerup.db.Statistics.BucketPeriod;
 import org.runnerup.db.entities.ActivityEntity;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SimpleCursorLoader;
@@ -66,6 +75,23 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   HistoryListAdapter adapter = null;
   View fab = null;
   View emptyView = null;
+
+  private static final int TAB_HISTORY_INDEX = 0;
+  private static final int TAB_STATISTICS_INDEX = 1;
+
+  private final ExecutorService statisticsExecutor = Executors.newSingleThreadExecutor();
+  private final Handler mainHandler = new Handler(Looper.getMainLooper());
+
+  private int currentTab = TAB_HISTORY_INDEX;
+  private BucketPeriod currentPeriod = BucketPeriod.DAY;
+  private List<Statistics.ActivityRow> statisticsRows = null;
+  private View statisticsContent;
+  private View statisticsEmpty;
+  private DistanceChartView statisticsChart;
+  private TextView statisticsChartTitle;
+  private TextView statistics7Value;
+  private TextView statistics30Value;
+  private TextView statistics365Value;
 
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
@@ -101,18 +127,69 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
     new ActivityCleaner().conditionalRecompute(mDB);
+
+    statisticsContent = view.findViewById(R.id.statistics_content);
+    statisticsEmpty = view.findViewById(R.id.statistics_empty);
+    statisticsChart = view.findViewById(R.id.statistics_chart);
+    statisticsChartTitle = view.findViewById(R.id.statistics_chart_title);
+    statistics7Value = view.findViewById(R.id.statistics_7_value);
+    statistics30Value = view.findViewById(R.id.statistics_30_value);
+    statistics365Value = view.findViewById(R.id.statistics_365_value);
+    statisticsChart.setLabelFormatter(
+        value -> formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(value)));
+
+    TabLayout historyTabs = view.findViewById(R.id.history_tabs);
+    historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.History));
+    historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Statistics));
+    historyTabs.addOnTabSelectedListener(
+        new TabLayout.OnTabSelectedListener() {
+          @Override
+          public void onTabSelected(TabLayout.Tab tab) {
+            selectTab(tab.getPosition());
+          }
+
+          @Override
+          public void onTabUnselected(TabLayout.Tab tab) {}
+
+          @Override
+          public void onTabReselected(TabLayout.Tab tab) {
+            if (tab.getPosition() == TAB_STATISTICS_INDEX) {
+              loadStatistics();
+            }
+          }
+        });
+
+    MaterialButtonToggleGroup statisticsToggle = view.findViewById(R.id.statistics_toggle);
+    statisticsToggle.addOnButtonCheckedListener(
+        (group, checkedId, isChecked) -> {
+          if (!isChecked) {
+            return;
+          }
+          BucketPeriod period =
+              checkedId == R.id.statistics_toggle_week
+                  ? BucketPeriod.WEEK
+                  : checkedId == R.id.statistics_toggle_month
+                      ? BucketPeriod.MONTH
+                      : BucketPeriod.DAY;
+          currentPeriod = period;
+          updateChart();
+        });
   }
 
   @Override
   public void onResume() {
     super.onResume();
     LoaderManager.getInstance(this).restartLoader(0, null, this);
+    if (currentTab == TAB_STATISTICS_INDEX) {
+      loadStatistics();
+    }
   }
 
   @Override
   public void onDestroy() {
     super.onDestroy();
     DBHelper.closeDB(mDB);
+    statisticsExecutor.shutdown();
   }
 
   @NonNull
@@ -149,6 +226,93 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   @Override
   public void onLoaderReset(@NonNull Loader<Cursor> arg0) {
     adapter.setData(null);
+  }
+
+  private void selectTab(int index) {
+    currentTab = index;
+    View view = getView();
+    if (view == null) {
+      return;
+    }
+    view.findViewById(R.id.history_list_content)
+        .setVisibility(index == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
+    statisticsContent.setVisibility(index == TAB_STATISTICS_INDEX ? View.VISIBLE : View.GONE);
+    fab.setVisibility(index == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
+    if (index == TAB_STATISTICS_INDEX) {
+      loadStatistics();
+    }
+  }
+
+  private void loadStatistics() {
+    if (mDB == null || statisticsContent == null) {
+      return;
+    }
+    BucketPeriod period = currentPeriod;
+    statisticsExecutor.execute(
+        () -> {
+          long now = System.currentTimeMillis() / 1000;
+          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, now - 365L * 86400);
+          double[] totals = Statistics.totals(rows, now);
+          double[] buckets = Statistics.bucketize(rows, period, now, ZoneId.systemDefault());
+          long[] starts = Statistics.bucketStarts(period, now, ZoneId.systemDefault());
+          mainHandler.post(
+              () -> {
+                statisticsRows = rows;
+                statistics7Value.setText(
+                    formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[0])));
+                statistics30Value.setText(
+                    formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
+                statistics365Value.setText(
+                    formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
+                statisticsChartTitle.setText(chartTitleFor(period));
+                statisticsChart.setData(buckets, buildXLabels(period, starts));
+                boolean empty = true;
+                for (double value : buckets) {
+                  if (value > 0) {
+                    empty = false;
+                    break;
+                  }
+                }
+                statisticsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+                statisticsChart.setVisibility(empty ? View.GONE : View.VISIBLE);
+              });
+        });
+  }
+
+  private void updateChart() {
+    if (statisticsRows == null) {
+      return;
+    }
+    long now = System.currentTimeMillis() / 1000;
+    double[] buckets =
+        Statistics.bucketize(statisticsRows, currentPeriod, now, ZoneId.systemDefault());
+    long[] starts = Statistics.bucketStarts(currentPeriod, now, ZoneId.systemDefault());
+    statisticsChartTitle.setText(chartTitleFor(currentPeriod));
+    statisticsChart.setData(buckets, buildXLabels(currentPeriod, starts));
+  }
+
+  private String[] buildXLabels(BucketPeriod period, long[] starts) {
+    String[] labels = new String[starts.length];
+    for (int i = 0; i < starts.length; i++) {
+      Date date = new Date(starts[i] * 1000);
+      labels[i] =
+          period == BucketPeriod.MONTH
+              ? formatter.formatMonth(date)
+              : formatter.formatDayOfMonth(date);
+    }
+    return labels;
+  }
+
+  private int chartTitleFor(BucketPeriod period) {
+    switch (period) {
+      case WEEK:
+        return org.runnerup.common.R.string.Statistics_last_8_weeks;
+      case MONTH:
+        return org.runnerup.common.R.string.Statistics_last_12_months;
+      case DAY:
+      default:
+        return org.runnerup.common.R.string.Statistics_last_14_days;
+    }
   }
 
   private void openActivity(long id) {
