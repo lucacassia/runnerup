@@ -139,8 +139,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         value -> formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(value)));
 
     TabLayout historyTabs = view.findViewById(R.id.history_tabs);
-    historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.History));
-    historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Statistics));
+    historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Activities));
+    historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Progress));
     historyTabs.addOnTabSelectedListener(
         new TabLayout.OnTabSelectedListener() {
           @Override

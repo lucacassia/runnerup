@@ -257,7 +257,8 @@
     <string name="Start">Start</string>
     <string name="Record">Record</string>
     <string name="History">History</string>
-    <string name="Statistics">Statistics</string>
+    <string name="Activities">Activities</string>
+    <string name="Progress">Progress</string>
     <string name="Statistics_7_days">Last 7 days</string>
     <string name="Statistics_30_days">Last 30 days</string>
     <string name="Statistics_365_days">Last 365 days</string>
