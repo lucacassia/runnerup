@@ -191,7 +191,7 @@ Navigate to the History tab (tap its bottom-nav item) and confirm:
 - No "History" title bar at the top of the screen; the sub-tabs sit at the very top.
 - Sub-tabs read **Activities | Progress**.
 - Tapping each sub-tab still shows the list / statistics page as before.
-- Bottom navigation still reads Start / History / Settings.
+- Bottom navigation still reads Record / History / Settings (first item is "Record" in the current app; the "History" item is unchanged).
 
 - [ ] **Step 2: Capture evidence**
 
