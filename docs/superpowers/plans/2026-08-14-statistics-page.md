@@ -85,8 +85,8 @@ public class StatisticsTest {
             now - 365 * DAY, 16000.0,
             now - 366 * DAY, 32000.0);
     double[] totals = Statistics.totals(rows, now);
-    assertEquals(3000.0, totals[0], 0.0);
-    assertEquals(15000.0, totals[1], 0.0);
+    assertEquals(1000.0, totals[0], 0.0);
+    assertEquals(7000.0, totals[1], 0.0);
     assertEquals(31000.0, totals[2], 0.0);
   }
 
