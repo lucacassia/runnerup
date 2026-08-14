@@ -991,7 +991,7 @@ In `onViewCreated`, after `new ActivityCleaner().conditionalRecompute(mDB);` (li
                   ? BucketPeriod.WEEK
                   : checkedId == R.id.statistics_toggle_month ? BucketPeriod.MONTH : BucketPeriod.DAY;
           currentPeriod = period;
-          updateChart();
+          renderChart();
         });
 ```
 
@@ -1005,10 +1005,10 @@ In `onResume`, after `LoaderManager.getInstance(this).restartLoader(0, null, thi
     }
 ```
 
-In `onDestroy`, after `DBHelper.closeDB(mDB);` (line 115), add:
+In `onDestroy`, before `super.onDestroy();` (line 115) and `DBHelper.closeDB(mDB);`, add:
 
 ```java
-    statisticsExecutor.shutdown();
+    statisticsExecutor.shutdownNow();
 ```
 
 Add these private methods (place them after `onLoaderReset`, before `openActivity`):
@@ -1037,10 +1037,9 @@ Add these private methods (place them after `onLoaderReset`, before `openActivit
     statisticsExecutor.execute(
         () -> {
           long now = System.currentTimeMillis() / 1000;
-          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, now - 365L * 86400);
+          long from = Statistics.bucketStarts(BucketPeriod.MONTH, now, ZoneId.systemDefault())[0];
+          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from);
           double[] totals = Statistics.totals(rows, now);
-          double[] buckets = Statistics.bucketize(rows, period, now, ZoneId.systemDefault());
-          long[] starts = Statistics.bucketStarts(period, now, ZoneId.systemDefault());
           mainHandler.post(
               () -> {
                 statisticsRows = rows;
@@ -1050,30 +1049,30 @@ Add these private methods (place them after `onLoaderReset`, before `openActivit
                     formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
                 statistics365Value.setText(
                     formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
-                statisticsChartTitle.setText(chartTitleFor(period));
-                statisticsChart.setData(buckets, buildXLabels(period, starts));
-                boolean empty = true;
-                for (double value : buckets) {
-                  if (value > 0) {
-                    empty = false;
-                    break;
-                  }
-                }
-                statisticsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
-                statisticsChart.setVisibility(empty ? View.GONE : View.VISIBLE);
+                renderChart();
               });
         });
   }
 
-  private void updateChart() {
+  private void renderChart() {
     if (statisticsRows == null) {
       return;
     }
     long now = System.currentTimeMillis() / 1000;
-    double[] buckets = Statistics.bucketize(statisticsRows, currentPeriod, now, ZoneId.systemDefault());
+    double[] buckets =
+        Statistics.bucketize(statisticsRows, currentPeriod, now, ZoneId.systemDefault());
     long[] starts = Statistics.bucketStarts(currentPeriod, now, ZoneId.systemDefault());
     statisticsChartTitle.setText(chartTitleFor(currentPeriod));
     statisticsChart.setData(buckets, buildXLabels(currentPeriod, starts));
+    boolean empty = true;
+    for (double value : buckets) {
+      if (value > 0) {
+        empty = false;
+        break;
+      }
+    }
+    statisticsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+    statisticsChart.setVisibility(empty ? View.GONE : View.VISIBLE);
   }
 
   private String[] buildXLabels(BucketPeriod period, long[] starts) {
