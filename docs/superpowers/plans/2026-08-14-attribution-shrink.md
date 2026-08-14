@@ -87,3 +87,4 @@ git commit -m "style: shrink and de-emphasize map attribution pill"
 - **Spec coverage:** textSize (Step 1), padding (Step 1), alpha day+night (Step 2), gates (Step 3), on-device day+night (Step 4). Position/margins/string/wiring untouched. ✓
 - **Placeholder scan:** no TBDs; all values literal.
 - **Consistency:** `mapAttributionBg` referenced only by `map_attribution_bg.xml` (verified); the pill stays `VISIBLE` via unchanged LiveMap wiring.
+- **Implementation deviation (approved in review):** the mandated 8sp trips the `SmallSp` lint check, which `warningsAsErrors=true` (`app/build.gradle:116`) promotes to a hard error. Step 1 required a view-scoped `tools:ignore="SmallSp"` on the pill TextView (`run.xml:48`) to pass lint; verified as the idiomatic minimal fix and correctly scoped.
