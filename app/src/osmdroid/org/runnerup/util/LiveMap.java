@@ -5,6 +5,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -78,6 +80,12 @@ public class LiveMap {
     boolean isNight = isNightMode();
     mapView.setTileSource(CartoTileSource.forNight(isNight));
     mapView.setBackgroundColor(mapView.getContext().getColor(R.color.mapBackground));
+    mapView
+        .getOverlayManager()
+        .getTilesOverlay()
+        .setColorFilter(
+            new ColorMatrixColorFilter(
+                new ColorMatrix(isNight ? MapTheme.NIGHT_TILE_MATRIX : MapTheme.DAY_TILE_MATRIX)));
     track.getOutlinePaint().setColor(MapTheme.routeColor(isNight));
     edge.getOutlinePaint().setColor(MapTheme.edgeColor(isNight));
     attribution.setVisibility(View.VISIBLE);
