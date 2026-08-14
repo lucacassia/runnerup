@@ -257,6 +257,7 @@
     <string name="Start">Start</string>
     <string name="Record">Record</string>
     <string name="History">History</string>
+    <string name="Statistics">Statistics</string>
     <string name="Basic">Basic</string>
     <string name="Advanced">Advanced</string>
     <string name="Manual_activity_title">Add manual entry</string>
