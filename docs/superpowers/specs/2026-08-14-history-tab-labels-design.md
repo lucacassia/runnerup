@@ -39,9 +39,9 @@ The bottom-navigation tab labeled "History" is unchanged.
   the convention used for the statistics strings).
 - Add `<string name="Progress">Progress</string>`.
 - Remove the now-unused `<string name="Statistics">Statistics</string>`
-  (verified unused: only `HistoryFragment.java:143` references it). Its 27
-  translations in `values-*/strings.xml` are removed too, so no stale resource
-  remains and no new `UnusedResources` lint warning appears.
+  (verified unused: only `HistoryFragment.java:143` references it; it exists
+  only in `common/src/main/res/values/strings.xml:260` — no translations), so
+  no stale resource remains and no new `UnusedResources` lint warning appears.
 - Keep `<string name="History">History</string>` — still referenced by the
   bottom-navigation menu (`app/res/menu/bottom_nav_menu.xml:26`).
 
