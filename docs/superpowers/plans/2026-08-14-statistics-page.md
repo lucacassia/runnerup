@@ -114,13 +114,15 @@ public class StatisticsTest {
         rows(
             at("2025-12-29"), 1000.0,
             at("2025-12-22"), 2000.0,
-            at("2025-11-10"), 3000.0);
+            at("2025-11-17"), 3000.0);
     double[] buckets = Statistics.bucketize(rows, BucketPeriod.WEEK, now, UTC);
     assertEquals(8, buckets.length);
-    assertEquals(1000.0, buckets[7], 0.0);
-    assertEquals(2000.0, buckets[6], 0.0);
-    assertEquals(0.0, buckets[5], 0.0);
     assertEquals(3000.0, buckets[0], 0.0);
+    assertEquals(0.0, buckets[1], 0.0);
+    assertEquals(0.0, buckets[4], 0.0);
+    assertEquals(2000.0, buckets[5], 0.0);
+    assertEquals(1000.0, buckets[6], 0.0);
+    assertEquals(0.0, buckets[7], 0.0);
   }
 
   @Test
@@ -247,7 +249,19 @@ public final class Statistics {
     long todayKey = key(today, period);
     for (ActivityRow row : rows) {
       LocalDate date = Instant.ofEpochSecond(row.startTime).atZone(zone).toLocalDate();
-      int offset = (int) (todayKey - key(date, period));
+      long dayDiff = todayKey - key(date, period);
+      int offset;
+      switch (period) {
+        case DAY:
+        case MONTH:
+          offset = (int) dayDiff;
+          break;
+        case WEEK:
+          offset = (int) (dayDiff / 7);
+          break;
+        default:
+          throw new IllegalArgumentException("unknown period " + period);
+      }
       if (offset >= 0 && offset < buckets.length) {
         buckets[buckets.length - 1 - offset] += row.distance;
       }
