@@ -172,7 +172,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                       ? BucketPeriod.MONTH
                       : BucketPeriod.DAY;
           currentPeriod = period;
-          updateChart();
+          renderChart();
         });
   }
 
@@ -187,9 +187,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
 
   @Override
   public void onDestroy() {
+    statisticsExecutor.shutdown();
     super.onDestroy();
     DBHelper.closeDB(mDB);
-    statisticsExecutor.shutdown();
   }
 
   @NonNull
@@ -247,14 +247,11 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     if (mDB == null || statisticsContent == null) {
       return;
     }
-    BucketPeriod period = currentPeriod;
     statisticsExecutor.execute(
         () -> {
           long now = System.currentTimeMillis() / 1000;
           List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, now - 365L * 86400);
           double[] totals = Statistics.totals(rows, now);
-          double[] buckets = Statistics.bucketize(rows, period, now, ZoneId.systemDefault());
-          long[] starts = Statistics.bucketStarts(period, now, ZoneId.systemDefault());
           mainHandler.post(
               () -> {
                 statisticsRows = rows;
@@ -264,22 +261,12 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                     formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
                 statistics365Value.setText(
                     formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
-                statisticsChartTitle.setText(chartTitleFor(period));
-                statisticsChart.setData(buckets, buildXLabels(period, starts));
-                boolean empty = true;
-                for (double value : buckets) {
-                  if (value > 0) {
-                    empty = false;
-                    break;
-                  }
-                }
-                statisticsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
-                statisticsChart.setVisibility(empty ? View.GONE : View.VISIBLE);
+                renderChart();
               });
         });
   }
 
-  private void updateChart() {
+  private void renderChart() {
     if (statisticsRows == null) {
       return;
     }
@@ -289,6 +276,15 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     long[] starts = Statistics.bucketStarts(currentPeriod, now, ZoneId.systemDefault());
     statisticsChartTitle.setText(chartTitleFor(currentPeriod));
     statisticsChart.setData(buckets, buildXLabels(currentPeriod, starts));
+    boolean empty = true;
+    for (double value : buckets) {
+      if (value > 0) {
+        empty = false;
+        break;
+      }
+    }
+    statisticsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
+    statisticsChart.setVisibility(empty ? View.GONE : View.VISIBLE);
   }
 
   private String[] buildXLabels(BucketPeriod period, long[] starts) {

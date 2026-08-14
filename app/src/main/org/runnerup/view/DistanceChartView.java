@@ -61,7 +61,7 @@ public class DistanceChartView extends View {
 
     float leftPad = dp(48);
     float rightPad = dp(8);
-    float topPad = dp(8);
+    float topPad = dp(16);
     float bottomPad = dp(20);
 
     float chartLeft = leftPad;
