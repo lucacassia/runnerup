@@ -187,7 +187,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
 
   @Override
   public void onDestroy() {
-    statisticsExecutor.shutdown();
+    statisticsExecutor.shutdownNow();
     super.onDestroy();
     DBHelper.closeDB(mDB);
   }
@@ -250,7 +250,10 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     statisticsExecutor.execute(
         () -> {
           long now = System.currentTimeMillis() / 1000;
-          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, now - 365L * 86400);
+          long from =
+              Statistics.bucketStarts(Statistics.BucketPeriod.MONTH, now, ZoneId.systemDefault())[
+                  0];
+          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from);
           double[] totals = Statistics.totals(rows, now);
           mainHandler.post(
               () -> {
