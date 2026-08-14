@@ -4,7 +4,7 @@
     <color name="colorText">#EEEEEE</color>
 
     <color name="mapBackground">#121212</color>
-    <color name="mapAttributionBg">#66000000</color>
+    <color name="mapAttributionBg">#40000000</color>
     <color name="markerCurrent">#fab283</color>
     <color name="markerCurrentStroke">#ffc09f</color>
     <color name="markerStart">#7fd88f</color>

@@ -40,7 +40,7 @@
     <color name="sportOther">#b58900</color>
 
     <color name="mapBackground">#eeeeee</color>
-    <color name="mapAttributionBg">#66FFFFFF</color>
+    <color name="mapAttributionBg">#40FFFFFF</color>
     <color name="markerCurrent">#3b7dd8</color>
     <color name="markerCurrentStroke">#2968c3</color>
     <color name="markerStart">#3d9a57</color>
