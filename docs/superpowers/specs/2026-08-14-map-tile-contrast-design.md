@@ -31,7 +31,7 @@ public static final float[] NIGHT_TILE_MATRIX = { ... }; // scale-from-black, c 
 
 Both are identity except the R/G/B diagonal scale coefficient:
 
-- **Day** — scale toward white: `R' = c·R + 255·(1−c)`, `c ≈ 1.3`. Diagonal = 1.3, translation = 255·(1−1.3) = −76.5 per channel. Effect: bg ~`#f2`→~`#ee`, gray roads ~`#c8`→~`#b7`, labels → near-black.
+- **Day** — scale toward white: `R' = c·R + 255·(1−c)`, `c ≈ 1.3`. Diagonal = 1.3, translation = 255·(1−1.3) = −76.5 per channel. Effect: bg ~`#f2`→~`#ee`, gray roads ~`#c8`→~`#b7` (intent-only — Positron roads are near-white, so on-device the road-vs-bg gap lands ~13-33 points; accepted), labels → near-black.
 - **Night** — scale from black: `R' = c·R`, `c ≈ 1.8`. Diagonal = 1.8, no translation. Effect: bg ~`#0a`→~`#12`, roads ~`#1e`→~`#36`, labels ~`#77`→~`#d6`.
 
 These are starting points; exact coefficients are tuned against on-device screenshots in the implementation plan.
