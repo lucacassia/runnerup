@@ -23,7 +23,6 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -57,8 +56,6 @@ public class MapWrapper implements Constants {
 
   private static final java.lang.String OSMDROID_USER_AGENT = "org.runnerup.free";
 
-  private static final int TRACK_COLOR = Color.parseColor("#FF6D00");
-  private static final int TRACK_EDGE_COLOR = Color.parseColor("#FFB680");
   private static final float TRACK_WIDTH_PX = 10.f;
   private static final float TRACK_EDGE_WIDTH_PX = 20.f;
   private static final float MARKER_DIAMETER_PX = 3 * TRACK_WIDTH_PX;
@@ -86,7 +83,13 @@ public class MapWrapper implements Constants {
 
     Configuration.getInstance().setUserAgentValue(OSMDROID_USER_AGENT);
 
-    loadRouteAsync();
+    loadRouteAsync(isNightMode());
+  }
+
+  private boolean isNightMode() {
+    return (mapView.getContext().getResources().getConfiguration().uiMode
+            & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+        == android.content.res.Configuration.UI_MODE_NIGHT_YES;
   }
 
   // The results from the database query
@@ -96,10 +99,10 @@ public class MapWrapper implements Constants {
    * Loads the route from the database on a background thread and then updates the UI on the main
    * thread.
    */
-  private void loadRouteAsync() {
+  private void loadRouteAsync(boolean isNight) {
     executor.execute(
         () -> {
-          final Route route = loadRouteData();
+          final Route route = loadRouteData(isNight);
 
           // UI update
           mapView.post(
@@ -124,9 +127,9 @@ public class MapWrapper implements Constants {
   }
 
   /** The long-running database query and data processing logic. */
-  private Route loadRouteData() {
-    Polyline edge = newPolyline(TRACK_EDGE_COLOR, TRACK_EDGE_WIDTH_PX);
-    Polyline track = newPolyline(TRACK_COLOR, TRACK_WIDTH_PX);
+  private Route loadRouteData(boolean isNight) {
+    Polyline edge = newPolyline(MapTheme.edgeColor(isNight), TRACK_EDGE_WIDTH_PX);
+    Polyline track = newPolyline(MapTheme.routeColor(isNight), TRACK_WIDTH_PX);
 
     java.util.List<Marker> markers = new ArrayList<>();
     java.util.List<GeoPoint> points = new LinkedList<>();
