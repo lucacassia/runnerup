@@ -151,10 +151,15 @@ public enum Sport {
   public static int colorOf(int dbValue) {
     switch (dbValue) {
       case DB.ACTIVITY.SPORT_RUNNING:
-      case DB.ACTIVITY.SPORT_TREADMILL:
         return R.color.sportRunning;
       case DB.ACTIVITY.SPORT_BIKING:
         return R.color.sportBiking;
+      case DB.ACTIVITY.SPORT_TREADMILL:
+        return R.color.sportTreadmill;
+      case DB.ACTIVITY.SPORT_GYM:
+        return R.color.sportGym;
+      case DB.ACTIVITY.SPORT_STATIONARY_BIKE:
+        return R.color.sportStationaryBike;
       case DB.ACTIVITY.SPORT_WALKING:
         return R.color.sportWalking;
       case DB.ACTIVITY.SPORT_ORIENTEERING:
@@ -169,10 +174,15 @@ public enum Sport {
   public static int drawableColored16Of(int dbValue) {
     switch (dbValue) {
       case DB.ACTIVITY.SPORT_RUNNING:
-      case DB.ACTIVITY.SPORT_TREADMILL:
         return R.drawable.sport_running;
       case DB.ACTIVITY.SPORT_BIKING:
         return R.drawable.sport_biking;
+      case DB.ACTIVITY.SPORT_TREADMILL:
+        return R.drawable.sport_treadmill;
+      case DB.ACTIVITY.SPORT_GYM:
+        return R.drawable.sport_gym;
+      case DB.ACTIVITY.SPORT_STATIONARY_BIKE:
+        return R.drawable.sport_stationary_bike;
       case DB.ACTIVITY.SPORT_WALKING:
         return R.drawable.sport_walking;
       case DB.ACTIVITY.SPORT_ORIENTEERING:

@@ -38,6 +38,9 @@
     <color name="sportRunning">#859900</color>
     <color name="sportWalking">#6c71c4</color>
     <color name="sportOther">#b58900</color>
+    <color name="sportTreadmill">#2aa198</color>
+    <color name="sportGym">#dc322f</color>
+    <color name="sportStationaryBike">#268bd2</color>
 
     <color name="mapBackground">#eeeeee</color>
     <color name="mapAttributionBg">#40FFFFFF</color>
