@@ -29,6 +29,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
@@ -43,10 +44,13 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -54,6 +58,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -212,7 +217,6 @@ public class StartFragment extends Fragment implements TickListener {
     ArrayAdapter<CharSequence> adapter =
         new ArrayAdapter<>(
             context, R.layout.actionbar_spinner, Sport.getStringArray(getResources()));
-    adapter.setDropDownViewResource(R.layout.actionbar_dropdown_spinner);
     sportSpinner.setAdapter(adapter);
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
     sportSpinner.setViewSelection(
@@ -329,6 +333,11 @@ public class StartFragment extends Fragment implements TickListener {
             }
           }
         });
+
+    sportSpinner.setOnOpenListener(() -> showSportPickerDialog(sportSpinner));
+    updateSportIcon(
+        sportSpinner,
+        prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING));
   }
 
   private void setGpsNotRequired(boolean val) {
@@ -353,6 +362,84 @@ public class StartFragment extends Fragment implements TickListener {
           startGps();
         }
       }
+    }
+  }
+
+  private void updateSportIcon(MaterialSportSpinner sportSpinner, int sport) {
+    Drawable icon =
+        AppCompatResources.getDrawable(requireContext(), Sport.drawableColored16Of(sport));
+    if (icon != null) {
+      icon.setTint(ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
+    }
+    Drawable arrow = sportSpinner.getCompoundDrawablesRelative()[2];
+    sportSpinner.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, arrow, null);
+  }
+
+  private void showSportPickerDialog(MaterialSportSpinner sportSpinner) {
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+    int checked =
+        prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
+    ListView list = new ListView(requireContext());
+    list.setAdapter(new SportPickerAdapter(requireContext(), getResources(), checked));
+    list.setDivider(null);
+    list.setDividerHeight(0);
+    AlertDialog dialog =
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(org.runnerup.common.R.string.Sport)
+            .setView(list)
+            .show();
+    list.setOnItemClickListener(
+        (parent, view, position, id) -> {
+          AdapterView.OnItemSelectedListener l = sportSpinner.getViewOnItemSelectedListener();
+          if (l != null) {
+            l.onItemSelected(null, null, position, position);
+          }
+          updateSportIcon(sportSpinner, position);
+          dialog.dismiss();
+        });
+  }
+
+  private static class SportPickerAdapter extends BaseAdapter {
+    private final Context context;
+    private final String[] sports;
+    private final int checked;
+
+    SportPickerAdapter(Context context, Resources resources, int checked) {
+      this.context = context;
+      this.sports = Sport.getStringArray(resources);
+      this.checked = checked;
+    }
+
+    @Override
+    public int getCount() {
+      return sports.length;
+    }
+
+    @Override
+    public Object getItem(int position) {
+      return sports[position];
+    }
+
+    @Override
+    public long getItemId(int position) {
+      return position;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+      View row =
+          convertView != null
+              ? convertView
+              : LayoutInflater.from(parent.getContext())
+                  .inflate(R.layout.sport_picker_row, parent, false);
+      ImageView iconView = row.findViewById(R.id.sport_picker_icon);
+      TextView labelView = row.findViewById(R.id.sport_picker_label);
+      RadioButton radioView = row.findViewById(R.id.sport_picker_radio);
+      iconView.setImageResource(Sport.drawableColored16Of(position));
+      iconView.setColorFilter(ContextCompat.getColor(context, Sport.colorOf(position)));
+      labelView.setText(sports[position]);
+      radioView.setChecked(position == checked);
+      return row;
     }
   }
 

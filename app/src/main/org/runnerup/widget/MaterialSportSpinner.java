@@ -32,6 +32,12 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import org.runnerup.R;
 
 public class MaterialSportSpinner extends MaterialAutoCompleteTextView implements SpinnerInterface {
+  public interface OnOpenListener {
+    void onOpen();
+  }
+
+  private OnOpenListener mOnOpenListener;
+
   final SpinnerPresenter mPresenter;
   private AdapterView.OnItemSelectedListener mItemSelectedListener = null;
 
@@ -101,8 +107,13 @@ public class MaterialSportSpinner extends MaterialAutoCompleteTextView implement
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    if (event.getAction() == MotionEvent.ACTION_UP && !isPopupShowing()) {
-      showDropDown();
+    if (event.getAction() == MotionEvent.ACTION_UP) {
+      performClick();
+      if (mOnOpenListener != null) {
+        mOnOpenListener.onOpen();
+      } else {
+        showDropDown();
+      }
     }
     return super.onTouchEvent(event);
   }
@@ -140,6 +151,10 @@ public class MaterialSportSpinner extends MaterialAutoCompleteTextView implement
   @Override
   public void setViewOnItemSelectedListener(AdapterView.OnItemSelectedListener listener) {
     mItemSelectedListener = listener;
+  }
+
+  public void setOnOpenListener(OnOpenListener listener) {
+    mOnOpenListener = listener;
   }
 
   @Override
