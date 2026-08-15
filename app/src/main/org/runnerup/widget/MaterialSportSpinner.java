@@ -48,6 +48,7 @@ public class MaterialSportSpinner extends MaterialAutoCompleteTextView implement
     setFocusable(false);
     setCursorVisible(false);
     setClickable(true);
+    setSaveEnabled(false);
 
     setOnItemClickListener(
         (parent, view, position, id) -> {
