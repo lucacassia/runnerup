@@ -49,6 +49,23 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   private final WorkoutStepsAdapter advancedWorkoutStepsAdapter = new WorkoutStepsAdapter();
   private boolean dontAskAgain = false;
   private boolean workoutEditMode = false;
+  private final Runnable onWorkoutChanged =
+      () -> {
+        String advWorkoutName = currentWorkoutName;
+        if (advancedWorkout != null) {
+          Context ctx = getApplicationContext();
+          try {
+            WorkoutSerializer.writeFile(ctx, advWorkoutName, advancedWorkout);
+          } catch (Exception ex) {
+            new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
+                .setTitle(org.runnerup.common.R.string.Failed_to_load_workout)
+                .setMessage("" + ex)
+                .setPositiveButton(
+                    org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
+                .show();
+          }
+        }
+      };
   private final View.OnClickListener addWorkoutFabClick =
       v -> {
         View sheetView = getLayoutInflater().inflate(R.layout.workout_add_sheet, null);
@@ -60,6 +77,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                 view -> {
                   advancedWorkout.addStep(new Step());
                   advancedWorkoutStepsAdapter.refreshSteps();
+                  onWorkoutChanged.run();
                   sheet.dismiss();
                 });
         sheetView
@@ -68,6 +86,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                 view -> {
                   advancedWorkout.addStep(new RepeatStep());
                   advancedWorkoutStepsAdapter.refreshSteps();
+                  onWorkoutChanged.run();
                   sheet.dismiss();
                 });
         sheet.show();
@@ -449,24 +468,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     advancedWorkoutStepsAdapter.refreshSteps();
     onWorkoutChanged.run();
   }
-
-  private final Runnable onWorkoutChanged =
-      () -> {
-        String advWorkoutName = currentWorkoutName;
-        if (advancedWorkout != null) {
-          Context ctx = getApplicationContext();
-          try {
-            WorkoutSerializer.writeFile(ctx, advWorkoutName, advancedWorkout);
-          } catch (Exception ex) {
-            new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
-                .setTitle(org.runnerup.common.R.string.Failed_to_load_workout)
-                .setMessage("" + ex)
-                .setPositiveButton(
-                    org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
-                .show();
-          }
-        }
-      };
 
   private final View.OnClickListener saveWorkoutButtonClick =
       v -> {
