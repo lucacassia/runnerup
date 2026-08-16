@@ -107,6 +107,7 @@ public class DistanceChartView extends View {
           continue;
         }
         float centerX = chartLeft + slot * i + slot / 2;
+        canvas.drawLine(centerX, chartBottom, centerX, chartBottom + dp(4), gridPaint);
         String label = xLabels[i];
         canvas.drawText(
             label, centerX - labelPaint.measureText(label) / 2, chartBottom + dp(14), labelPaint);
