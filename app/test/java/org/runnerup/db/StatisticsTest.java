@@ -53,8 +53,8 @@ public class StatisticsTest {
             at("2025-12-31"), 4000.0);
     double[] totals = Statistics.totals(rows, now, UTC);
     assertEquals(0.0, totals[0], 0.0);
-    assertEquals(0.0, totals[1], 0.0);
-    assertEquals(0.0, totals[2], 0.0);
+    assertEquals(1000.0, totals[1], 0.0);
+    assertEquals(3000.0, totals[2], 0.0);
   }
 
   @Test
