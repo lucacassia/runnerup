@@ -14,7 +14,6 @@ import org.runnerup.db.Statistics.BucketPeriod;
 public class StatisticsTest {
 
   private static final ZoneId UTC = ZoneId.of("UTC");
-  private static final long DAY = 86400L;
 
   private static long at(String date) {
     return LocalDate.parse(date).atStartOfDay(UTC).toEpochSecond();
