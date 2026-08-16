@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -20,7 +22,9 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +32,6 @@ import java.util.List;
 import org.json.JSONException;
 import org.runnerup.R;
 import org.runnerup.util.ViewUtil;
-import org.runnerup.widget.MaterialTitleSpinner;
 import org.runnerup.workout.RepeatStep;
 import org.runnerup.workout.Step;
 import org.runnerup.workout.Workout;
@@ -37,9 +40,11 @@ import org.runnerup.workout.WorkoutSerializer;
 public class CreateAdvancedWorkout extends AppCompatActivity {
 
   private Workout advancedWorkout = null;
-  private MaterialTitleSpinner advancedWorkoutSpinner = null;
+  private String currentWorkoutName = null;
   private final WorkoutStepsAdapter advancedWorkoutStepsAdapter = new WorkoutStepsAdapter();
   private boolean dontAskAgain = false;
+  private boolean workoutEditMode = false;
+  private final View.OnClickListener addWorkoutFabClick = v -> {};
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -52,41 +57,22 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
     Intent intent = getIntent();
     String advWorkoutName = intent.getStringExtra(ManageWorkoutsActivity.WORKOUT_NAME);
-    boolean workoutEditMode =
-        intent.getBooleanExtra(ManageWorkoutsActivity.WORKOUT_EDIT_MODE, false);
-
-    advancedWorkoutSpinner = findViewById(R.id.new_workout_spinner);
-    advancedWorkoutSpinner.setValue(advWorkoutName);
-    advancedWorkoutSpinner.setEnabled(false);
+    workoutEditMode = intent.getBooleanExtra(ManageWorkoutsActivity.WORKOUT_EDIT_MODE, false);
+    currentWorkoutName = advWorkoutName;
 
     dontAskAgain = false;
+
+    MaterialToolbar toolbar = findViewById(R.id.actionbar);
+    setSupportActionBar(toolbar);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    toolbar.setTitle(advWorkoutName);
 
     RecyclerView advancedStepList = findViewById(R.id.new_advnced_workout_steps);
     advancedStepList.setLayoutManager(new LinearLayoutManager(this));
     advancedStepList.setAdapter(advancedWorkoutStepsAdapter);
 
-    Button addStepButton = findViewById(R.id.add_step_button);
-    addStepButton.setOnClickListener(addStepButtonClick);
-
-    Button addRepeatButton = findViewById(R.id.add_repeat_button);
-    addRepeatButton.setOnClickListener(addRepeatStepButtonClick);
-
-    Button saveWorkoutButton = findViewById(R.id.workout_save_button);
-    saveWorkoutButton.setOnClickListener(saveWorkoutButtonClick);
-
-    Button discardWorkoutButton = findViewById(R.id.workout_discard_button);
-    discardWorkoutButton.setOnClickListener(discardWorkoutButtonClick);
-
-    Button renameWorkoutButton = findViewById(R.id.workout_rename_button);
-    renameWorkoutButton.setVisibility(View.GONE);
-
-    if (workoutEditMode) {
-      // Avoid users inadvertently deleting existing workouts while editing:
-      // (discard button should only be available when creating a workout)
-      discardWorkoutButton.setVisibility(View.GONE);
-      renameWorkoutButton.setVisibility(View.VISIBLE);
-      renameWorkoutButton.setOnClickListener(renameWorkoutButtonClick);
-    }
+    FloatingActionButton addWorkoutFab = findViewById(R.id.add_workout_fab);
+    addWorkoutFab.setOnClickListener(addWorkoutFabClick);
 
     try {
       createAdvancedWorkout(advWorkoutName, workoutEditMode);
@@ -110,15 +96,42 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     ViewUtil.Insets(findViewById(R.id.create_advanced_workout_view), true);
   }
 
+  @Override
+  public boolean onCreateOptionsMenu(Menu menu) {
+    getMenuInflater().inflate(R.menu.workout_editor_menu, menu);
+    menu.findItem(R.id.menu_rename_workout).setVisible(workoutEditMode);
+    menu.findItem(R.id.menu_discard_workout).setVisible(!workoutEditMode);
+    return true;
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+    int itemId = item.getItemId();
+    if (itemId == R.id.menu_save_workout) {
+      saveWorkoutButtonClick.onClick(null);
+      return true;
+    } else if (itemId == R.id.menu_rename_workout) {
+      renameWorkoutButtonClick.onClick(null);
+      return true;
+    } else if (itemId == R.id.menu_discard_workout) {
+      discardWorkoutButtonClick.onClick(null);
+      return true;
+    } else if (itemId == android.R.id.home) {
+      persistCurrentWorkoutName();
+      finish();
+      return true;
+    }
+    return super.onOptionsItemSelected(item);
+  }
+
   private void persistCurrentWorkoutName() {
-    if (advancedWorkoutSpinner == null) {
+    if (currentWorkoutName == null) {
       return;
     }
     try {
-      String curName = advancedWorkoutSpinner.getValue().toString();
       SharedPreferences prefs =
           PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-      prefs.edit().putString(getString(R.string.pref_advanced_workout), curName).apply();
+      prefs.edit().putString(getString(R.string.pref_advanced_workout), currentWorkoutName).apply();
     } catch (Exception ignored) {
       // If the spinner value can't be read, fall back to the default back behaviour.
     }
@@ -248,7 +261,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
   private final Runnable onWorkoutChanged =
       () -> {
-        String advWorkoutName = advancedWorkoutSpinner.getValue().toString();
+        String advWorkoutName = currentWorkoutName;
         if (advancedWorkout != null) {
           Context ctx = getApplicationContext();
           try {
@@ -264,22 +277,10 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
         }
       };
 
-  private final View.OnClickListener addStepButtonClick =
-      v -> {
-        advancedWorkout.addStep(new Step());
-        advancedWorkoutStepsAdapter.refreshSteps();
-      };
-
-  private final View.OnClickListener addRepeatStepButtonClick =
-      view -> {
-        advancedWorkout.addStep(new RepeatStep());
-        advancedWorkoutStepsAdapter.refreshSteps();
-      };
-
   private final View.OnClickListener saveWorkoutButtonClick =
       v -> {
         try {
-          String advWorkoutName = advancedWorkoutSpinner.getValue().toString();
+          String advWorkoutName = currentWorkoutName;
           WorkoutSerializer.writeFile(getApplicationContext(), advWorkoutName, advancedWorkout);
           finish();
         } catch (Exception e) {
@@ -304,7 +305,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                   org.runnerup.common.R.string.Yes,
                   (dialog, which) -> {
                     dialog.dismiss();
-                    String name = advancedWorkoutSpinner.getValue().toString();
+                    String name = currentWorkoutName;
                     File f = WorkoutSerializer.getFile(getApplicationContext(), name);
                     //noinspection ResultOfMethodCallIgnored
                     f.delete();
@@ -321,7 +322,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
         newWorkoutNameEditText.setInputType(InputType.TYPE_CLASS_TEXT);
         newWorkoutNameEditText.setSingleLine(true);
         newWorkoutNameEditText.setMaxLines(1);
-        newWorkoutNameEditText.setText(advancedWorkoutSpinner.getValue().toString());
+        newWorkoutNameEditText.setText(currentWorkoutName);
 
         new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
             .setView(newWorkoutNameEditText)
@@ -329,7 +330,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                 org.runnerup.common.R.string.OK,
                 (dialog, which) -> {
                   String newWorkoutName = newWorkoutNameEditText.getText().toString().trim();
-                  String oldWorkoutName = advancedWorkoutSpinner.getValue().toString().trim();
+                  String oldWorkoutName = currentWorkoutName.trim();
                   if (newWorkoutName.isEmpty()
                       || newWorkoutName.contains("/")
                       || newWorkoutName.contains("\\")
@@ -372,7 +373,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                     if (oldWorkoutName.contentEquals(prefs.getString(key, ""))) {
                       prefs.edit().putString(key, newWorkoutName).apply();
                     }
-                    advancedWorkoutSpinner.setValue(newWorkoutName);
+                    currentWorkoutName = newWorkoutName;
                     dialog.dismiss();
                     finish();
                   } catch (Exception e) {
