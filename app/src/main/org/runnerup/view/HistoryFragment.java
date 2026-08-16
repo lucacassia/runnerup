@@ -296,7 +296,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       Date date = new Date(starts[i] * 1000);
       labels[i] =
           period == BucketPeriod.MONTH
-              ? formatter.formatMonth(date)
+              ? formatter.formatMonthShort(date)
               : formatter.formatDayOfMonth(date);
     }
     return labels;
