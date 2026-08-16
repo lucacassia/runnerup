@@ -492,7 +492,7 @@
              android:layout_height="match_parent"
              android:layout_gravity="bottom"
              android:orientation="vertical"
-             android:background="?attr/colorSurface"
+             android:background="@drawable/bg_run_bottom_sheet"
              app:behavior_hideable="false"
              app:behavior_peekHeight="@dimen/run_sheet_peek_height"
              app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
