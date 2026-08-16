@@ -143,7 +143,7 @@ public class DistanceChartView extends View {
     return max;
   }
 
-  private static double niceMax(double value) {
+  static double niceMax(double value) {
     if (value <= 0) {
       return 1.0;
     }
@@ -155,8 +155,16 @@ public class DistanceChartView extends View {
       niceFraction = 1;
     } else if (fraction <= 2) {
       niceFraction = 2;
+    } else if (fraction <= 3) {
+      niceFraction = 3;
+    } else if (fraction <= 4) {
+      niceFraction = 4;
     } else if (fraction <= 5) {
       niceFraction = 5;
+    } else if (fraction <= 6) {
+      niceFraction = 6;
+    } else if (fraction <= 8) {
+      niceFraction = 8;
     } else {
       niceFraction = 10;
     }
