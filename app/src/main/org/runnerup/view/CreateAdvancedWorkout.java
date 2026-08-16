@@ -23,6 +23,7 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
@@ -44,7 +45,29 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   private final WorkoutStepsAdapter advancedWorkoutStepsAdapter = new WorkoutStepsAdapter();
   private boolean dontAskAgain = false;
   private boolean workoutEditMode = false;
-  private final View.OnClickListener addWorkoutFabClick = v -> {};
+  private final View.OnClickListener addWorkoutFabClick =
+      v -> {
+        View sheetView = getLayoutInflater().inflate(R.layout.workout_add_sheet, null);
+        BottomSheetDialog sheet = new BottomSheetDialog(this);
+        sheet.setContentView(sheetView);
+        sheetView
+            .findViewById(R.id.add_step_sheet_row)
+            .setOnClickListener(
+                view -> {
+                  advancedWorkout.addStep(new Step());
+                  advancedWorkoutStepsAdapter.refreshSteps();
+                  sheet.dismiss();
+                });
+        sheetView
+            .findViewById(R.id.add_repeat_sheet_row)
+            .setOnClickListener(
+                view -> {
+                  advancedWorkout.addStep(new RepeatStep());
+                  advancedWorkoutStepsAdapter.refreshSteps();
+                  sheet.dismiss();
+                });
+        sheet.show();
+      };
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
