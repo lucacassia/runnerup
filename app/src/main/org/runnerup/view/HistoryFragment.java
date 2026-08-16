@@ -254,7 +254,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
               Statistics.bucketStarts(Statistics.BucketPeriod.MONTH, now, ZoneId.systemDefault())[
                   0];
           List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from);
-          double[] totals = Statistics.totals(rows, now);
+          double[] totals = Statistics.totals(rows, now, ZoneId.systemDefault());
           mainHandler.post(
               () -> {
                 statisticsRows = rows;
@@ -305,12 +305,12 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private int chartTitleFor(BucketPeriod period) {
     switch (period) {
       case WEEK:
-        return org.runnerup.common.R.string.Statistics_last_8_weeks;
+        return org.runnerup.common.R.string.Statistics_last_12_weeks;
       case MONTH:
         return org.runnerup.common.R.string.Statistics_last_12_months;
       case DAY:
       default:
-        return org.runnerup.common.R.string.Statistics_last_14_days;
+        return org.runnerup.common.R.string.Statistics_last_12_days;
     }
   }
 
