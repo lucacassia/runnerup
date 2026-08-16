@@ -68,9 +68,9 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
       };
   private final View.OnClickListener addWorkoutFabClick =
       v -> {
-        View sheetView = getLayoutInflater().inflate(R.layout.workout_add_sheet, null);
         BottomSheetDialog sheet = new BottomSheetDialog(this);
-        sheet.setContentView(sheetView);
+        sheet.setContentView(R.layout.workout_add_sheet);
+        View sheetView = sheet.findViewById(android.R.id.content);
         sheetView
             .findViewById(R.id.add_step_sheet_row)
             .setOnClickListener(
