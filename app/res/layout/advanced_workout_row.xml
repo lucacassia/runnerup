@@ -6,22 +6,31 @@
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/del_button"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_gravity="center"
-        app:backgroundTint="?attr/colorError"
-        android:gravity="center_vertical|center_horizontal"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:shadowColor="#000000"
-        android:shadowDx="1"
-        android:shadowDy="1"
-        android:shadowRadius="2"
-        android:text="@string/_sign_minus"
-        android:textColor="@color/btn_text_color"
-        android:textStyle="bold" />
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageButton
+            android:id="@+id/move_up_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/Move_up"
+            android:padding="10dp"
+            android:src="@drawable/ic_expand_up_white_24dp"
+            app:tint="?attr/colorOnSurfaceVariant" />
+
+        <ImageButton
+            android:id="@+id/move_down_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/Move_down"
+            android:padding="10dp"
+            android:src="@drawable/ic_expand_down_white_24dp"
+            app:tint="?attr/colorOnSurfaceVariant" />
+    </LinearLayout>
 
     <view
         android:id="@+id/workout_step_button"
@@ -31,18 +40,23 @@
         android:layout_weight="1" />
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/del_button"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        app:backgroundTint="?attr/colorError"
+        android:text="@string/_sign_minus"
+        android:textColor="@color/btn_text_color"
+        android:textStyle="bold" />
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/add_button"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_gravity="center"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
         app:backgroundTint="?attr/colorPrimary"
-        android:gravity="center_vertical|center_horizontal"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:shadowColor="#000000"
-        android:shadowDx="1"
-        android:shadowDy="1"
-        android:shadowRadius="2"
         android:text="@string/_sign_plus"
         android:textColor="@color/btn_text_color"
         android:textStyle="bold" />
