@@ -163,7 +163,7 @@ git commit -m "feat: add same-level step reorder helper"
   - `No_steps_yet` = "No steps yet. Tap + to add a step or a repeat."
   - `Move_up` = "Move up"
   - `Move_down` = "Move down"
-- Produces (app menu `R.menu.workout_editor_menu`): items `menu_rename_workout` (title `@string/Rename`) and `menu_discard_workout` (title `@string/Discard`). Consumed by Task 3.
+- Produces (app menu `R.menu.workout_editor_menu`): items `menu_save_workout` (title `@string/Save`, `app:showAsAction="always"`, icon `@drawable/ic_check`), `menu_rename_workout` (title `@string/Rename`), and `menu_discard_workout` (title `@string/Discard`). Consumed by Task 3. (Save added per controller ruling after spec-vs-plan conflict scan — spec §1 mandates an always-present toolbar Save.)
 - Reuses existing `common` strings: `Add_step`, `Add_repeat`, `Save`, `Discard`, `Rename`, `repeat_times` ("Repeat %1$d times"). Confirmed present (`common/src/main/res/values/strings.xml:38-39, 287-288`).
 
 - [ ] **Step 1: Add the five strings**
@@ -184,7 +184,13 @@ Create `app/res/menu/workout_editor_menu.xml`:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/menu_save_workout"
+        android:icon="@drawable/ic_check"
+        android:title="@string/Save"
+        app:showAsAction="always" />
     <item
         android:id="@+id/menu_rename_workout"
         android:title="@string/Rename" />
@@ -320,7 +326,10 @@ Add these methods to `CreateAdvancedWorkout`:
   @Override
   public boolean onOptionsItemSelected(@NonNull MenuItem item) {
     int itemId = item.getItemId();
-    if (itemId == R.id.menu_rename_workout) {
+    if (itemId == R.id.menu_save_workout) {
+      saveWorkoutButtonClick.onClick(null);
+      return true;
+    } else if (itemId == R.id.menu_rename_workout) {
       renameWorkoutButtonClick.onClick(null);
       return true;
     } else if (itemId == R.id.menu_discard_workout) {
@@ -337,7 +346,7 @@ Add these methods to `CreateAdvancedWorkout`:
 
 Note: `workoutEditMode` must become a field (currently a local in `onCreate`). Add `private boolean workoutEditMode = false;` next to `dontAskAgain` (`CreateAdvancedWorkout.java:42`) and assign it in `onCreate`.
 
-Add imports: `android.view.Menu`, `android.view.MenuItem`, `androidx.annotation.NonNull`.
+Add imports: `android.view.Menu`, `android.view.MenuItem` (`androidx.annotation.NonNull` is already imported).
 
 - [ ] **Step 4: Remove dead button wiring**
 
@@ -345,7 +354,7 @@ Delete from `onCreate`:
 - `advancedWorkoutSpinner` field and its assignments (`CreateAdvancedWorkout.java:40, 58-60`).
 - `advancedWorkoutSpinner` references in `persistCurrentWorkoutName` (`:113-125`) → replace with a stored `String currentWorkoutName` field set in `onCreate`, and use it in `persistCurrentWorkoutName`, `onWorkoutChanged` (`:251`), `saveWorkoutButtonClick` (`:282`), `discardWorkoutButtonClick` (`:307`), `renameWorkoutButtonClick` (`:320,324,332,363,371,375`).
 - The old `Button` field wiring: `addStepButton`/`addRepeatButton`/`saveWorkoutButton`/`discardWorkoutButton`/`renameWorkoutButton` `findViewById` + `setOnClickListener` + visibility lines (`:68-89`).
-- The now-unused methods `addStepButtonClick` (`:267-271`) and `addRepeatStepButtonClick` (`:273-277`) — replaced by the FAB chooser (Task 4). `saveWorkoutButtonClick` and `discardWorkoutButtonClick`/`renameWorkoutButtonClick` stay (their handler bodies are reused), but they become the dialog-launching lambdas only; the button fields are gone.
+- The now-unused methods `addStepButtonClick` (`:267-271`) and `addRepeatStepButtonClick` (`:273-277`) — replaced by the FAB chooser (Task 4). `saveWorkoutButtonClick` (writes + finishes), `discardWorkoutButtonClick`, and `renameWorkoutButtonClick` stay with unchanged bodies — they are now invoked from `onOptionsItemSelected` (Save/Rename/Discard); their old `Button` fields are gone.
 
 Temporarily keep `addWorkoutFabClick` as a stub (no-op) — Task 4 replaces it.
 
@@ -1004,7 +1013,7 @@ Add these methods to `CreateAdvancedWorkout`:
 
   private void editRepeatCount(RepeatStep repeat) {
     final NumberPicker numberPicker = new NumberPicker(this, null);
-    numberPicker.setOrientation(VERTICAL);
+    numberPicker.setOrientation(LinearLayout.VERTICAL);
     numberPicker.setDigits(4);
     numberPicker.setRange(0, 9999, true);
     numberPicker.setValue(repeat.getRepeatCount());
@@ -1025,7 +1034,7 @@ Add these methods to `CreateAdvancedWorkout`:
   }
 ```
 
-Add imports: `android.view.View.GONE`, `android.widget.ImageButton`, `android.widget.TextView`, `org.runnerup.widget.NumberPicker`. Replace the old `addStep(StepButton)` method (`CreateAdvancedWorkout.java:187-206`) and `deleteStep(StepButton)` signature — change `deleteStep`/`confirmDeleteStep` to take `Step` instead of `StepButton`:
+Add imports: `android.view.View.GONE`, `android.widget.ImageButton`, `android.widget.LinearLayout`, `android.widget.TextView`, `org.runnerup.widget.NumberPicker`. Replace the old `addStep(StepButton)` method (`CreateAdvancedWorkout.java:187-206`) and `deleteStep(StepButton)` signature — change `deleteStep`/`confirmDeleteStep` to take `Step` instead of `StepButton`:
 
 ```java
   private void confirmDeleteStep(Step step) {
