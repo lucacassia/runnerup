@@ -35,6 +35,7 @@
             android:layout_height="wrap_content"
             android:contentDescription="@string/Sport"
             android:cursorVisible="false"
+            android:drawablePadding="8dp"
             android:focusable="false"
             android:inputType="none"
             android:key="@string/pref_sport"
