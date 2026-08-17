@@ -113,6 +113,7 @@
                             app:autoSizeTextType="uniform" />
 
                         <TextView
+                            android:id="@+id/distance_label"
                             style="@style/RunStatLabel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -141,6 +142,7 @@
                             app:autoSizeTextType="uniform" />
 
                         <TextView
+                            android:id="@+id/time_label"
                             style="@style/RunStatLabel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -169,6 +171,7 @@
                             app:autoSizeTextType="uniform" />
 
                         <TextView
+                            android:id="@+id/pace_label"
                             style="@style/RunStatLabel"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

@@ -111,6 +111,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private TextView activityTimeExpanded = null;
   private TextView activityDistanceExpanded = null;
   private TextView activityPaceExpanded = null;
+  private TextView distanceLabel = null;
+  private TextView timeLabel = null;
+  private TextView paceLabel = null;
   private View statsCard = null;
   private ImageView statsExpandIndicator = null;
   private View stats3Horizontal = null;
@@ -118,6 +121,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private View stats3Area = null;
   private boolean statsExpanded = false;
   private boolean statsAnimating = false;
+  private boolean statsClipChildrenSaved = false;
   private int statsCardNaturalHeight = 0;
   private int stats3AreaNaturalHeight = 0;
   private int statsDelta = 0;
@@ -233,6 +237,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     activityTimeExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     activityDistanceExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     activityPaceExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+    distanceLabel = findViewById(R.id.distance_label);
+    timeLabel = findViewById(R.id.time_label);
+    paceLabel = findViewById(R.id.pace_label);
     statsCard = findViewById(R.id.table_layout1);
     statsExpandIndicator = findViewById(R.id.stats_expand_indicator);
     stats3Horizontal = findViewById(R.id.stats_3_horizontal);
