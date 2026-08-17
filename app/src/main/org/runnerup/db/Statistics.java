@@ -69,6 +69,9 @@ public final class Statistics {
     LocalDate today = Instant.ofEpochSecond(nowSeconds).atZone(zone).toLocalDate();
     long todayKey = key(today, period);
     for (ActivityRow row : rows) {
+      if (row.startTime > nowSeconds) {
+        continue;
+      }
       LocalDate date = Instant.ofEpochSecond(row.startTime).atZone(zone).toLocalDate();
       long dayDiff = todayKey - key(date, period);
       int offset;
