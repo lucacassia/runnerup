@@ -301,6 +301,12 @@ public class Formatter implements OnSharedPreferenceChangeListener {
           .append(" ")
           .append(resources.getString(org.runnerup.common.R.string.metrics_elapsed_s));
     }
+    if (s.length() == 0) {
+      return "0 "
+          + resources.getString(org.runnerup.common.R.string.metrics_elapsed_h)
+          + " 0 "
+          + resources.getString(org.runnerup.common.R.string.metrics_elapsed_m);
+    }
     return s.toString();
   }
 
