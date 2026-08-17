@@ -338,12 +338,12 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     double[] totals = Statistics.totals(statisticsRows, currentMetric, now, ZoneId.systemDefault());
     switch (currentMetric) {
       case TIME:
-        statistics7Value.setText(
-            formatter.formatElapsedTime(Formatter.Format.TXT_LONG, Math.round(totals[0])));
-        statistics30Value.setText(
-            formatter.formatElapsedTime(Formatter.Format.TXT_LONG, Math.round(totals[1])));
-        statistics365Value.setText(
-            formatter.formatElapsedTime(Formatter.Format.TXT_LONG, Math.round(totals[2])));
+        long t7 = Math.round(totals[0] / 60.0) * 60;
+        long t30 = Math.round(totals[1] / 60.0) * 60;
+        long t365 = Math.round(totals[2] / 60.0) * 60;
+        statistics7Value.setText(formatter.formatElapsedTime(Formatter.Format.TXT_LONG, t7));
+        statistics30Value.setText(formatter.formatElapsedTime(Formatter.Format.TXT_LONG, t30));
+        statistics365Value.setText(formatter.formatElapsedTime(Formatter.Format.TXT_LONG, t365));
         break;
       case ELEVATION_GAIN:
         statistics7Value.setText(
@@ -368,7 +368,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private String formatChartValue(double value) {
     switch (currentMetric) {
       case TIME:
-        return formatter.formatElapsedTime(Formatter.Format.TXT_LONG, Math.round(value));
+        return formatter.formatElapsedTime(
+            Formatter.Format.TXT_LONG, Math.round(value / 60.0) * 60);
       case ELEVATION_GAIN:
         return formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(value));
       case DISTANCE:
