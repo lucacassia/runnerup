@@ -34,8 +34,8 @@ The compact labels currently have no IDs in `run.xml` (lines 116, 144, 172); IDs
 ### Animation Mechanics
 
 - Single 250ms animator drives both the existing card/area height expansion AND the morph, keeping them in sync.
-- **Targets:** before the animator starts, lay the area out at its expanded height once (measure-once), read each compact view's final position/size, then restore. The targets are the compact views' translated/scaled end state (equivalently, where the expanded views sit).
-- **Per frame:** for each of the 6 pairs, set `translationX/Y` (pivot at view center), `scaleX/Y` (1.0 → ~2-3x, matching compact→expanded size ratio), and `alpha` (compact 1→0; expanded 0→1).
+- **Targets:** before the animator starts, defer target computation to after the layout pass (via `View.post()`), so expanded views have non-zero dimensions. The targets are the compact views' translated/scaled end state (equivalently, where the expanded views sit).
+- **Per frame:** for each of the 6 pairs, set `translationX/Y` (pivot at top-left (0,0), so values grow toward their expanded row), `scaleX/Y` (1.0 → ~2-3x, matching compact→expanded size ratio), and `alpha` (compact 1→0; expanded 0→1).
 - **Expand direction:** distance top-left → top full-width row; time → middle row; pace → bottom row; labels follow their values.
 - **Collapse direction:** exact reverse — values shrink and slide back to their horizontal slots.
 - Interpolator: default (decelerate), matching existing feel.
