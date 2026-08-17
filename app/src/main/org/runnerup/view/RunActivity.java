@@ -45,6 +45,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
@@ -118,7 +119,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private ImageView statsExpandIndicator = null;
   private View stats3Horizontal = null;
   private View stats3Vertical = null;
-  private View stats3Area = null;
+  private ViewGroup stats3Area = null;
   private boolean statsExpanded = false;
   private boolean statsAnimating = false;
   private boolean statsClipChildrenSaved = false;
@@ -469,39 +470,180 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     areaLp.height = areaStart;
     stats3Area.setLayoutParams(areaLp);
 
-    final View gone = statsExpanded ? stats3Horizontal : stats3Vertical;
-    final View shown = statsExpanded ? stats3Vertical : stats3Horizontal;
-    gone.animate().alpha(0f).setDuration(150).withEndAction(() -> gone.setVisibility(View.GONE));
-    shown.setAlpha(0f);
-    shown.setVisibility(View.VISIBLE);
-    shown.animate().alpha(1f).setDuration(150).start();
+    stats3Horizontal.setVisibility(View.VISIBLE);
+    stats3Vertical.setVisibility(View.VISIBLE);
+    stats3Horizontal.setAlpha(1f);
+    stats3Vertical.setAlpha(1f);
 
-    ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-    animator.setDuration(250);
-    animator.addUpdateListener(
-        a -> {
-          float f = a.getAnimatedFraction();
-          int cardH = Math.round(cardStart + (cardEnd - cardStart) * f);
-          int areaH = Math.round(areaStart + (areaEnd - areaStart) * f);
-          cardLp.height = cardH;
-          ((ViewGroup.MarginLayoutParams) cardLp).bottomMargin = -(cardH - cardNatural);
-          statsCard.setLayoutParams(cardLp);
-          areaLp.height = areaH;
-          stats3Area.setLayoutParams(areaLp);
-        });
-    animator.addListener(
-        new AnimatorListenerAdapter() {
-          @Override
-          public void onAnimationEnd(Animator animation) {
-            statsAnimating = false;
-            stats3Vertical.requestLayout();
-            stats3Vertical.invalidate();
-            statsCard.requestLayout();
-            statsCard.invalidate();
+    final boolean expanding = statsExpanded;
+    final View[] compactValueViews = {activityDistance, activityTime, activityPace};
+    final TextView[] compactLabelViews = {distanceLabel, timeLabel, paceLabel};
+    final View[] expandedValueViews = {
+      activityDistanceExpanded, activityTimeExpanded, activityPaceExpanded
+    };
+
+    for (View v : compactValueViews) {
+      v.setPivotX(0f);
+      v.setPivotY(0f);
+    }
+    for (TextView v : compactLabelViews) {
+      v.setPivotX(0f);
+      v.setPivotY(0f);
+    }
+
+    if (!expanding) {
+      for (View v : expandedValueViews) {
+        v.setAlpha(1f);
+      }
+    }
+
+    if (!statsClipChildrenSaved) {
+      stats3Area.setClipChildren(false);
+      ViewParent parent = stats3Area.getParent();
+      if (parent instanceof ViewGroup) {
+        ((ViewGroup) parent).setClipChildren(false);
+      }
+      statsClipChildrenSaved = true;
+    }
+
+    for (View v : compactValueViews) {
+      v.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+    }
+
+    final float[] finalExpandedRowTops = new float[3];
+    final float[] finalExpandedValueScaleX = new float[3];
+    final float[] finalExpandedValueScaleY = new float[3];
+    final float[] finalExpandedLabelTops = new float[3];
+    final float[] finalExpandedLabelScaleX = new float[3];
+    final float[] finalExpandedLabelScaleY = new float[3];
+
+    Runnable startMorphAnimator =
+        () -> {
+          float rowH = (float) (areaNatural + delta) / 3f;
+          for (int i = 0; i < 3; i++) {
+            finalExpandedRowTops[i] = rowH * i;
+            finalExpandedValueScaleX[i] =
+                (float) expandedValueViews[i].getWidth() / compactValueViews[i].getWidth();
+            finalExpandedValueScaleY[i] =
+                (float) expandedValueViews[i].getHeight() / compactValueViews[i].getHeight();
+
+            float expandedLabelTop =
+                finalExpandedRowTops[i]
+                    + expandedValueViews[i].getHeight()
+                    + 4f * (areaNatural + delta) / (3f * 560f);
+            finalExpandedLabelTops[i] = expandedLabelTop;
+            finalExpandedLabelScaleX[i] =
+                (float) (areaNatural + delta) / (3f * compactLabelViews[i].getWidth());
+            finalExpandedLabelScaleY[i] = (float) (rowH * 0.35f) / compactLabelViews[i].getHeight();
           }
-        });
 
-    animator.start();
+          if (expanding) {
+            for (View v : expandedValueViews) {
+              v.setAlpha(0f);
+            }
+          }
+
+          ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+          animator.setDuration(250);
+          animator.addUpdateListener(
+              a -> {
+                float f = a.getAnimatedFraction();
+                int cardH = Math.round(cardStart + (cardEnd - cardStart) * f);
+                int areaH = Math.round(areaStart + (areaEnd - areaStart) * f);
+                cardLp.height = cardH;
+                ((ViewGroup.MarginLayoutParams) cardLp).bottomMargin = -(cardH - cardNatural);
+                statsCard.setLayoutParams(cardLp);
+                areaLp.height = areaH;
+                stats3Area.setLayoutParams(areaLp);
+
+                for (int i = 0; i < 3; i++) {
+                  float targetTx = 0f;
+                  float targetTyValue = finalExpandedRowTops[i];
+                  float targetTyLabel = finalExpandedLabelTops[i];
+                  float targetSxValue = finalExpandedValueScaleX[i];
+                  float targetSyValue = finalExpandedValueScaleY[i];
+                  float targetSxLabel = finalExpandedLabelScaleX[i];
+                  float targetSyLabel = finalExpandedLabelScaleY[i];
+
+                  if (expanding) {
+                    compactValueViews[i].setTranslationX(targetTx * f);
+                    compactValueViews[i].setTranslationY(targetTyValue * f);
+                    compactValueViews[i].setScaleX(1f + (targetSxValue - 1f) * f);
+                    compactValueViews[i].setScaleY(1f + (targetSyValue - 1f) * f);
+                    compactValueViews[i].setAlpha(1f - f);
+
+                    compactLabelViews[i].setTranslationX(targetTx * f);
+                    compactLabelViews[i].setTranslationY(targetTyLabel * f);
+                    compactLabelViews[i].setScaleX(1f + (targetSxLabel - 1f) * f);
+                    compactLabelViews[i].setScaleY(1f + (targetSyLabel - 1f) * f);
+                    compactLabelViews[i].setAlpha(1f - f);
+
+                    expandedValueViews[i].setAlpha(f);
+                  } else {
+                    compactValueViews[i].setTranslationX(targetTx * (1f - f));
+                    compactValueViews[i].setTranslationY(targetTyValue * (1f - f));
+                    compactValueViews[i].setScaleX(targetSxValue - (targetSxValue - 1f) * f);
+                    compactValueViews[i].setScaleY(targetSyValue - (targetSyValue - 1f) * f);
+                    compactValueViews[i].setAlpha(f);
+
+                    compactLabelViews[i].setTranslationX(targetTx * (1f - f));
+                    compactLabelViews[i].setTranslationY(targetTyLabel * (1f - f));
+                    compactLabelViews[i].setScaleX(targetSxLabel - (targetSxLabel - 1f) * f);
+                    compactLabelViews[i].setScaleY(targetSyLabel - (targetSyLabel - 1f) * f);
+                    compactLabelViews[i].setAlpha(f);
+
+                    expandedValueViews[i].setAlpha(1f - f);
+                  }
+                }
+              });
+          animator.addListener(
+              new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                  statsAnimating = false;
+                  for (View v : compactValueViews) {
+                    v.setLayerType(View.LAYER_TYPE_NONE, null);
+                  }
+                  if (expanding) {
+                    stats3Horizontal.setVisibility(View.GONE);
+                    for (View v : compactValueViews) {
+                      v.setTranslationX(0f);
+                      v.setTranslationY(0f);
+                      v.setScaleX(1f);
+                      v.setScaleY(1f);
+                      v.setAlpha(0f);
+                    }
+                    for (TextView v : compactLabelViews) {
+                      v.setTranslationX(0f);
+                      v.setTranslationY(0f);
+                      v.setScaleX(1f);
+                      v.setScaleY(1f);
+                      v.setAlpha(0f);
+                    }
+                  } else {
+                    stats3Vertical.setVisibility(View.GONE);
+                    for (View v : expandedValueViews) {
+                      v.setAlpha(0f);
+                    }
+                    for (View v : compactValueViews) {
+                      v.setAlpha(1f);
+                    }
+                  }
+                  stats3Vertical.requestLayout();
+                  stats3Vertical.invalidate();
+                  statsCard.requestLayout();
+                  statsCard.invalidate();
+                }
+              });
+          animator.start();
+        };
+
+    if (expanding) {
+      startMorphAnimator.run();
+    } else {
+      startMorphAnimator.run();
+    }
+
     statsExpandIndicator.animate().rotation(statsExpanded ? 180f : 0f).setDuration(250).start();
   }
 
