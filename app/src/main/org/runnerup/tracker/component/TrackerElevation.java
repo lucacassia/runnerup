@@ -47,6 +47,8 @@ public class TrackerElevation extends DefaultTrackerComponent implements SensorE
   private long minEleAverageCutoffTime = Long.MAX_VALUE;
   private AltitudeConverterWrapper mAltitudeConverter = null;
   private boolean isStarted;
+  private double mElevationGain = 0;
+  private Double mLastRawAltitude = null;
 
   public TrackerElevation(Tracker tracker, TrackerGPS trackerGPS, TrackerPressure trackerPressure) {
     this.tracker = tracker;
@@ -102,7 +104,21 @@ public class TrackerElevation extends DefaultTrackerComponent implements SensorE
     return val;
   }
 
+  public double getElevationGain() {
+    return mElevationGain;
+  }
+
   public void onLocationChanged(android.location.Location arg0) {
+    if (arg0.hasAltitude()) {
+      double alt = arg0.getAltitude();
+      if (mLastRawAltitude != null) {
+        double delta = alt - mLastRawAltitude;
+        if (delta > 0) {
+          mElevationGain += delta;
+        }
+      }
+      mLastRawAltitude = alt;
+    }
     if (arg0.hasAltitude()
         && (!isStarted || mPressureOffset == null || arg0.getTime() < minEleAverageCutoffTime)) {
       // If mPressureOffset is not "used" yet or shortly after first GPS, update the average
@@ -164,6 +180,8 @@ public class TrackerElevation extends DefaultTrackerComponent implements SensorE
   @Override
   public void onStart() {
     isStarted = true;
+    mElevationGain = 0;
+    mLastRawAltitude = null;
   }
 
   /** Called by Tracker when workout is paused */
@@ -172,6 +190,7 @@ public class TrackerElevation extends DefaultTrackerComponent implements SensorE
     isStarted = false;
     minEleAverageCutoffTime = Long.MAX_VALUE;
     mPressureOffset = null;
+    mLastRawAltitude = null;
   }
 
   /** Called by Tracker when workout is resumed */
@@ -187,6 +206,8 @@ public class TrackerElevation extends DefaultTrackerComponent implements SensorE
     minEleAverageCutoffTime = Long.MAX_VALUE;
     mPressureOffset = null;
     mAverageGpsElevation = null;
+    mElevationGain = 0;
+    mLastRawAltitude = null;
   }
 
   /** Called by tracked after workout has ended */
@@ -196,6 +217,8 @@ public class TrackerElevation extends DefaultTrackerComponent implements SensorE
     minEleAverageCutoffTime = Long.MAX_VALUE;
     mPressureOffset = null;
     mAverageGpsElevation = null;
+    mElevationGain = 0;
+    mLastRawAltitude = null;
     return ResultCode.RESULT_OK;
   }
 

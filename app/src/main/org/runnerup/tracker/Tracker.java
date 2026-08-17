@@ -595,6 +595,7 @@ public class Tracker extends android.app.Service implements LocationListener, Co
     } else {
       tmp.put(Constants.DB.ACTIVITY.DISTANCE, mElapsedDistance);
     }
+    tmp.put(Constants.DB.ACTIVITY.ELEVATION_GAIN, trackerElevation.getElevationGain());
     tmp.put(
         Constants.DB.ACTIVITY.TIME,
         Math.round(getTimeMs() / 1000.0d)); // time should be updated last for conditionalRecompute
