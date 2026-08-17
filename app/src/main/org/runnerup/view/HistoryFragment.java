@@ -254,7 +254,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
               Statistics.bucketStarts(Statistics.BucketPeriod.MONTH, now, ZoneId.systemDefault())[
                   0];
           List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from);
-          double[] totals = Statistics.totals(rows, now, ZoneId.systemDefault());
+          double[] totals =
+              Statistics.totals(rows, Statistics.Metric.DISTANCE, now, ZoneId.systemDefault());
           mainHandler.post(
               () -> {
                 statisticsRows = rows;
@@ -275,7 +276,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     }
     long now = System.currentTimeMillis() / 1000;
     double[] buckets =
-        Statistics.bucketize(statisticsRows, currentPeriod, now, ZoneId.systemDefault());
+        Statistics.bucketize(
+            statisticsRows, Statistics.Metric.DISTANCE, currentPeriod, now, ZoneId.systemDefault());
     long[] starts = Statistics.bucketStarts(currentPeriod, now, ZoneId.systemDefault());
     statisticsChartTitle.setText(chartTitleFor(currentPeriod));
     statisticsChart.setData(buckets, buildXLabels(currentPeriod, starts));

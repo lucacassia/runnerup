@@ -10,6 +10,7 @@ import java.util.List;
 import org.junit.Test;
 import org.runnerup.db.Statistics.ActivityRow;
 import org.runnerup.db.Statistics.BucketPeriod;
+import org.runnerup.db.Statistics.Metric;
 
 public class StatisticsTest {
 
@@ -19,10 +20,12 @@ public class StatisticsTest {
     return LocalDate.parse(date).atStartOfDay(UTC).toEpochSecond();
   }
 
+  private static long nextId = 1;
+
   private static List<ActivityRow> rows(Object... pairs) {
     List<ActivityRow> rows = new ArrayList<>();
     for (int i = 0; i < pairs.length; i += 2) {
-      rows.add(new ActivityRow((Long) pairs[i], (Double) pairs[i + 1]));
+      rows.add(new ActivityRow(nextId++, (Long) pairs[i], (Double) pairs[i + 1]));
     }
     return rows;
   }
@@ -36,7 +39,7 @@ public class StatisticsTest {
             at("2026-08-14"), 2000.0,
             at("2026-08-01"), 4000.0,
             at("2026-01-01"), 8000.0);
-    double[] totals = Statistics.totals(rows, now, UTC);
+    double[] totals = Statistics.totals(rows, Metric.DISTANCE, now, UTC);
     assertEquals(3000.0, totals[0], 0.0);
     assertEquals(7000.0, totals[1], 0.0);
     assertEquals(15000.0, totals[2], 0.0);
@@ -50,7 +53,7 @@ public class StatisticsTest {
             at("2026-08-09"), 1000.0,
             at("2026-07-31"), 2000.0,
             at("2025-12-31"), 4000.0);
-    double[] totals = Statistics.totals(rows, now, UTC);
+    double[] totals = Statistics.totals(rows, Metric.DISTANCE, now, UTC);
     assertEquals(0.0, totals[0], 0.0);
     assertEquals(1000.0, totals[1], 0.0);
     assertEquals(3000.0, totals[2], 0.0);
@@ -60,7 +63,7 @@ public class StatisticsTest {
   public void totalsExcludeFutureRows() {
     long now = at("2026-08-14") + 12 * 3600;
     List<ActivityRow> rows = rows(now - 3600, 1000.0, now + 3600, 5000.0);
-    double[] totals = Statistics.totals(rows, now, UTC);
+    double[] totals = Statistics.totals(rows, Metric.DISTANCE, now, UTC);
     assertEquals(1000.0, totals[0], 0.0);
     assertEquals(1000.0, totals[1], 0.0);
     assertEquals(1000.0, totals[2], 0.0);
@@ -75,7 +78,7 @@ public class StatisticsTest {
             at("2026-08-13"), 2000.0,
             at("2026-08-03"), 500.0,
             at("2026-08-02"), 9999.0);
-    double[] buckets = Statistics.bucketize(rows, BucketPeriod.DAY, now, UTC);
+    double[] buckets = Statistics.bucketize(rows, Metric.DISTANCE, BucketPeriod.DAY, now, UTC);
     assertEquals(12, buckets.length);
     assertEquals(500.0, buckets[0], 0.0);
     assertEquals(0.0, buckets[9], 0.0);
@@ -91,7 +94,7 @@ public class StatisticsTest {
             at("2025-12-29"), 1000.0,
             at("2025-12-22"), 2000.0,
             at("2025-11-17"), 3000.0);
-    double[] buckets = Statistics.bucketize(rows, BucketPeriod.WEEK, now, UTC);
+    double[] buckets = Statistics.bucketize(rows, Metric.DISTANCE, BucketPeriod.WEEK, now, UTC);
     assertEquals(12, buckets.length);
     assertEquals(0.0, buckets[0], 0.0);
     assertEquals(3000.0, buckets[4], 0.0);
@@ -111,7 +114,7 @@ public class StatisticsTest {
             at("2026-01-10"), 3000.0,
             at("2025-09-05"), 4000.0,
             at("2025-08-15"), 9999.0);
-    double[] buckets = Statistics.bucketize(rows, BucketPeriod.MONTH, now, UTC);
+    double[] buckets = Statistics.bucketize(rows, Metric.DISTANCE, BucketPeriod.MONTH, now, UTC);
     assertEquals(12, buckets.length);
     assertEquals(4000.0, buckets[0], 0.0);
     assertEquals(3000.0, buckets[4], 0.0);
@@ -145,5 +148,65 @@ public class StatisticsTest {
     assertEquals(12, Statistics.bucketCount(BucketPeriod.DAY));
     assertEquals(12, Statistics.bucketCount(BucketPeriod.WEEK));
     assertEquals(12, Statistics.bucketCount(BucketPeriod.MONTH));
+  }
+
+  @Test
+  public void totalsTimeSumsActivityDuration() {
+    long now = at("2026-08-14") + 12 * 3600;
+    List<ActivityRow> rows = new ArrayList<>();
+    rows.add(new ActivityRow(1, at("2026-08-14"), 1000.0, 1800.0)); // 30 min
+    rows.add(new ActivityRow(2, at("2026-08-03"), 2000.0, 3600.0)); // 60 min
+    double[] totals = Statistics.totals(rows, Metric.TIME, now, UTC);
+    assertEquals(1800.0, totals[0], 0.0);
+    assertEquals(5400.0, totals[1], 0.0);
+    assertEquals(5400.0, totals[2], 0.0);
+  }
+
+  @Test
+  public void totalsElevationSumsGain() {
+    long now = at("2026-08-14") + 12 * 3600;
+    List<ActivityRow> rows = new ArrayList<>();
+    rows.add(new ActivityRow(1, at("2026-08-14"), 1000.0, null, 50.0));
+    rows.add(new ActivityRow(2, at("2026-08-10"), 2000.0, null, 120.0));
+    double[] totals = Statistics.totals(rows, Metric.ELEVATION_GAIN, now, UTC);
+    assertEquals(170.0, totals[0], 0.0);
+    assertEquals(170.0, totals[1], 0.0);
+    assertEquals(170.0, totals[2], 0.0);
+  }
+
+  @Test
+  public void totalsElevationSkipsNull() {
+    long now = at("2026-08-14") + 12 * 3600;
+    List<ActivityRow> rows = new ArrayList<>();
+    rows.add(new ActivityRow(1, at("2026-08-14"), 1000.0, null, (Double) null));
+    rows.add(new ActivityRow(2, at("2026-08-03"), 2000.0, null, 100.0));
+    double[] totals = Statistics.totals(rows, Metric.ELEVATION_GAIN, now, UTC);
+    assertEquals(0.0, totals[0], 0.0);
+    assertEquals(100.0, totals[1], 0.0);
+  }
+
+  @Test
+  public void bucketizeTimeGroupsByMetricValue() {
+    long now = at("2026-08-14") + 12 * 3600;
+    List<ActivityRow> rows = new ArrayList<>();
+    rows.add(new ActivityRow(1, at("2026-08-14"), 1000.0, 1800.0));
+    rows.add(new ActivityRow(2, at("2026-08-13"), 2000.0, 3600.0));
+    double[] buckets = Statistics.bucketize(rows, Metric.TIME, BucketPeriod.DAY, now, UTC);
+    assertEquals(12, buckets.length);
+    assertEquals(1800.0, buckets[11], 0.0);
+    assertEquals(3600.0, buckets[10], 0.0);
+  }
+
+  @Test
+  public void bucketizeElevationGroupsByMetricValue() {
+    long now = at("2026-08-14") + 12 * 3600;
+    List<ActivityRow> rows = new ArrayList<>();
+    rows.add(new ActivityRow(1, at("2026-08-14"), 1000.0, null, 50.0));
+    rows.add(new ActivityRow(2, at("2026-08-13"), 2000.0, null, 120.0));
+    double[] buckets =
+        Statistics.bucketize(rows, Metric.ELEVATION_GAIN, BucketPeriod.DAY, now, UTC);
+    assertEquals(12, buckets.length);
+    assertEquals(50.0, buckets[11], 0.0);
+    assertEquals(120.0, buckets[10], 0.0);
   }
 }
