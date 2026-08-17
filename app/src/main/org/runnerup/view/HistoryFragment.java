@@ -339,19 +339,19 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     switch (currentMetric) {
       case TIME:
         statistics7Value.setText(
-            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(totals[0])));
+            formatter.formatElapsedTime(Formatter.Format.TXT_LONG, Math.round(totals[0])));
         statistics30Value.setText(
-            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
+            formatter.formatElapsedTime(Formatter.Format.TXT_LONG, Math.round(totals[1])));
         statistics365Value.setText(
-            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
+            formatter.formatElapsedTime(Formatter.Format.TXT_LONG, Math.round(totals[2])));
         break;
       case ELEVATION_GAIN:
         statistics7Value.setText(
-            formatter.formatElevation(Formatter.Format.TXT_SHORT, Math.round(totals[0])));
+            formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(totals[0])));
         statistics30Value.setText(
-            formatter.formatElevation(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
+            formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(totals[1])));
         statistics365Value.setText(
-            formatter.formatElevation(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
+            formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(totals[2])));
         break;
       case DISTANCE:
       default:
@@ -368,9 +368,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private String formatChartValue(double value) {
     switch (currentMetric) {
       case TIME:
-        return formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(value));
+        return formatter.formatElapsedTime(Formatter.Format.TXT_LONG, Math.round(value));
       case ELEVATION_GAIN:
-        return formatter.formatElevation(Formatter.Format.TXT_SHORT, Math.round(value));
+        return formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(value));
       case DISTANCE:
       default:
         return formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(value));

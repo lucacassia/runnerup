@@ -10,10 +10,44 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/statistics_metric_toggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:checkedButton="@id/statistics_metric_distance"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/statistics_metric_distance"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/Statistics_distance" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/statistics_metric_time"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/Statistics_time" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/statistics_metric_elevation"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/Statistics_elevation" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
         <LinearLayout
             android:id="@+id/statistics_cards"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
@@ -111,40 +145,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/statistics_metric_toggle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            app:checkedButton="@id/statistics_metric_distance"
-            app:selectionRequired="true"
-            app:singleSelection="true">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/statistics_metric_distance"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/Statistics_distance" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/statistics_metric_time"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/Statistics_time" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/statistics_metric_elevation"
-                style="?attr/materialButtonOutlinedStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/Statistics_elevation" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
 
         <com.google.android.material.button.MaterialButtonToggleGroup
             android:id="@+id/statistics_toggle"
