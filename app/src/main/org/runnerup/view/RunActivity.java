@@ -820,13 +820,20 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       double ad = workout.getDistance(Scope.ACTIVITY);
       double at = workout.getTime(Scope.ACTIVITY);
       double ap = workout.getSpeed(Scope.ACTIVITY);
-      activityTime.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(at)));
-      activityDistance.setText(
+      if (!statsAnimating) {
+        activityTime.setText(
+            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(at)));
+        activityDistance.setText(
+            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(ad)));
+        activityPace.setText(
+            formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, ap));
+      }
+      activityTimeExpanded.setText(
+          formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(at)));
+      activityDistanceExpanded.setText(
           formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(ad)));
-      activityPace.setText(formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, ap));
-      activityTimeExpanded.setText(activityTime.getText());
-      activityDistanceExpanded.setText(activityDistance.getText());
-      activityPaceExpanded.setText(activityPace.getText());
+      activityPaceExpanded.setText(
+          formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, ap));
 
       double ld = workout.getDistance(Scope.LAP);
       double lt = workout.getTime(Scope.LAP);
