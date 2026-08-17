@@ -215,16 +215,11 @@ public final class Statistics {
         db.query(
             "location",
             new String[] {DB.LOCATION.ALTITUDE},
-            DB.LOCATION.ACTIVITY
-                + " = ? AND "
-                + DB.LOCATION.ALTITUDE
-                + " IS NOT NULL ORDER BY "
-                + DB.LOCATION.TIME
-                + " ASC",
+            DB.LOCATION.ACTIVITY + " = ? AND " + DB.LOCATION.ALTITUDE + " IS NOT NULL",
             new String[] {Long.toString(activityId)},
             null,
             null,
-            null)) {
+            DB.LOCATION.TIME + " ASC")) {
       while (cursor.moveToNext()) {
         double alt = cursor.getDouble(0);
         if (prevAlt != null) {

@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Before;
 import org.junit.Test;
 import org.runnerup.db.Statistics.ActivityRow;
 import org.runnerup.db.Statistics.BucketPeriod;
@@ -21,6 +22,11 @@ public class StatisticsTest {
   }
 
   private static long nextId = 1;
+
+  @Before
+  public void setUp() {
+    nextId = 1;
+  }
 
   private static List<ActivityRow> rows(Object... pairs) {
     List<ActivityRow> rows = new ArrayList<>();
