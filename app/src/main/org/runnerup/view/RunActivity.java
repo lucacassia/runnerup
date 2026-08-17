@@ -639,9 +639,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         };
 
     if (expanding) {
-      startMorphAnimator.run();
+      stats3Area.post(startMorphAnimator);
     } else {
-      startMorphAnimator.run();
+      stats3Area.post(startMorphAnimator);
     }
 
     statsExpandIndicator.animate().rotation(statsExpanded ? 180f : 0f).setDuration(250).start();
