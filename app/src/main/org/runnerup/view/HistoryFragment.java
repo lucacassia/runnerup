@@ -19,6 +19,7 @@ package org.runnerup.view;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
@@ -41,6 +42,7 @@ import androidx.fragment.app.Fragment;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.app.LoaderManager.LoaderCallbacks;
 import androidx.loader.content.Loader;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -59,6 +61,7 @@ import org.runnerup.db.ActivityCleaner;
 import org.runnerup.db.DBHelper;
 import org.runnerup.db.Statistics;
 import org.runnerup.db.Statistics.BucketPeriod;
+import org.runnerup.db.Statistics.Metric;
 import org.runnerup.db.entities.ActivityEntity;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SimpleCursorLoader;
@@ -84,6 +87,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
 
   private int currentTab = TAB_HISTORY_INDEX;
   private BucketPeriod currentPeriod = BucketPeriod.DAY;
+  private Metric currentMetric = Metric.DISTANCE;
   private List<Statistics.ActivityRow> statisticsRows = null;
   private View statisticsContent;
   private View statisticsEmpty;
@@ -135,8 +139,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     statistics7Value = view.findViewById(R.id.statistics_7_value);
     statistics30Value = view.findViewById(R.id.statistics_30_value);
     statistics365Value = view.findViewById(R.id.statistics_365_value);
-    statisticsChart.setLabelFormatter(
-        value -> formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(value)));
+    statisticsChart.setLabelFormatter(this::formatChartValue);
 
     TabLayout historyTabs = view.findViewById(R.id.history_tabs);
     historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Activities));
@@ -173,6 +176,41 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                       : BucketPeriod.DAY;
           currentPeriod = period;
           renderChart();
+        });
+
+    MaterialButtonToggleGroup metricToggle = view.findViewById(R.id.statistics_metric_toggle);
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+    int savedMetric =
+        prefs.getInt(getString(org.runnerup.common.R.string.pref_statistics_metric), 0);
+    currentMetric = Metric.values()[savedMetric];
+    if (savedMetric != 0) {
+      int checkedId =
+          savedMetric == 1 ? R.id.statistics_metric_time : R.id.statistics_metric_elevation;
+      metricToggle.check(checkedId);
+    }
+    metricToggle.addOnButtonCheckedListener(
+        (group, checkedId, isChecked) -> {
+          if (!isChecked) {
+            return;
+          }
+          Metric metric;
+          if (checkedId == R.id.statistics_metric_time) {
+            metric = Metric.TIME;
+          } else if (checkedId == R.id.statistics_metric_elevation) {
+            metric = Metric.ELEVATION_GAIN;
+          } else {
+            metric = Metric.DISTANCE;
+          }
+          currentMetric = metric;
+          prefs
+              .edit()
+              .putInt(
+                  getString(org.runnerup.common.R.string.pref_statistics_metric), metric.ordinal())
+              .apply();
+          if (statisticsRows != null) {
+            updateStatisticsCards();
+            renderChart();
+          }
         });
   }
 
@@ -254,18 +292,18 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
               Statistics.bucketStarts(Statistics.BucketPeriod.MONTH, now, ZoneId.systemDefault())[
                   0];
           List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from);
-          double[] totals =
-              Statistics.totals(rows, Statistics.Metric.DISTANCE, now, ZoneId.systemDefault());
           mainHandler.post(
               () -> {
                 statisticsRows = rows;
-                statistics7Value.setText(
-                    formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[0])));
-                statistics30Value.setText(
-                    formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
-                statistics365Value.setText(
-                    formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
-                renderChart();
+                statisticsExecutor.execute(
+                    () -> {
+                      Statistics.computeMissingElevation(mDB, rows);
+                      mainHandler.post(
+                          () -> {
+                            updateStatisticsCards();
+                            renderChart();
+                          });
+                    });
               });
         });
   }
@@ -277,7 +315,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     long now = System.currentTimeMillis() / 1000;
     double[] buckets =
         Statistics.bucketize(
-            statisticsRows, Statistics.Metric.DISTANCE, currentPeriod, now, ZoneId.systemDefault());
+            statisticsRows, currentMetric, currentPeriod, now, ZoneId.systemDefault());
     long[] starts = Statistics.bucketStarts(currentPeriod, now, ZoneId.systemDefault());
     statisticsChartTitle.setText(chartTitleFor(currentPeriod));
     statisticsChart.setData(buckets, buildXLabels(currentPeriod, starts));
@@ -290,6 +328,53 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     }
     statisticsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
     statisticsChart.setVisibility(empty ? View.GONE : View.VISIBLE);
+  }
+
+  private void updateStatisticsCards() {
+    if (statisticsRows == null) {
+      return;
+    }
+    long now = System.currentTimeMillis() / 1000;
+    double[] totals = Statistics.totals(statisticsRows, currentMetric, now, ZoneId.systemDefault());
+    switch (currentMetric) {
+      case TIME:
+        statistics7Value.setText(
+            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(totals[0])));
+        statistics30Value.setText(
+            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
+        statistics365Value.setText(
+            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
+        break;
+      case ELEVATION_GAIN:
+        statistics7Value.setText(
+            formatter.formatElevation(Formatter.Format.TXT_SHORT, Math.round(totals[0])));
+        statistics30Value.setText(
+            formatter.formatElevation(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
+        statistics365Value.setText(
+            formatter.formatElevation(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
+        break;
+      case DISTANCE:
+      default:
+        statistics7Value.setText(
+            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[0])));
+        statistics30Value.setText(
+            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
+        statistics365Value.setText(
+            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
+        break;
+    }
+  }
+
+  private String formatChartValue(double value) {
+    switch (currentMetric) {
+      case TIME:
+        return formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(value));
+      case ELEVATION_GAIN:
+        return formatter.formatElevation(Formatter.Format.TXT_SHORT, Math.round(value));
+      case DISTANCE:
+      default:
+        return formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(value));
+    }
   }
 
   private String[] buildXLabels(BucketPeriod period, long[] starts) {
