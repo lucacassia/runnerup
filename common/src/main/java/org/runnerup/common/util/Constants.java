@@ -50,6 +50,7 @@ public interface Constants {
       String AVG_CADENCE = "avg_cadence";
       String META_DATA = "meta_data";
       String DELETED = "deleted";
+      String ELEVATION_GAIN = "elevation_gain";
       String NULLCOLUMNHACK = "nullColumnHack";
 
       int SPORT_RUNNING = 0;

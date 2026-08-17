@@ -51,7 +51,7 @@ import org.runnerup.workout.FileFormats;
 public class DBHelper extends SQLiteOpenHelper implements Constants {
 
   private static final String TAG = "DBHelper";
-  private static final int DBVERSION = 31;
+  private static final int DBVERSION = 32;
   private static final String DBNAME = "runnerup.db";
 
   // DBVERSION update
@@ -78,6 +78,7 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
           + (DB.ACTIVITY.AVG_CADENCE + " real, ")
           + (DB.ACTIVITY.META_DATA + " text, ")
           + ("deleted integer not null default 0, ")
+          + (DB.ACTIVITY.ELEVATION_GAIN + " real, ")
           + "nullColumnHack text null"
           + ");";
 
@@ -367,6 +368,16 @@ public class DBHelper extends SQLiteOpenHelper implements Constants {
       echoDo(
           arg0,
           "alter table " + DB.ACTIVITY.TABLE + " add column " + DB.ACTIVITY.META_DATA + " text");
+    }
+
+    if (oldVersion < 32) {
+      echoDo(
+          arg0,
+          "alter table "
+              + DB.ACTIVITY.TABLE
+              + " add column "
+              + DB.ACTIVITY.ELEVATION_GAIN
+              + " real");
     }
 
     // DBVERSION update
