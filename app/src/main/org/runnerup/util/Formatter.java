@@ -48,6 +48,7 @@ public class Formatter implements OnSharedPreferenceChangeListener {
   // private HRZones hrZones = null;
   private final java.text.DateFormat timeFormat;
   private final java.text.DateFormat monthFormat;
+  private final java.text.DateFormat monthShortFormat;
   private final java.text.DateFormat dayOfMonthFormat;
   private final boolean unitCue;
   private boolean metric = true;
@@ -63,6 +64,7 @@ public class Formatter implements OnSharedPreferenceChangeListener {
     dateFormat = android.text.format.DateFormat.getDateFormat(ctx);
     timeFormat = android.text.format.DateFormat.getTimeFormat(ctx);
     monthFormat = new SimpleDateFormat("LLL yyyy", cueResources.defaultLocale);
+    monthShortFormat = new SimpleDateFormat("LLL", cueResources.defaultLocale);
     dayOfMonthFormat = new SimpleDateFormat("E d", cueResources.defaultLocale);
     unitCue = sharedPreferences.getBoolean(cueResources.getString(R.string.cueinfo_units), true);
 
@@ -614,6 +616,10 @@ public class Formatter implements OnSharedPreferenceChangeListener {
    */
   public String formatMonth(Date date) {
     return monthFormat.format(date);
+  }
+
+  public String formatMonthShort(Date date) {
+    return monthShortFormat.format(date);
   }
 
   /**

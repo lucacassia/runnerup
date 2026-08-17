@@ -14,7 +14,6 @@ import org.runnerup.db.Statistics.BucketPeriod;
 public class StatisticsTest {
 
   private static final ZoneId UTC = ZoneId.of("UTC");
-  private static final long DAY = 86400L;
 
   private static long at(String date) {
     return LocalDate.parse(date).atStartOfDay(UTC).toEpochSecond();
@@ -29,20 +28,42 @@ public class StatisticsTest {
   }
 
   @Test
-  public void totalsRollingWindowsExcludeOutOfRange() {
+  public void totalsIncludeThisCalendarPeriod() {
     long now = at("2026-08-14") + 12 * 3600;
     List<ActivityRow> rows =
         rows(
-            now - 7 * DAY, 1000.0,
-            now - 7 * DAY - 1, 2000.0,
-            now - 30 * DAY, 4000.0,
-            now - 31 * DAY, 8000.0,
-            now - 365 * DAY, 16000.0,
-            now - 366 * DAY, 32000.0);
-    double[] totals = Statistics.totals(rows, now);
-    assertEquals(1000.0, totals[0], 0.0);
+            at("2026-08-10"), 1000.0,
+            at("2026-08-14"), 2000.0,
+            at("2026-08-01"), 4000.0,
+            at("2026-01-01"), 8000.0);
+    double[] totals = Statistics.totals(rows, now, UTC);
+    assertEquals(3000.0, totals[0], 0.0);
     assertEquals(7000.0, totals[1], 0.0);
-    assertEquals(31000.0, totals[2], 0.0);
+    assertEquals(15000.0, totals[2], 0.0);
+  }
+
+  @Test
+  public void totalsExcludeOutsideCalendarPeriod() {
+    long now = at("2026-08-14") + 12 * 3600;
+    List<ActivityRow> rows =
+        rows(
+            at("2026-08-09"), 1000.0,
+            at("2026-07-31"), 2000.0,
+            at("2025-12-31"), 4000.0);
+    double[] totals = Statistics.totals(rows, now, UTC);
+    assertEquals(0.0, totals[0], 0.0);
+    assertEquals(1000.0, totals[1], 0.0);
+    assertEquals(3000.0, totals[2], 0.0);
+  }
+
+  @Test
+  public void totalsExcludeFutureRows() {
+    long now = at("2026-08-14") + 12 * 3600;
+    List<ActivityRow> rows = rows(now - 3600, 1000.0, now + 3600, 5000.0);
+    double[] totals = Statistics.totals(rows, now, UTC);
+    assertEquals(1000.0, totals[0], 0.0);
+    assertEquals(1000.0, totals[1], 0.0);
+    assertEquals(1000.0, totals[2], 0.0);
   }
 
   @Test
@@ -52,14 +73,14 @@ public class StatisticsTest {
         rows(
             at("2026-08-14"), 1000.0,
             at("2026-08-13"), 2000.0,
-            at("2026-08-01"), 500.0,
-            at("2026-07-31"), 9999.0);
+            at("2026-08-03"), 500.0,
+            at("2026-08-02"), 9999.0);
     double[] buckets = Statistics.bucketize(rows, BucketPeriod.DAY, now, UTC);
-    assertEquals(14, buckets.length);
+    assertEquals(12, buckets.length);
     assertEquals(500.0, buckets[0], 0.0);
-    assertEquals(0.0, buckets[11], 0.0);
-    assertEquals(2000.0, buckets[12], 0.0);
-    assertEquals(1000.0, buckets[13], 0.0);
+    assertEquals(0.0, buckets[9], 0.0);
+    assertEquals(2000.0, buckets[10], 0.0);
+    assertEquals(1000.0, buckets[11], 0.0);
   }
 
   @Test
@@ -71,13 +92,13 @@ public class StatisticsTest {
             at("2025-12-22"), 2000.0,
             at("2025-11-17"), 3000.0);
     double[] buckets = Statistics.bucketize(rows, BucketPeriod.WEEK, now, UTC);
-    assertEquals(8, buckets.length);
-    assertEquals(3000.0, buckets[0], 0.0);
-    assertEquals(0.0, buckets[1], 0.0);
-    assertEquals(0.0, buckets[4], 0.0);
-    assertEquals(2000.0, buckets[5], 0.0);
-    assertEquals(1000.0, buckets[6], 0.0);
-    assertEquals(0.0, buckets[7], 0.0);
+    assertEquals(12, buckets.length);
+    assertEquals(0.0, buckets[0], 0.0);
+    assertEquals(3000.0, buckets[4], 0.0);
+    assertEquals(0.0, buckets[6], 0.0);
+    assertEquals(2000.0, buckets[9], 0.0);
+    assertEquals(1000.0, buckets[10], 0.0);
+    assertEquals(0.0, buckets[11], 0.0);
   }
 
   @Test
@@ -102,12 +123,12 @@ public class StatisticsTest {
   public void bucketStartsAlignToDayWeekMonthStarts() {
     long now = at("2026-08-14") + 12 * 3600;
     long[] days = Statistics.bucketStarts(BucketPeriod.DAY, now, UTC);
-    assertEquals(14, days.length);
-    assertEquals(at("2026-08-14"), days[13]);
-    assertEquals(at("2026-08-01"), days[0]);
+    assertEquals(12, days.length);
+    assertEquals(at("2026-08-14"), days[11]);
+    assertEquals(at("2026-08-03"), days[0]);
     long[] weeks = Statistics.bucketStarts(BucketPeriod.WEEK, now, UTC);
-    assertEquals(8, weeks.length);
-    assertEquals(at("2026-08-10"), weeks[7]);
+    assertEquals(12, weeks.length);
+    assertEquals(at("2026-08-10"), weeks[11]);
     long[] months = Statistics.bucketStarts(BucketPeriod.MONTH, now, UTC);
     assertEquals(12, months.length);
     assertEquals(at("2026-08-01"), months[11]);
@@ -121,8 +142,8 @@ public class StatisticsTest {
 
   @Test
   public void bucketCountMatchesPeriods() {
-    assertEquals(14, Statistics.bucketCount(BucketPeriod.DAY));
-    assertEquals(8, Statistics.bucketCount(BucketPeriod.WEEK));
+    assertEquals(12, Statistics.bucketCount(BucketPeriod.DAY));
+    assertEquals(12, Statistics.bucketCount(BucketPeriod.WEEK));
     assertEquals(12, Statistics.bucketCount(BucketPeriod.MONTH));
   }
 }

@@ -27,31 +27,37 @@ public final class Statistics {
     }
   }
 
-  private static final int[] TOTALS_DAYS = {7, 30, 365};
-  private static final long DAY_SECONDS = 86400L;
-
   private Statistics() {}
 
   public static int bucketCount(BucketPeriod period) {
     switch (period) {
-      case WEEK:
-        return 8;
-      case MONTH:
-        return 12;
       case DAY:
+      case WEEK:
+      case MONTH:
       default:
-        return 14;
+        return 12;
     }
   }
 
-  public static double[] totals(List<ActivityRow> rows, long nowSeconds) {
-    double[] totals = new double[TOTALS_DAYS.length];
+  public static double[] totals(List<ActivityRow> rows, long nowSeconds, ZoneId zone) {
+    double[] totals = new double[3];
+    LocalDate today = Instant.ofEpochSecond(nowSeconds).atZone(zone).toLocalDate();
+    long todayWeekKey = key(today, BucketPeriod.WEEK);
+    long todayMonthKey = key(today, BucketPeriod.MONTH);
+    int todayYear = today.getYear();
     for (ActivityRow row : rows) {
-      long age = nowSeconds - row.startTime;
-      for (int i = 0; i < TOTALS_DAYS.length; i++) {
-        if (age <= TOTALS_DAYS[i] * DAY_SECONDS) {
-          totals[i] += row.distance;
-        }
+      if (row.startTime > nowSeconds) {
+        continue;
+      }
+      LocalDate date = Instant.ofEpochSecond(row.startTime).atZone(zone).toLocalDate();
+      if (key(date, BucketPeriod.WEEK) == todayWeekKey) {
+        totals[0] += row.distance;
+      }
+      if (key(date, BucketPeriod.MONTH) == todayMonthKey) {
+        totals[1] += row.distance;
+      }
+      if (date.getYear() == todayYear) {
+        totals[2] += row.distance;
       }
     }
     return totals;
@@ -63,6 +69,9 @@ public final class Statistics {
     LocalDate today = Instant.ofEpochSecond(nowSeconds).atZone(zone).toLocalDate();
     long todayKey = key(today, period);
     for (ActivityRow row : rows) {
+      if (row.startTime > nowSeconds) {
+        continue;
+      }
       LocalDate date = Instant.ofEpochSecond(row.startTime).atZone(zone).toLocalDate();
       long dayDiff = todayKey - key(date, period);
       int offset;
