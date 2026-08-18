@@ -5,23 +5,36 @@
 
 ## Summary
 
-Refresh the recording screen stats card with a 3px blue border and blue shadow glow to solve three visual issues: card blends into the bottom sheet, too much white/flat feel, and the stats card feels plain.
+Refresh the recording screen stats card with a 3px themed border and elevation shadow to solve three visual issues: card blends into the bottom sheet, too much white/flat feel, and the stats card feels plain.
 
 ## What Changes
 
 ### Stats card (`table_layout1` in `run.xml`)
 
-- **Border:** 3px solid `#3B7DD8` (primary blue), with 12dp corner radius preserved
-- **Shadow:** `0 4px 16px rgba(59,125,216,0.25)` — colored glow underneath
-- **Background:** white (unchanged)
-- **Stat values:** dark `#1A1A1A` (unchanged)
-- **Stat labels:** gray `#595959` (unchanged)
-- **Expand indicator:** gray (unchanged)
+- **Border:** 3px solid `?attr/colorPrimary` — blue (#3B7DD8) in light mode, peach (#FAB283) in dark mode
+- **Shadow:** 4dp elevation — standard Material black shadow, pairs with the colored border
+- **Background:** white in light mode, `?attr/colorSurface` in dark mode (via MaterialCardView default)
+- **Corner radius:** 12dp (unchanged)
+- **Stat values:** `?attr/colorOnSurface` — dark in light mode, light in dark mode (unchanged)
+- **Stat labels:** `?attr/colorOnSurfaceVariant` (unchanged)
+- **Expand indicator:** `?attr/colorOnSurfaceVariant` (unchanged)
+
+### Dark mode specifics
+
+The app's dark theme uses a different primary color:
+
+| Role | Light | Dark |
+|------|-------|------|
+| `colorPrimary` | `#3B7DD8` (blue) | `#FAB283` (peach) |
+| `colorSurface` | `#FFFFFF` | `#0A0A0A` |
+| `colorOnSurface` | `#1A1A1A` | `#EEEEEE` |
+
+Using `?attr/colorPrimary` for the stroke means the border adapts: blue card border in light mode, peach card border in dark mode. The card background follows the theme surface automatically via MaterialCardView.
 
 ### What stays the same
 
-- Bottom sheet: white, no changes
-- Buttons (Next Lap / Pause): blue, no changes
+- Bottom sheet: follows theme surface (white in light, dark in dark)
+- Buttons (Next Lap / Pause): use `?attr/colorPrimary`, already theme-aware
 - Map: no changes
 - Expand/collapse animation: no changes
 - All stat text content and formatting: no changes
@@ -44,25 +57,17 @@ Replace the `MaterialCardView` attributes for `table_layout1`:
 <com.google.android.material.card.MaterialCardView
     android:id="@+id/table_layout1"
     style="?attr/materialCardViewOutlinedStyle"
-    app:strokeColor="#3B7DD8"
+    app:strokeColor="?attr/colorPrimary"
     app:strokeWidth="3dp"
     app:cardElevation="4dp"
-    app:cardBackgroundColor="@android:color/white"
     ...>
 ```
 
-Note: `materialCardViewOutlinedStyle` gives us the stroke system. We also need to set `cardBackgroundColor` explicitly since outlined style defaults to transparent/secondary surface.
+Note: `materialCardViewOutlinedStyle` gives us the stroke system. The card background inherits from the theme surface automatically — no need to hardcode white.
 
-### Shadow color
+### Shadow
 
-MaterialCardView's elevation shadow is always black-based. To get a blue-tinted shadow, we have two options:
-
-1. **Simple:** Keep `cardElevation="4dp"` — shadow will be subtle black, border provides the blue accent. Clean and standard.
-2. **Custom:** Use `OutlineProvider` or a layered drawable to fake a blue shadow. More complex, may not be worth it.
-
-**Recommendation:** Option 1 (simple elevation). The blue border already provides strong color differentiation. A black elevation shadow is standard Material3 and looks natural. The combined effect of blue border + elevation shadow achieves the goal without custom shadow code.
-
-If the user specifically wants a blue-tinted shadow glow, that's a separate follow-up requiring a custom `ViewOutlineProvider` or wrapper drawable.
+Standard Material elevation shadow (black-based). The colored border provides the accent; the shadow provides lift. No custom shadow code needed.
 
 ## Files to Modify
 
@@ -74,4 +79,5 @@ If the user specifically wants a blue-tinted shadow glow, that's a separate foll
 2. `./gradlew :app:lintLatestDebug`
 3. `./gradlew spotlessApply && spotlessCheck`
 4. `./gradlew :app:assembleLatestDebug`
-5. Device: verify card has visible blue border, shadow lift, and clear separation from white bottom sheet
+5. Light mode: verify blue border, shadow lift, clear separation from white bottom sheet
+6. Dark mode: verify peach border, shadow lift, card visible against dark bottom sheet
