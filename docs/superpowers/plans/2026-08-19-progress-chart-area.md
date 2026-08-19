@@ -158,15 +158,6 @@ if (count > 0) {
   fillPath.lineTo(points[count - 1][0], chartBottom);
   fillPath.close();
 
-  fillPaint.setShader(
-      new LinearGradient(
-          0,
-          chartTop,
-          0,
-          chartBottom,
-          ColorUtils.setAlphaComponent(barColor, 64),
-          ColorUtils.setAlphaComponent(barColor, 0),
-          Shader.TileMode.CLAMP));
   canvas.drawPath(fillPath, fillPaint);
   canvas.drawPath(linePath, linePaint);
 
@@ -178,7 +169,36 @@ if (count > 0) {
 }
 ```
 
-- [ ] **Step 4: Add required imports**
+- [ ] **Step 4: Cache the gradient shader (avoids DrawAllocation lint error)**
+
+The `LinearGradient` must NOT be allocated inside `onDraw` — the repo's lint gate (`warningsAsErrors=true`) fails on `DrawAllocation`. Cache it as a field, rebuilding only when the fill color or chart height changes.
+
+Add a field next to the paints:
+
+```java
+private Shader fillShader;
+```
+
+Add a private method:
+
+```java
+private void rebuildFillShader(float chartTop, float chartBottom) {
+  fillShader =
+      new LinearGradient(
+          0,
+          chartTop,
+          0,
+          chartBottom,
+          ColorUtils.setAlphaComponent(barColor, 64),
+          ColorUtils.setAlphaComponent(barColor, 0),
+          Shader.TileMode.CLAMP);
+  fillPaint.setShader(fillShader);
+}
+```
+
+Rebuild the shader in `resolveColors()` (color can change with theme) and whenever the view height changes — override `onSizeChanged(int, int, int, int)` and call `rebuildFillShader(dp(16), getHeight() - dp(20))` there (guard `getHeight() >= dp(20) + dp(16)`). In `onDraw`, replace the `fillPaint.setShader(new LinearGradient(...))` block with a no-op — the shader is already current from `onSizeChanged`/`resolveColors` (or rebuild there if null as a safety net).
+
+- [ ] **Step 5: Add required imports**
 
 Add to the import block (keep google-java-format alphabetical order):
 
@@ -188,7 +208,7 @@ import android.graphics.Shader;
 import androidx.core.graphics.ColorUtils;
 ```
 
-- [ ] **Step 5: Run tests and verify build**
+- [ ] **Step 6: Run tests and verify build**
 
 Run: `./gradlew :app:testLatestDebugUnitTest --tests "org.runnerup.view.DistanceChartViewTest"`
 Expected: PASS
@@ -196,12 +216,12 @@ Expected: PASS
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 6: Verify style gates**
+- [ ] **Step 7: Verify style gates**
 
 Run: `./gradlew spotlessApply && ./gradlew spotlessCheck && ./gradlew :app:lintLatestDebug`
 Expected: spotless passes, lint reports only the 25 pre-existing baseline issues.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add app/src/main/org/runnerup/view/DistanceChartView.java
