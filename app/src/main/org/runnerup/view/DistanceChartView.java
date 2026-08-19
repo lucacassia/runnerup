@@ -3,11 +3,14 @@ package org.runnerup.view;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
-import android.graphics.RectF;
+import android.graphics.Path;
+import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.View;
+import androidx.core.graphics.ColorUtils;
 import com.google.android.material.R;
 import java.util.Locale;
 
@@ -20,10 +23,14 @@ public class DistanceChartView extends View {
   private static final int MAX_Y_LABELS = 4;
   private static final int X_LABEL_SKIP_THRESHOLD = 8;
 
-  private final Paint barPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Paint gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-  private final RectF rect = new RectF();
+  private final Paint linePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+  private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+  private final Paint dotFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+  private final Paint dotStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+  private final Path linePath = new Path();
+  private final Path fillPath = new Path();
 
   private int barColor = Color.parseColor("#3B7DD8");
   private int labelColor = Color.parseColor("#595959");
@@ -41,6 +48,13 @@ public class DistanceChartView extends View {
     super(context, attrs);
     labelPaint.setTextSize(dp(11));
     gridPaint.setStrokeWidth(dp(1));
+    linePaint.setStyle(Paint.Style.STROKE);
+    linePaint.setStrokeWidth(dp(2.5f));
+    linePaint.setStrokeJoin(Paint.Join.ROUND);
+    linePaint.setStrokeCap(Paint.Cap.ROUND);
+    dotFillPaint.setStyle(Paint.Style.FILL);
+    dotStrokePaint.setStyle(Paint.Style.STROKE);
+    dotStrokePaint.setStrokeWidth(dp(2));
     resolveColors();
   }
 
@@ -87,15 +101,37 @@ public class DistanceChartView extends View {
 
     if (count > 0) {
       float slot = chartWidth / count;
-      float barWidth = slot * 0.7f;
-      float radius = dp(3);
+      float[][] points = plotPoints(values, maxValue, chartLeft, slot, chartHeight, chartBottom);
+      linePath.reset();
+      fillPath.reset();
+      fillPath.moveTo(points[0][0], chartBottom);
       for (int i = 0; i < count; i++) {
-        float barHeight = (float) (values[i] / maxValue * chartHeight);
-        rect.left = chartLeft + slot * i + (slot - barWidth) / 2;
-        rect.top = chartBottom - barHeight;
-        rect.right = rect.left + barWidth;
-        rect.bottom = chartBottom;
-        canvas.drawRoundRect(rect, radius, radius, barPaint);
+        if (i == 0) {
+          linePath.moveTo(points[i][0], points[i][1]);
+        } else {
+          linePath.lineTo(points[i][0], points[i][1]);
+        }
+        fillPath.lineTo(points[i][0], points[i][1]);
+      }
+      fillPath.lineTo(points[count - 1][0], chartBottom);
+      fillPath.close();
+
+      fillPaint.setShader(
+          new LinearGradient(
+              0,
+              chartTop,
+              0,
+              chartBottom,
+              ColorUtils.setAlphaComponent(barColor, 64),
+              ColorUtils.setAlphaComponent(barColor, 0),
+              Shader.TileMode.CLAMP));
+      canvas.drawPath(fillPath, fillPaint);
+      canvas.drawPath(linePath, linePaint);
+
+      float dotRadius = dp(4);
+      for (int i = 0; i < count; i++) {
+        canvas.drawCircle(points[i][0], points[i][1], dotRadius, dotFillPaint);
+        canvas.drawCircle(points[i][0], points[i][1], dotRadius, dotStrokePaint);
       }
     }
 
@@ -119,7 +155,9 @@ public class DistanceChartView extends View {
     barColor = resolveColor(androidx.appcompat.R.attr.colorPrimary, barColor);
     labelColor = resolveColor(R.attr.colorOnSurfaceVariant, labelColor);
     gridColor = resolveColor(R.attr.colorOutlineVariant, gridColor);
-    barPaint.setColor(barColor);
+    linePaint.setColor(barColor);
+    dotFillPaint.setColor(Color.WHITE);
+    dotStrokePaint.setColor(barColor);
     labelPaint.setColor(labelColor);
     gridPaint.setColor(gridColor);
   }
