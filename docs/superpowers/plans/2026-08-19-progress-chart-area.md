@@ -112,6 +112,8 @@ private final Path linePath = new Path();
 private final Path fillPath = new Path();
 ```
 
+Remove the now-unused `barPaint` field and `rect` (RectF) field, and their imports if they become unused (`android.graphics.RectF`).
+
 Initialize in the constructor next to the existing paint setup:
 
 ```java
@@ -126,7 +128,7 @@ dotStrokePaint.setStrokeWidth(dp(2));
 
 - [ ] **Step 2: Set line/dot colors in resolveColors()**
 
-In `resolveColors()`, after `barPaint.setColor(barColor);` add:
+In `resolveColors()`, replace `barPaint.setColor(barColor);` with:
 
 ```java
 linePaint.setColor(barColor);
