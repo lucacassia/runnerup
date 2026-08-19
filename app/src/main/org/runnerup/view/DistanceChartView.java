@@ -31,6 +31,7 @@ public class DistanceChartView extends View {
   private final Paint dotStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Path linePath = new Path();
   private final Path fillPath = new Path();
+  private LinearGradient fillShader;
 
   private int barColor = Color.parseColor("#3B7DD8");
   private int labelColor = Color.parseColor("#595959");
@@ -116,15 +117,6 @@ public class DistanceChartView extends View {
       fillPath.lineTo(points[count - 1][0], chartBottom);
       fillPath.close();
 
-      fillPaint.setShader(
-          new LinearGradient(
-              0,
-              chartTop,
-              0,
-              chartBottom,
-              ColorUtils.setAlphaComponent(barColor, 64),
-              ColorUtils.setAlphaComponent(barColor, 0),
-              Shader.TileMode.CLAMP));
       canvas.drawPath(fillPath, fillPaint);
       canvas.drawPath(linePath, linePaint);
 
@@ -151,6 +143,12 @@ public class DistanceChartView extends View {
     }
   }
 
+  @Override
+  protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+    super.onSizeChanged(w, h, oldw, oldh);
+    rebuildFillShader();
+  }
+
   private void resolveColors() {
     barColor = resolveColor(androidx.appcompat.R.attr.colorPrimary, barColor);
     labelColor = resolveColor(R.attr.colorOnSurfaceVariant, labelColor);
@@ -160,6 +158,27 @@ public class DistanceChartView extends View {
     dotStrokePaint.setColor(barColor);
     labelPaint.setColor(labelColor);
     gridPaint.setColor(gridColor);
+    rebuildFillShader();
+  }
+
+  private void rebuildFillShader() {
+    float chartTop = dp(16);
+    float chartBottom = getHeight() - dp(20);
+    if (chartBottom <= chartTop) {
+      fillShader = null;
+      fillPaint.setShader(null);
+      return;
+    }
+    fillShader =
+        new LinearGradient(
+            0,
+            chartTop,
+            0,
+            chartBottom,
+            ColorUtils.setAlphaComponent(barColor, 64),
+            ColorUtils.setAlphaComponent(barColor, 0),
+            Shader.TileMode.CLAMP);
+    fillPaint.setShader(fillShader);
   }
 
   private int resolveColor(int attr, int fallback) {
