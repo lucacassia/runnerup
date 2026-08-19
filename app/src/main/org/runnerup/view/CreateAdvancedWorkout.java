@@ -305,7 +305,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     final StepButton button;
     final ImageButton moveUp;
     final ImageButton moveDown;
-    final Button del;
+    final ImageButton del;
     Workout.StepListEntry stepEntry;
 
     StepRowViewHolder(@NonNull View itemView) {
@@ -325,7 +325,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     final ImageButton moveUp;
     final ImageButton moveDown;
     final TextView chip;
-    final Button del;
+    final ImageButton del;
     RepeatStep repeatStep;
 
     RepeatRowViewHolder(@NonNull View itemView) {
