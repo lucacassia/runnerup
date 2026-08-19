@@ -22,6 +22,8 @@ public class DistanceChartView extends View {
 
   private static final int MAX_Y_LABELS = 4;
   private static final int X_LABEL_SKIP_THRESHOLD = 8;
+  private static final float TOP_PAD_DP = 16;
+  private static final float BOTTOM_PAD_DP = 20;
 
   private final Paint gridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Paint labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -76,8 +78,8 @@ public class DistanceChartView extends View {
 
     float leftPad = dp(48);
     float rightPad = dp(8);
-    float topPad = dp(16);
-    float bottomPad = dp(20);
+    float topPad = dp(TOP_PAD_DP);
+    float bottomPad = dp(BOTTOM_PAD_DP);
 
     float chartLeft = leftPad;
     float chartRight = getWidth() - rightPad;
@@ -162,8 +164,8 @@ public class DistanceChartView extends View {
   }
 
   private void rebuildFillShader() {
-    float chartTop = dp(16);
-    float chartBottom = getHeight() - dp(20);
+    float chartTop = dp(TOP_PAD_DP);
+    float chartBottom = getHeight() - dp(BOTTOM_PAD_DP);
     if (chartBottom <= chartTop) {
       fillShader = null;
       fillPaint.setShader(null);
