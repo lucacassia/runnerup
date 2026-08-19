@@ -305,7 +305,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     final StepButton button;
     final ImageButton moveUp;
     final ImageButton moveDown;
-    final Button add;
     final Button del;
     Workout.StepListEntry stepEntry;
 
@@ -317,8 +316,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
       moveUp.setOnClickListener(v -> moveStep(stepEntry, -1));
       moveDown = itemView.findViewById(R.id.move_down_button);
       moveDown.setOnClickListener(v -> moveStep(stepEntry, 1));
-      add = itemView.findViewById(R.id.add_button);
-      add.setOnClickListener(v -> addStepAfter(stepEntry));
       del = itemView.findViewById(R.id.del_button);
       del.setOnClickListener(v -> confirmDeleteStep(stepEntry.step()));
     }
@@ -328,7 +325,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     final ImageButton moveUp;
     final ImageButton moveDown;
     final TextView chip;
-    final Button add;
     final Button del;
     RepeatStep repeatStep;
 
@@ -340,8 +336,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
       moveDown.setOnClickListener(v -> moveStep(entryFor(repeatStep), 1));
       chip = itemView.findViewById(R.id.repeat_chip);
       chip.setOnClickListener(v -> editRepeatCount(repeatStep));
-      add = itemView.findViewById(R.id.add_button);
-      add.setOnClickListener(v -> addStepAfter(entryFor(repeatStep)));
       del = itemView.findViewById(R.id.del_button);
       del.setOnClickListener(v -> confirmDeleteStep(repeatStep));
     }
@@ -383,20 +377,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     if (index < 0 || !StepReorder.swapIndex(list, index, index + delta)) {
       return;
     }
-    advancedWorkoutStepsAdapter.refreshSteps();
-    onWorkoutChanged.run();
-  }
-
-  private void addStepAfter(Workout.StepListEntry entry) {
-    if (entry == null) {
-      return;
-    }
-    List<Step> list = listFor(entry);
-    int index = list.indexOf(entry.step());
-    if (index < 0) {
-      return;
-    }
-    list.add(index + 1, new Step());
     advancedWorkoutStepsAdapter.refreshSteps();
     onWorkoutChanged.run();
   }
