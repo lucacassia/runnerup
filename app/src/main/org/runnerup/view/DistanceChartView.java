@@ -144,6 +144,21 @@ public class DistanceChartView extends View {
     return max;
   }
 
+  static float[][] plotPoints(
+      double[] values,
+      double maxValue,
+      float chartLeft,
+      float slot,
+      float chartHeight,
+      float chartBottom) {
+    float[][] points = new float[values.length][2];
+    for (int i = 0; i < values.length; i++) {
+      points[i][0] = chartLeft + slot * i + slot / 2;
+      points[i][1] = chartBottom - (float) (values[i] / maxValue * chartHeight);
+    }
+    return points;
+  }
+
   static double niceMax(double value) {
     if (value <= 0) {
       return 1.0;
