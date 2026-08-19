@@ -78,6 +78,7 @@ import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.common.tracker.TrackerState;
 import org.runnerup.db.DBHelper;
+import org.runnerup.common.util.Constants.DB;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerHRM;
 import org.runnerup.util.Formatter;
@@ -87,6 +88,7 @@ import org.runnerup.util.TickListener;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.Intensity;
 import org.runnerup.workout.Scope;
+import org.runnerup.workout.Sport;
 import org.runnerup.workout.Step;
 import org.runnerup.workout.Workout;
 
@@ -195,11 +197,17 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     setContentView(R.layout.run);
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       runMapview = findViewById(R.id.run_mapview);
-      runMapview.setVisibility(View.VISIBLE);
-      liveMap =
-          new LiveMap(
-              runMapview, findViewById(R.id.recenter_button), findViewById(R.id.map_attribution));
-      liveMap.onCreate(savedInstanceState);
+      SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      int sport = prefs.getInt(getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
+      if (Sport.isWithoutGps(sport)) {
+        runMapview.setVisibility(View.GONE);
+      } else {
+        runMapview.setVisibility(View.VISIBLE);
+        liveMap =
+            new LiveMap(
+                runMapview, findViewById(R.id.recenter_button), findViewById(R.id.map_attribution));
+        liveMap.onCreate(savedInstanceState);
+      }
     }
     View rootView = findViewById(R.id.start_view);
     ViewCompat.setOnApplyWindowInsetsListener(
