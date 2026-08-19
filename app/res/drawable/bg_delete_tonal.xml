@@ -7,4 +7,10 @@
             <solid android:color="@color/deleteButtonContainer" />
         </shape>
     </item>
+    <item android:id="@android:id/mask">
+        <shape
+            android:shape="oval">
+            <solid android:color="@android:color/white" />
+        </shape>
+    </item>
 </ripple>

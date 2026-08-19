@@ -15,8 +15,6 @@
     ~  You should have received a copy of the GNU General Public License
     ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.-->
     <string name="mm31kz513sg5" translatable="false">mm(31);kz(5,13);sg(5)</string>
-    <string name="_sign_plus" translatable="false">+</string>
-    <string name="_sign_minus" translatable="false">-</string>
     <string name="path_simplification_default_tolerance" translatable="false">3</string>
     <string name="Theme_mode">Theme</string>
     <string name="Theme_mode_summary">Choose light or dark appearance</string>
