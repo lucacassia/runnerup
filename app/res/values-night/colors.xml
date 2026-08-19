@@ -10,4 +10,5 @@
     <color name="markerStart">#7fd88f</color>
     <color name="markerStartStroke">#4fae62</color>
     <color name="markerLap">#e5c07b</color>
+    <color name="deleteButtonContainer">#3A1F21</color>
 </resources>
