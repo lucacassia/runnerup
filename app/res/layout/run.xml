@@ -497,6 +497,7 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent"
              android:layout_gravity="bottom"
+             android:elevation="8dp"
              android:orientation="vertical"
              android:background="@drawable/bg_run_bottom_sheet"
              app:behavior_hideable="false"
