@@ -504,6 +504,11 @@
              app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
 
             <View
+                android:layout_width="match_parent"
+                android:layout_height="12dp"
+                android:background="@drawable/bottom_sheet_shadow" />
+
+            <View
                 android:layout_width="32dp"
                 android:layout_height="4dp"
                 android:layout_gravity="center_horizontal"
