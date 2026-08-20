@@ -11,4 +11,10 @@
     <color name="markerStartStroke">#4fae62</color>
     <color name="markerLap">#e5c07b</color>
     <color name="deleteButtonContainer">#3A1F21</color>
+
+    <color name="stepWarmupBg">#3D1B11</color>
+    <color name="stepActiveBg">#3E1516</color>
+    <color name="stepCooldownBg">#0E3331</color>
+    <color name="stepRestingBg">#12293F</color>
+    <color name="stepRecoveryBg">#3E3411</color>
 </resources>
