@@ -50,6 +50,7 @@ public class Formatter implements OnSharedPreferenceChangeListener {
   private final java.text.DateFormat monthFormat;
   private final java.text.DateFormat monthShortFormat;
   private final java.text.DateFormat dayOfMonthFormat;
+  private final java.text.DateFormat yearFormat;
   private final boolean unitCue;
   private boolean metric = true;
   private String base_unit = "km";
@@ -66,6 +67,7 @@ public class Formatter implements OnSharedPreferenceChangeListener {
     monthFormat = new SimpleDateFormat("LLL yyyy", cueResources.defaultLocale);
     monthShortFormat = new SimpleDateFormat("LLL", cueResources.defaultLocale);
     dayOfMonthFormat = new SimpleDateFormat("E d", cueResources.defaultLocale);
+    yearFormat = new SimpleDateFormat("yyyy", cueResources.defaultLocale);
     unitCue = sharedPreferences.getBoolean(cueResources.getString(R.string.cueinfo_units), true);
 
     setUnit();
@@ -634,6 +636,14 @@ public class Formatter implements OnSharedPreferenceChangeListener {
    */
   public String formatDayOfMonth(Date date) {
     return dayOfMonthFormat.format(date);
+  }
+
+  /**
+   * @param date date to format
+   * @return year as a string (e.g. "2026")
+   */
+  public String formatYear(Date date) {
+    return yearFormat.format(date);
   }
 
   /**
