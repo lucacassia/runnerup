@@ -35,4 +35,23 @@ public class DistanceChartViewTest {
     float[][] points = DistanceChartView.plotPoints(new double[0], 10.0, 0f, 100f, 100f, 100f);
     assertEquals(0, points.length);
   }
+
+  @Test
+  public void plotBarRectsMapsValuesToRectangles() {
+    float[][] rects =
+        DistanceChartView.plotBarRects(new double[] {0.0, 4.0, 8.0}, 10.0, 0f, 100f, 100f, 100f);
+    assertEquals(3, rects.length);
+    // i=0: center 50, half-width 30 => [20,100,80,100]
+    assertArrayEquals(new float[] {20f, 100f, 80f, 100f}, rects[0], 0.01f);
+    // i=1: center 150 => [120,60,180,100]
+    assertArrayEquals(new float[] {120f, 60f, 180f, 100f}, rects[1], 0.01f);
+    // i=2: center 250 => [220,20,280,100]
+    assertArrayEquals(new float[] {220f, 20f, 280f, 100f}, rects[2], 0.01f);
+  }
+
+  @Test
+  public void plotBarRectsHandlesEmptyInput() {
+    float[][] rects = DistanceChartView.plotBarRects(new double[0], 10.0, 0f, 100f, 100f, 100f);
+    assertEquals(0, rects.length);
+  }
 }

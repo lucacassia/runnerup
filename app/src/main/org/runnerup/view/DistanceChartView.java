@@ -31,6 +31,13 @@ public class DistanceChartView extends View {
   private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Paint dotFillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final Paint dotStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+  private static final float BAR_WIDTH_FRACTION = 0.6f;
+  private static final float BAR_CORNER_RADIUS_DP = 2;
+
+  private boolean barMode = false;
+  private final Paint barPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
   private final Path linePath = new Path();
   private final Path fillPath = new Path();
   private LinearGradient fillShader;
@@ -58,6 +65,7 @@ public class DistanceChartView extends View {
     dotFillPaint.setStyle(Paint.Style.FILL);
     dotStrokePaint.setStyle(Paint.Style.STROKE);
     dotStrokePaint.setStrokeWidth(dp(2));
+    barPaint.setStyle(Paint.Style.FILL);
     resolveColors();
   }
 
@@ -69,6 +77,11 @@ public class DistanceChartView extends View {
 
   public void setLabelFormatter(LabelFormatter formatter) {
     labelFormatter = formatter == null ? this.labelFormatter : formatter;
+    invalidate();
+  }
+
+  public void setBarMode(boolean barMode) {
+    this.barMode = barMode;
     invalidate();
   }
 
@@ -104,28 +117,39 @@ public class DistanceChartView extends View {
 
     if (count > 0) {
       float slot = chartWidth / count;
-      float[][] points = plotPoints(values, maxValue, chartLeft, slot, chartHeight, chartBottom);
-      linePath.reset();
-      fillPath.reset();
-      fillPath.moveTo(points[0][0], chartBottom);
-      for (int i = 0; i < count; i++) {
-        if (i == 0) {
-          linePath.moveTo(points[i][0], points[i][1]);
-        } else {
-          linePath.lineTo(points[i][0], points[i][1]);
+      if (barMode) {
+        float[][] rects = plotBarRects(values, maxValue, chartLeft, slot, chartHeight, chartBottom);
+        float radius = dp(BAR_CORNER_RADIUS_DP);
+        for (float[] rect : rects) {
+          if (rect[3] - rect[1] <= 0) {
+            continue;
+          }
+          canvas.drawRoundRect(rect[0], rect[1], rect[2], rect[3], radius, radius, barPaint);
         }
-        fillPath.lineTo(points[i][0], points[i][1]);
-      }
-      fillPath.lineTo(points[count - 1][0], chartBottom);
-      fillPath.close();
+      } else {
+        float[][] points = plotPoints(values, maxValue, chartLeft, slot, chartHeight, chartBottom);
+        linePath.reset();
+        fillPath.reset();
+        fillPath.moveTo(points[0][0], chartBottom);
+        for (int i = 0; i < count; i++) {
+          if (i == 0) {
+            linePath.moveTo(points[i][0], points[i][1]);
+          } else {
+            linePath.lineTo(points[i][0], points[i][1]);
+          }
+          fillPath.lineTo(points[i][0], points[i][1]);
+        }
+        fillPath.lineTo(points[count - 1][0], chartBottom);
+        fillPath.close();
 
-      canvas.drawPath(fillPath, fillPaint);
-      canvas.drawPath(linePath, linePaint);
+        canvas.drawPath(fillPath, fillPaint);
+        canvas.drawPath(linePath, linePaint);
 
-      float dotRadius = dp(4);
-      for (int i = 0; i < count; i++) {
-        canvas.drawCircle(points[i][0], points[i][1], dotRadius, dotFillPaint);
-        canvas.drawCircle(points[i][0], points[i][1], dotRadius, dotStrokePaint);
+        float dotRadius = dp(4);
+        for (int i = 0; i < count; i++) {
+          canvas.drawCircle(points[i][0], points[i][1], dotRadius, dotFillPaint);
+          canvas.drawCircle(points[i][0], points[i][1], dotRadius, dotStrokePaint);
+        }
       }
     }
 
@@ -158,6 +182,7 @@ public class DistanceChartView extends View {
     linePaint.setColor(barColor);
     dotFillPaint.setColor(Color.WHITE);
     dotStrokePaint.setColor(barColor);
+    barPaint.setColor(barColor);
     labelPaint.setColor(labelColor);
     gridPaint.setColor(gridColor);
     rebuildFillShader();
@@ -216,6 +241,25 @@ public class DistanceChartView extends View {
       points[i][1] = chartBottom - (float) (values[i] / maxValue * chartHeight);
     }
     return points;
+  }
+
+  static float[][] plotBarRects(
+      double[] values,
+      double maxValue,
+      float chartLeft,
+      float slot,
+      float chartHeight,
+      float chartBottom) {
+    float[][] rects = new float[values.length][4];
+    float barWidth = slot * BAR_WIDTH_FRACTION;
+    for (int i = 0; i < values.length; i++) {
+      float centerX = chartLeft + slot * i + slot / 2;
+      float left = centerX - barWidth / 2;
+      float right = centerX + barWidth / 2;
+      float top = chartBottom - (float) (values[i] / maxValue * chartHeight);
+      rects[i] = new float[] {left, top, right, chartBottom};
+    }
+    return rects;
   }
 
   static double niceMax(double value) {
