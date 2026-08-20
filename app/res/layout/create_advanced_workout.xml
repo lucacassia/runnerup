@@ -24,16 +24,40 @@
             android:paddingTop="8dp"
             android:paddingBottom="88dp" />
 
-        <TextView
-            android:id="@+id/empty_state_text"
+        <LinearLayout
+            android:id="@+id/empty_state_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:gravity="center"
+            android:orientation="vertical"
             android:padding="24dp"
-            android:text="@string/No_steps_yet"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:visibility="gone" />
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginBottom="16dp"
+                android:src="@drawable/ic_flag"
+                app:tint="?attr/colorOutline" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/No_steps_yet"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:text="Tap + to add your first step or interval repeat"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/add_workout_fab"
