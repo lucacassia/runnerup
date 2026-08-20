@@ -29,6 +29,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
@@ -88,6 +89,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private int currentTab = TAB_HISTORY_INDEX;
   private BucketPeriod currentPeriod = BucketPeriod.DAY;
   private Metric currentMetric = Metric.DISTANCE;
+  private boolean chartBarMode = false;
   private List<Statistics.ActivityRow> statisticsRows = null;
   private View statisticsContent;
   private View statisticsEmpty;
@@ -173,7 +175,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                   ? BucketPeriod.WEEK
                   : checkedId == R.id.statistics_toggle_month
                       ? BucketPeriod.MONTH
-                      : BucketPeriod.DAY;
+                      : checkedId == R.id.statistics_toggle_year
+                          ? BucketPeriod.YEAR
+                          : BucketPeriod.DAY;
           currentPeriod = period;
           renderChart();
         });
@@ -212,6 +216,23 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
             renderChart();
           }
         });
+
+    ImageButton chartToggle = view.findViewById(R.id.statistics_chart_toggle);
+    SharedPreferences chartPrefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+    chartBarMode =
+        chartPrefs.getBoolean(getString(org.runnerup.common.R.string.pref_statistics_chart), false);
+    chartToggle.setOnClickListener(
+        v -> {
+          chartBarMode = !chartBarMode;
+          chartPrefs
+              .edit()
+              .putBoolean(
+                  getString(org.runnerup.common.R.string.pref_statistics_chart), chartBarMode)
+              .apply();
+          updateChartToggle(chartToggle);
+          renderChart();
+        });
+    updateChartToggle(chartToggle);
   }
 
   @Override
@@ -289,8 +310,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         () -> {
           long now = System.currentTimeMillis() / 1000;
           long from =
-              Statistics.bucketStarts(Statistics.BucketPeriod.MONTH, now, ZoneId.systemDefault())[
-                  0];
+              Statistics.bucketStarts(Statistics.BucketPeriod.YEAR, now, ZoneId.systemDefault())[0];
           List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from);
           mainHandler.post(
               () -> {
@@ -319,6 +339,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     long[] starts = Statistics.bucketStarts(currentPeriod, now, ZoneId.systemDefault());
     statisticsChartTitle.setText(chartTitleFor(currentPeriod));
     statisticsChart.setData(buckets, buildXLabels(currentPeriod, starts));
+    statisticsChart.setBarMode(chartBarMode);
     boolean empty = true;
     for (double value : buckets) {
       if (value > 0) {
@@ -328,6 +349,15 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     }
     statisticsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
     statisticsChart.setVisibility(empty ? View.GONE : View.VISIBLE);
+  }
+
+  private void updateChartToggle(ImageButton button) {
+    button.setImageResource(chartBarMode ? R.drawable.ic_chart_line : R.drawable.ic_chart_bar);
+    button.setContentDescription(
+        getString(
+            chartBarMode
+                ? org.runnerup.common.R.string.Statistics_switch_to_line
+                : org.runnerup.common.R.string.Statistics_switch_to_bars));
   }
 
   private void updateStatisticsCards() {
@@ -385,7 +415,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       labels[i] =
           period == BucketPeriod.MONTH
               ? formatter.formatMonthShort(date)
-              : formatter.formatDayOfMonth(date);
+              : period == BucketPeriod.YEAR
+                  ? formatter.formatYear(date)
+                  : formatter.formatDayOfMonth(date);
     }
     return labels;
   }
@@ -396,6 +428,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         return org.runnerup.common.R.string.Statistics_last_12_weeks;
       case MONTH:
         return org.runnerup.common.R.string.Statistics_last_12_months;
+      case YEAR:
+        return org.runnerup.common.R.string.Statistics_last_12_years;
       case DAY:
       default:
         return org.runnerup.common.R.string.Statistics_last_12_days;
