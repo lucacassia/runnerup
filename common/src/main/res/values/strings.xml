@@ -423,5 +423,4 @@
     <string name="No_steps_yet_title">No steps yet</string>
     <string name="No_steps_yet_hint">Tap + to add your first step or interval repeat</string>
     <string name="Move_up">Move up</string>
-    <string name="Move_down">Move down</string>
 </resources>
