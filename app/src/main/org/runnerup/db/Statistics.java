@@ -169,6 +169,25 @@ public final class Statistics {
   }
 
   public static List<ActivityRow> queryActivities(SQLiteDatabase db, long fromSeconds) {
+    return queryActivities(db, fromSeconds, null);
+  }
+
+  public static List<ActivityRow> queryActivities(
+      SQLiteDatabase db, long fromSeconds, Integer sport) {
+    String selection =
+        ACTIVITY.DELETED
+            + " = 0 AND "
+            + ACTIVITY.DISTANCE
+            + " IS NOT NULL AND "
+            + ACTIVITY.START_TIME
+            + " >= ?";
+    String[] args;
+    if (sport != null) {
+      selection += " AND " + ACTIVITY.SPORT + " = ?";
+      args = new String[] {Long.toString(fromSeconds), Integer.toString(sport)};
+    } else {
+      args = new String[] {Long.toString(fromSeconds)};
+    }
     List<ActivityRow> rows = new ArrayList<>();
     try (Cursor cursor =
         db.query(
@@ -180,13 +199,8 @@ public final class Statistics {
               ACTIVITY.TIME,
               ACTIVITY.ELEVATION_GAIN
             },
-            ACTIVITY.DELETED
-                + " = 0 AND "
-                + ACTIVITY.DISTANCE
-                + " IS NOT NULL AND "
-                + ACTIVITY.START_TIME
-                + " >= ?",
-            new String[] {Long.toString(fromSeconds)},
+            selection,
+            args,
             null,
             null,
             ACTIVITY.START_TIME + " ASC")) {
@@ -198,6 +212,27 @@ public final class Statistics {
       }
     }
     return rows;
+  }
+
+  public static int[] sportCounts(SQLiteDatabase db) {
+    int[] counts = new int[ACTIVITY.SPORT_MAX + 1];
+    try (Cursor cursor =
+        db.query(
+            ACTIVITY.TABLE,
+            new String[] {ACTIVITY.SPORT, "count(*)"},
+            ACTIVITY.DELETED + " = 0",
+            null,
+            ACTIVITY.SPORT,
+            null,
+            null)) {
+      while (cursor.moveToNext()) {
+        int sport = cursor.getInt(0);
+        if (sport >= 0 && sport < counts.length) {
+          counts[sport] = cursor.getInt(1);
+        }
+      }
+    }
+    return counts;
   }
 
   public static void computeMissingElevation(SQLiteDatabase db, List<ActivityRow> rows) {

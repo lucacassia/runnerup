@@ -1,14 +1,27 @@
 package org.runnerup.db;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.runnerup.common.util.Constants.DB;
 import org.runnerup.db.Statistics.ActivityRow;
 import org.runnerup.db.Statistics.BucketPeriod;
 import org.runnerup.db.Statistics.Metric;
@@ -249,5 +262,131 @@ public class StatisticsTest {
     assertEquals(12, buckets.length);
     assertEquals(50.0, buckets[11], 0.0);
     assertEquals(120.0, buckets[10], 0.0);
+  }
+
+  @Test
+  public void queryActivitiesAppliesSportFilter() {
+    SQLiteDatabase db = mock(SQLiteDatabase.class);
+    Cursor cursor = mock(Cursor.class);
+    when(cursor.moveToNext()).thenReturn(true, false);
+    when(cursor.getLong(0)).thenReturn(1L);
+    when(cursor.getLong(1)).thenReturn(at("2026-08-14"));
+    when(cursor.getDouble(2)).thenReturn(1000.0);
+    when(cursor.isNull(3)).thenReturn(true);
+    when(cursor.isNull(4)).thenReturn(true);
+    when(db.query(
+            eq(DB.ACTIVITY.TABLE),
+            any(String[].class),
+            anyString(),
+            any(String[].class),
+            isNull(),
+            isNull(),
+            anyString()))
+        .thenReturn(cursor);
+    List<Statistics.ActivityRow> rows = Statistics.queryActivities(db, at("2026-01-01"), 0);
+    assertEquals(1, rows.size());
+    assertEquals(1000.0, rows.get(0).distance, 0.0);
+    ArgumentCaptor<String> selection = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String[]> args = ArgumentCaptor.forClass(String[].class);
+    verify(db)
+        .query(
+            eq(DB.ACTIVITY.TABLE),
+            any(String[].class),
+            selection.capture(),
+            args.capture(),
+            isNull(),
+            isNull(),
+            anyString());
+    assertTrue(selection.getValue().contains("type = ?"));
+    assertEquals(2, args.getValue().length);
+    assertEquals("0", args.getValue()[1]);
+  }
+
+  @Test
+  public void queryActivitiesWithoutSportOmitsFilter() {
+    SQLiteDatabase db = mock(SQLiteDatabase.class);
+    Cursor cursor = mock(Cursor.class);
+    when(cursor.moveToNext()).thenReturn(false);
+    when(db.query(
+            eq(DB.ACTIVITY.TABLE),
+            any(String[].class),
+            anyString(),
+            any(String[].class),
+            isNull(),
+            isNull(),
+            anyString()))
+        .thenReturn(cursor);
+    List<Statistics.ActivityRow> rows = Statistics.queryActivities(db, at("2026-01-01"), null);
+    assertEquals(0, rows.size());
+    ArgumentCaptor<String> selection = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String[]> args = ArgumentCaptor.forClass(String[].class);
+    verify(db)
+        .query(
+            eq(DB.ACTIVITY.TABLE),
+            any(String[].class),
+            selection.capture(),
+            args.capture(),
+            isNull(),
+            isNull(),
+            anyString());
+    assertFalse(selection.getValue().contains("type = ?"));
+    assertEquals(1, args.getValue().length);
+  }
+
+  @Test
+  public void queryActivitiesTwoArgDelegatesToThreeArg() {
+    SQLiteDatabase db = mock(SQLiteDatabase.class);
+    Cursor cursor = mock(Cursor.class);
+    when(cursor.moveToNext()).thenReturn(true, true, false);
+    when(cursor.getLong(0)).thenReturn(1L, 2L);
+    when(cursor.getLong(1)).thenReturn(at("2026-08-14"), at("2026-08-13"));
+    when(cursor.getDouble(2)).thenReturn(1000.0, 2000.0);
+    when(cursor.isNull(3)).thenReturn(true, true);
+    when(cursor.isNull(4)).thenReturn(true, true);
+    when(db.query(
+            eq(DB.ACTIVITY.TABLE),
+            any(String[].class),
+            anyString(),
+            any(String[].class),
+            isNull(),
+            isNull(),
+            anyString()))
+        .thenReturn(cursor);
+    List<Statistics.ActivityRow> rows = Statistics.queryActivities(db, at("2026-01-01"));
+    assertEquals(2, rows.size());
+    ArgumentCaptor<String[]> args = ArgumentCaptor.forClass(String[].class);
+    verify(db)
+        .query(
+            eq(DB.ACTIVITY.TABLE),
+            any(String[].class),
+            anyString(),
+            args.capture(),
+            isNull(),
+            isNull(),
+            anyString());
+    assertEquals(1, args.getValue().length);
+  }
+
+  @Test
+  public void sportCountsGroupsBySport() {
+    SQLiteDatabase db = mock(SQLiteDatabase.class);
+    Cursor cursor = mock(Cursor.class);
+    when(cursor.moveToNext()).thenReturn(true, true, false);
+    when(cursor.getInt(0)).thenReturn(0, 4);
+    when(cursor.getInt(1)).thenReturn(3, 5);
+    when(db.query(
+            eq(DB.ACTIVITY.TABLE),
+            any(String[].class),
+            anyString(),
+            nullable(String[].class),
+            eq(DB.ACTIVITY.SPORT),
+            isNull(),
+            isNull()))
+        .thenReturn(cursor);
+    int[] counts = Statistics.sportCounts(db);
+    assertEquals(DB.ACTIVITY.SPORT_MAX + 1, counts.length);
+    assertEquals(3, counts[0]);
+    assertEquals(5, counts[4]);
+    assertEquals(0, counts[1]);
   }
 }
