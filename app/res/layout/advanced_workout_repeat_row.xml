@@ -3,7 +3,10 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_repeat_group_top"
+    android:background="@drawable/bg_repeat_group"
+    android:padding="8dp"
+    android:layout_marginTop="6dp"
+    android:layout_marginBottom="2dp"
     android:orientation="vertical">
 
     <LinearLayout
@@ -12,37 +15,23 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <ImageButton
-                android:id="@+id/move_up_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/Move_up"
-                android:padding="10dp"
-                android:src="@drawable/ic_expand_up_white_24dp"
-                app:tint="?attr/colorOnSurfaceVariant" />
-
-            <ImageButton
-                android:id="@+id/move_down_button"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/Move_down"
-                android:padding="10dp"
-                android:src="@drawable/ic_expand_down_white_24dp"
-                app:tint="?attr/colorOnSurfaceVariant" />
-        </LinearLayout>
+        <ImageButton
+            android:id="@+id/move_up_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/Move_up"
+            android:padding="8dp"
+            android:src="@drawable/ic_drag_handle"
+            app:tint="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:id="@+id/repeat_chip"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
             android:background="@drawable/bg_repeat_chip"
             android:paddingStart="16dp"
             android:paddingTop="10dp"
@@ -55,8 +44,6 @@
             android:id="@+id/del_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"
             android:background="@drawable/bg_delete_tonal"
             android:contentDescription="@string/Delete"
             android:padding="9dp"
@@ -67,10 +54,10 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingStart="16dp"
+        android:paddingStart="48dp"
         android:paddingEnd="16dp"
         android:paddingTop="4dp"
-        android:paddingBottom="8dp"
+        android:paddingBottom="4dp"
         android:text="@string/Inside_repeat"
         android:textAppearance="?attr/textAppearanceLabelSmall"
         android:textColor="?attr/colorPrimary" />
