@@ -34,6 +34,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.json.JSONException;
 import org.runnerup.R;
@@ -50,6 +51,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   private String currentWorkoutName = null;
   private final WorkoutStepsAdapter advancedWorkoutStepsAdapter = new WorkoutStepsAdapter();
   private ItemTouchHelper itemTouchHelper;
+  private boolean reorderDirty = false;
   private boolean dontAskAgain = false;
   private boolean workoutEditMode = false;
   private final Runnable onWorkoutChanged =
@@ -145,14 +147,32 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                     int toIndex = list.indexOf(toEntry.step());
                     if (fromIndex >= 0 && toIndex >= 0) {
                       if (StepReorder.swapIndex(list, fromIndex, toIndex)) {
-                        advancedWorkoutStepsAdapter.refreshSteps();
-                        onWorkoutChanged.run();
+                        boolean repeatInvolved =
+                            fromEntry.step() instanceof RepeatStep
+                                || toEntry.step() instanceof RepeatStep;
+                        if (repeatInvolved) {
+                          advancedWorkoutStepsAdapter.refreshSteps();
+                        } else {
+                          Collections.swap(advancedWorkoutStepsAdapter.items, fromPos, toPos);
+                          advancedWorkoutStepsAdapter.notifyItemMoved(fromPos, toPos);
+                        }
+                        reorderDirty = true;
                         return true;
                       }
                     }
                   }
                 }
                 return false;
+              }
+
+              @Override
+              public void clearView(
+                  @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                super.clearView(recyclerView, viewHolder);
+                if (reorderDirty) {
+                  reorderDirty = false;
+                  onWorkoutChanged.run();
+                }
               }
 
               @Override
@@ -323,6 +343,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
         Workout.StepListEntry entry = (Workout.StepListEntry) items.get(position);
         holder.stepEntry = entry;
         holder.button.setStep(entry.step());
+        holder.nestedGuide.setVisibility(entry.parent() != null ? View.VISIBLE : View.GONE);
       } else if (viewHolder instanceof RepeatRowViewHolder) {
         RepeatRowViewHolder holder = (RepeatRowViewHolder) viewHolder;
         Workout.StepListEntry entry = (Workout.StepListEntry) items.get(position);
@@ -342,12 +363,14 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     final StepButton button;
     final ImageButton moveUp;
     final ImageButton del;
+    final View nestedGuide;
     Workout.StepListEntry stepEntry;
 
     StepRowViewHolder(@NonNull View itemView) {
       super(itemView);
       button = itemView.findViewById(R.id.workout_step_button);
       button.setOnChangedListener(onWorkoutChanged);
+      nestedGuide = itemView.findViewById(R.id.nested_guide);
       moveUp = itemView.findViewById(R.id.move_up_button);
       moveUp.setOnTouchListener(
           (v, event) -> {

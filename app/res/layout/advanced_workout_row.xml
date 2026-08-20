@@ -7,6 +7,15 @@
     android:orientation="horizontal"
     android:padding="4dp">
 
+    <View
+        android:id="@+id/nested_guide"
+        android:layout_width="2dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="46dp"
+        android:background="?attr/colorOutlineVariant"
+        android:visibility="gone" />
+
     <ImageButton
         android:id="@+id/move_up_button"
         android:layout_width="40dp"
