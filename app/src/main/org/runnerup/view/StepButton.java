@@ -19,13 +19,13 @@ package org.runnerup.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
 import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
@@ -46,7 +46,7 @@ public class StepButton extends LinearLayout {
 
   private final Context mContext;
   private final ViewGroup mLayout;
-  private final ImageView mIntensityIcon;
+  private final TextView mIntensityBadge;
   private final TextView mDurationValue;
   private final TextView mGoalValue;
   private final Formatter formatter;
@@ -70,7 +70,7 @@ public class StepButton extends LinearLayout {
     inflater.inflate(R.layout.step_button, this);
     formatter = new Formatter(context);
     mLayout = findViewById(R.id.step_button_layout);
-    mIntensityIcon = findViewById(R.id.step_icon);
+    mIntensityBadge = findViewById(R.id.step_intensity_badge);
     mDurationValue = findViewById(R.id.step_duration_value);
     mGoalValue = findViewById(R.id.step_goal_value);
   }
@@ -91,42 +91,59 @@ public class StepButton extends LinearLayout {
   public void setStep(Step step) {
     this.step = step;
 
-    mDurationValue.setVisibility(VISIBLE);
+    int badgeTextColorId;
+    int badgeBgColorId;
     switch (step.getIntensity()) {
       case ACTIVE:
-        mIntensityIcon.setImageResource(R.drawable.step_active);
-        mGoalValue.setTextColor(
-            ContextCompat.getColor(mContext, R.color.stepActive)); // todo check if it works
+        badgeTextColorId = R.color.stepActive;
+        badgeBgColorId = R.color.stepActiveBg;
         break;
       case RESTING:
-        mIntensityIcon.setImageResource(R.drawable.step_resting);
-        mGoalValue.setTextColor(ContextCompat.getColor(mContext, R.color.stepResting));
+        badgeTextColorId = R.color.stepResting;
+        badgeBgColorId = R.color.stepRestingBg;
         break;
       case REPEAT:
-        mIntensityIcon.setImageResource(R.drawable.step_repeat);
-        mDurationValue.setVisibility(GONE); // todo better wording in string
+        badgeTextColorId = R.color.stepRepeat;
+        badgeBgColorId = R.color.stepRestingBg;
+        break;
+      case WARMUP:
+        badgeTextColorId = R.color.stepWarmup;
+        badgeBgColorId = R.color.stepWarmupBg;
+        break;
+      case COOLDOWN:
+        badgeTextColorId = R.color.stepCooldown;
+        badgeBgColorId = R.color.stepCooldownBg;
+        break;
+      case RECOVERY:
+        badgeTextColorId = R.color.stepRecovery;
+        badgeBgColorId = R.color.stepRecoveryBg;
+        break;
+      default:
+        badgeTextColorId = R.color.stepResting;
+        badgeBgColorId = R.color.stepRestingBg;
+    }
+    mIntensityBadge.setText(step.getIntensity().getTextId());
+    mIntensityBadge.setTextColor(ContextCompat.getColor(mContext, badgeTextColorId));
+    GradientDrawable badgeBg = new GradientDrawable();
+    badgeBg.setShape(GradientDrawable.RECTANGLE);
+    badgeBg.setCornerRadius(dp_to_px(6));
+    badgeBg.setColor(ContextCompat.getColor(mContext, badgeBgColorId));
+    mIntensityBadge.setBackground(badgeBg);
+
+    mDurationValue.setVisibility(VISIBLE);
+    switch (step.getIntensity()) {
+      case REPEAT:
+        mDurationValue.setVisibility(GONE);
+        mGoalValue.setVisibility(VISIBLE);
         mGoalValue.setText(
             String.format(
                 Locale.getDefault(),
                 getResources().getString(org.runnerup.common.R.string.repeat_times),
                 step.getRepeatCount()));
-        mGoalValue.setTextColor(ContextCompat.getColor(mContext, R.color.stepRepeat));
         if (editRepeatCount) mLayout.setOnClickListener(onRepeatClickListener);
         return;
-      case WARMUP:
-        mIntensityIcon.setImageResource(R.drawable.step_warmup);
-        mGoalValue.setTextColor(ContextCompat.getColor(mContext, R.color.stepWarmup));
-        break;
-      case COOLDOWN:
-        mIntensityIcon.setImageResource(R.drawable.step_cooldown);
-        mGoalValue.setTextColor(ContextCompat.getColor(mContext, R.color.stepCooldown));
-        break;
-      case RECOVERY:
-        mIntensityIcon.setImageResource(R.drawable.step_recovery);
-        mGoalValue.setTextColor(ContextCompat.getColor(mContext, R.color.stepRecovery));
-        break;
       default:
-        mIntensityIcon.setImageResource(0);
+        break;
     }
 
     Dimension durationType = step.getDurationType();
@@ -139,8 +156,9 @@ public class StepButton extends LinearLayout {
 
     Dimension goalType = step.getTargetType();
     if (goalType == null) {
-      mGoalValue.setText(step.getIntensity().getTextId());
+      mGoalValue.setVisibility(View.GONE);
     } else {
+      mGoalValue.setVisibility(View.VISIBLE);
       String prefix;
       if (goalType == Dimension.HR || goalType == Dimension.HRZ)
         prefix = "HR "; // todo should use a string
@@ -159,6 +177,10 @@ public class StepButton extends LinearLayout {
     if (editStepButton) {
       mLayout.setOnClickListener(onStepClickListener);
     }
+  }
+
+  private int dp_to_px(int dp) {
+    return (int) (dp * mContext.getResources().getDisplayMetrics().density);
   }
 
   private final OnClickListener onRepeatClickListener =
