@@ -19,8 +19,6 @@
     <color name="stepRecoveryBg">#3E3411</color>
 
     <!-- Recording activity screen night colors -->
-    <color name="runStatsCardBg">#1E1E1E</color>
-    <color name="runStatsCardBorder">#3C3C3C</color>
     <color name="hrZone1">#7FD88F</color>
     <color name="hrZone2">#7FD88F</color>
     <color name="hrZone3">#E5C07B</color>

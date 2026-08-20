@@ -28,445 +28,460 @@
         android:layout_height="match_parent"
         android:visibility="gone" />
 
-    <TextView
-        android:id="@+id/map_attribution"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|start"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="@dimen/run_recenter_bottom_margin"
-        android:background="@drawable/map_attribution_bg"
-        android:paddingStart="4dp"
-        android:paddingTop="1dp"
-        android:paddingEnd="4dp"
-        android:paddingBottom="1dp"
-        android:text="@string/map_attribution"
-        android:textSize="8sp"
-        android:textAppearance="?attr/textAppearanceLabelSmall"
-        android:textColor="?attr/colorOnSurface"
-        android:visibility="gone"
-        tools:ignore="SmallSp" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/table_layout1"
+        style="?attr/materialCardViewOutlinedStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardBackgroundColor="?attr/colorSurface"
+        app:cardCornerRadius="@dimen/history_row_corner"
+        app:cardElevation="4dp"
+        app:strokeColor="?attr/colorPrimary"
+        app:strokeWidth="3dp">
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/table_layout1"
-            style="?attr/materialCardViewOutlinedStyle"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginEnd="12dp"
-            android:clickable="true"
-            android:focusable="true"
-            app:cardBackgroundColor="@color/runStatsCardBg"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:strokeColor="@color/runStatsCardBorder"
-            app:strokeWidth="1dp">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <ImageView
+                android:id="@+id/stats_expand_indicator"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="end"
+                android:layout_marginBottom="8dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_expand_down_white_24dp"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <FrameLayout
+                android:id="@+id/stats_3_area"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:id="@+id/stats_3_horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/run_activity_distance"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="32sp"
+                            app:autoSizeMinTextSize="16sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            android:id="@+id/distance_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Distance" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/run_activity_time"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="32sp"
+                            app:autoSizeMinTextSize="16sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            android:id="@+id/time_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Time" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/run_activity_pace"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_horizontal"
+                            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            app:autoSizeMaxTextSize="32sp"
+                            app:autoSizeMinTextSize="16sp"
+                            app:autoSizeStepGranularity="1sp"
+                            app:autoSizeTextType="uniform" />
+
+                        <TextView
+                            android:id="@+id/pace_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Pace" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/stats_3_vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:baselineAligned="false"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        tools:ignore="NestedWeights">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            tools:ignore="NestedWeights">
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/run_activity_distance_expanded"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="4"
+                                android:gravity="center"
+                                android:maxLines="1"
+                                android:textAppearance="?attr/textAppearanceDisplayMedium"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold"
+                                app:autoSizeMaxTextSize="96sp"
+                                app:autoSizeMinTextSize="24sp"
+                                app:autoSizeStepGranularity="1sp"
+                                app:autoSizeTextType="uniform" />
+
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/distance_expanded_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Distance" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        tools:ignore="NestedWeights">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            tools:ignore="NestedWeights">
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/run_activity_time_expanded"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="4"
+                                android:gravity="center"
+                                android:maxLines="1"
+                                android:textAppearance="?attr/textAppearanceDisplayMedium"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold"
+                                app:autoSizeMaxTextSize="96sp"
+                                app:autoSizeMinTextSize="24sp"
+                                app:autoSizeStepGranularity="1sp"
+                                app:autoSizeTextType="uniform" />
+
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/time_expanded_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Time" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        tools:ignore="NestedWeights">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            tools:ignore="NestedWeights">
+
+                            <View
+                                android:layout_width="0dp"
+                                android:layout_height="0dp"
+                                android:layout_weight="1" />
+
+                            <TextView
+                                android:id="@+id/run_activity_pace_expanded"
+                                android:layout_width="0dp"
+                                android:layout_height="match_parent"
+                                android:layout_weight="4"
+                                android:gravity="center"
+                                android:maxLines="1"
+                                android:textAppearance="?attr/textAppearanceDisplayMedium"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textStyle="bold"
+                                app:autoSizeMaxTextSize="96sp"
+                                app:autoSizeMinTextSize="24sp"
+                                app:autoSizeStepGranularity="1sp"
+                                app:autoSizeTextType="uniform" />
+
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/pace_expanded_label"
+                            style="@style/RunStatLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            android:gravity="center_horizontal"
+                            android:text="@string/Pace" />
+                    </LinearLayout>
+                </LinearLayout>
+            </FrameLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="16dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
 
-                <ImageView
-                    android:id="@+id/stats_expand_indicator"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_gravity="end"
-                    android:layout_marginBottom="4dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/ic_expand_down_white_24dp"
-                    app:tint="?attr/colorOnSurfaceVariant" />
-
-                <FrameLayout
-                    android:id="@+id/stats_3_area"
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    tools:ignore="TooDeepLayout">
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                    <LinearLayout
-                        android:id="@+id/stats_3_horizontal"
+                    <TextView
+                        android:id="@+id/lap_distance"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
+                        android:gravity="center_horizontal"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold"
+                        app:autoSizeMaxTextSize="22sp"
+                        app:autoSizeMinTextSize="14sp"
+                        app:autoSizeStepGranularity="1sp"
+                        app:autoSizeTextType="uniform" />
 
-                        <!-- Hero Stats Row: Distance & Time -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:baselineAligned="false"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
-                            android:paddingBottom="12dp">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1.2"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/run_activity_distance"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="start"
-                                    android:textAppearance="?attr/textAppearanceHeadlineLarge"
-                                    android:textColor="?attr/colorOnSurface"
-                                    android:textSize="36sp"
-                                    android:textStyle="bold"
-                                    app:autoSizeMaxTextSize="36sp"
-                                    app:autoSizeMinTextSize="18sp"
-                                    app:autoSizeStepGranularity="1sp"
-                                    app:autoSizeTextType="uniform" />
-
-                                <TextView
-                                    android:id="@+id/distance_label"
-                                    style="@style/RunStatLabel"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:gravity="start"
-                                    android:text="@string/Distance" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/run_activity_time"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="end"
-                                    android:textAppearance="?attr/textAppearanceHeadlineLarge"
-                                    android:textColor="?attr/colorPrimary"
-                                    android:textSize="26sp"
-                                    android:textStyle="bold"
-                                    app:autoSizeMaxTextSize="26sp"
-                                    app:autoSizeMinTextSize="16sp"
-                                    app:autoSizeStepGranularity="1sp"
-                                    app:autoSizeTextType="uniform" />
-
-                                <TextView
-                                    android:id="@+id/time_label"
-                                    style="@style/RunStatLabel"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:gravity="end"
-                                    android:text="@string/Time" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="1dp"
-                            android:layout_marginBottom="12dp"
-                            android:background="?attr/colorOutlineVariant" />
-
-                        <!-- 2x2 Secondary Metrics Grid -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:baselineAligned="false"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginEnd="6dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/run_activity_pace"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="start"
-                                    android:textAppearance="?attr/textAppearanceTitleLarge"
-                                    android:textColor="?attr/colorOnSurface"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:id="@+id/pace_label"
-                                    style="@style/RunStatLabel"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:gravity="start"
-                                    android:text="@string/Pace" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="end|center_vertical"
-                                    android:orientation="horizontal">
-
-                                    <TextView
-                                        android:id="@+id/current_hr"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:textAppearance="?attr/textAppearanceTitleLarge"
-                                        android:textColor="?attr/colorOnSurface"
-                                        android:textStyle="bold" />
-
-                                    <TextView
-                                        android:id="@+id/hr_zone_pill"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginStart="6dp"
-                                        android:background="@drawable/bg_hr_zone_pill"
-                                        android:paddingStart="6dp"
-                                        android:paddingTop="2dp"
-                                        android:paddingEnd="6dp"
-                                        android:paddingBottom="2dp"
-                                        android:textColor="#0A0A0A"
-                                        android:textSize="11sp"
-                                        android:textStyle="bold"
-                                        android:visibility="gone"
-                                        tools:text="Z2" />
-                                </LinearLayout>
-
-                                <TextView
-                                    style="@style/RunStatLabel"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:gravity="end"
-                                    android:text="@string/Heart_rate" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:baselineAligned="false"
-                            android:orientation="horizontal">
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginEnd="6dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/lap_distance"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="start"
-                                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                                    android:textColor="?attr/colorOnSurface"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    style="@style/RunStatLabel"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:gravity="start"
-                                    android:text="@string/LapDistance" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:layout_marginEnd="6dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/lap_time"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="center"
-                                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                                    android:textColor="?attr/colorOnSurface"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    style="@style/RunStatLabel"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:gravity="center"
-                                    android:text="@string/LapTime" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:id="@+id/lap_pace"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:gravity="end"
-                                    android:textAppearance="?attr/textAppearanceTitleMedium"
-                                    android:textColor="?attr/colorOnSurface"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    style="@style/RunStatLabel"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:gravity="end"
-                                    android:text="@string/LapPace" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <TextView
-                                style="@style/RunStatLabel"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:gravity="start"
-                                android:text="@string/Current" />
-
-                            <TextView
-                                android:id="@+id/current_pace"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textAppearance="?attr/textAppearanceTitleMedium"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- Expanded Giant Single Metric View (Toggled on card click) -->
-                    <LinearLayout
-                        android:id="@+id/stats_3_vertical"
+                    <TextView
+                        style="@style/RunStatLabel"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:baselineAligned="false"
-                        android:orientation="vertical"
-                        android:visibility="gone">
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/LapDistance" />
+                </LinearLayout>
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                            <TextView
-                                android:id="@+id/run_activity_distance_expanded"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:maxLines="1"
-                                android:textAppearance="?attr/textAppearanceDisplayMedium"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textStyle="bold"
-                                app:autoSizeMaxTextSize="72sp"
-                                app:autoSizeMinTextSize="24sp"
-                                app:autoSizeStepGranularity="1sp"
-                                app:autoSizeTextType="uniform" />
+                    <TextView
+                        android:id="@+id/lap_time"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold"
+                        app:autoSizeMaxTextSize="22sp"
+                        app:autoSizeMinTextSize="14sp"
+                        app:autoSizeStepGranularity="1sp"
+                        app:autoSizeTextType="uniform" />
 
-                            <TextView
-                                android:id="@+id/distance_expanded_label"
-                                style="@style/RunStatLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="8dp"
-                                android:gravity="center_horizontal"
-                                android:text="@string/Distance" />
-                        </LinearLayout>
+                    <TextView
+                        style="@style/RunStatLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/LapTime" />
+                </LinearLayout>
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                            <TextView
-                                android:id="@+id/run_activity_time_expanded"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:maxLines="1"
-                                android:textAppearance="?attr/textAppearanceDisplayMedium"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textStyle="bold"
-                                app:autoSizeMaxTextSize="72sp"
-                                app:autoSizeMinTextSize="24sp"
-                                app:autoSizeStepGranularity="1sp"
-                                app:autoSizeTextType="uniform" />
+                    <TextView
+                        android:id="@+id/lap_pace"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold"
+                        app:autoSizeMaxTextSize="22sp"
+                        app:autoSizeMinTextSize="14sp"
+                        app:autoSizeStepGranularity="1sp"
+                        app:autoSizeTextType="uniform" />
 
-                            <TextView
-                                android:id="@+id/time_expanded_label"
-                                style="@style/RunStatLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="8dp"
-                                android:gravity="center_horizontal"
-                                android:text="@string/Time" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"
-                            android:gravity="center"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:id="@+id/run_activity_pace_expanded"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center"
-                                android:maxLines="1"
-                                android:textAppearance="?attr/textAppearanceDisplayMedium"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textStyle="bold"
-                                app:autoSizeMaxTextSize="72sp"
-                                app:autoSizeMinTextSize="24sp"
-                                app:autoSizeStepGranularity="1sp"
-                                app:autoSizeTextType="uniform" />
-
-                            <TextView
-                                android:id="@+id/pace_expanded_label"
-                                style="@style/RunStatLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginBottom="8dp"
-                                android:gravity="center_horizontal"
-                                android:text="@string/Pace" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </FrameLayout>
+                    <TextView
+                        style="@style/RunStatLabel"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_horizontal"
+                        android:text="@string/LapPace" />
+                </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="12dp"
+                android:background="?attr/colorOutlineVariant" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    style="@style/RunStatLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="start"
+                    android:text="@string/Current" />
+
+                <TextView
+                    android:id="@+id/current_pace"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/current_hr"
+                    style="@style/RunInfo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/hr_zone_pill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_hr_zone_pill"
+                    android:paddingStart="6dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="6dp"
+                    android:paddingBottom="2dp"
+                    android:textColor="#0A0A0A"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:visibility="gone"
+                    tools:text="Z2" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
 
         <!-- Bottom Sheet Host for Workout Steps -->
         <androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -474,6 +489,37 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/map_attribution"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="@dimen/run_recenter_bottom_margin"
+            android:background="@drawable/map_attribution_bg"
+            android:paddingStart="4dp"
+            android:paddingTop="1dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="1dp"
+            android:text="@string/map_attribution"
+            android:textSize="8sp"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSurface"
+            android:visibility="gone"
+            tools:ignore="SmallSp" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/recenter_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="@dimen/run_recenter_bottom_margin"
+            android:contentDescription="@string/Recenter"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_recenter"
+            app:tint="?attr/colorOnPrimaryContainer" />
 
             <LinearLayout
                 android:id="@+id/run_bottom_sheet"
@@ -596,7 +642,6 @@
                 </FrameLayout>
             </LinearLayout>
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
-
         <!-- Bottom Action Dock -->
         <LinearLayout
             android:id="@+id/run_table_row1"
@@ -638,19 +683,5 @@
                 app:iconTint="?attr/colorOnPrimary" />
         </LinearLayout>
     </LinearLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/recenter_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="@dimen/run_recenter_bottom_margin"
-        android:contentDescription="@string/Recenter"
-        android:visibility="gone"
-        app:srcCompat="@drawable/ic_recenter"
-        app:tint="?attr/colorOnPrimaryContainer" />
 
 </FrameLayout>

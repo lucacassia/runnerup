@@ -58,8 +58,6 @@
     <color name="stepRecoveryBg">#FFFDE7</color>
 
     <!-- Recording activity screen colors -->
-    <color name="runStatsCardBg">#FFFFFF</color>
-    <color name="runStatsCardBorder">#D4D4D4</color>
     <color name="hrZone1">#3D9A57</color>
     <color name="hrZone2">#3D9A57</color>
     <color name="hrZone3">#B0851F</color>
