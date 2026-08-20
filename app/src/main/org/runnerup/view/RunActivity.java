@@ -33,6 +33,7 @@ import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
@@ -82,6 +83,7 @@ import org.runnerup.db.DBHelper;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.tracker.component.TrackerHRM;
 import org.runnerup.util.Formatter;
+import org.runnerup.util.HRZones;
 import org.runnerup.util.LiveMap;
 import org.runnerup.util.MapViewWrapper;
 import org.runnerup.util.TickListener;
@@ -137,6 +139,12 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Formatter formatter = null;
   private TextView currentHr;
   private TextView hrDebug;
+  private TextView hrZonePill = null;
+  private TextView activeStepTitle = null;
+  private TextView activeStepTargetText = null;
+  private TextView stepIntensityBadge = null;
+  private com.google.android.material.progressindicator.LinearProgressIndicator
+      activeStepProgressBar = null;
   private BottomSheetBehavior<?> runBottomSheetBehavior = null;
   private MapViewWrapper runMapview = null;
   private LiveMap liveMap = null;
@@ -262,6 +270,11 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     currentHr = findViewById(R.id.current_hr);
     workoutList = findViewById(R.id.workout_list);
     hrDebug = findViewById(R.id.hr_debug);
+    hrZonePill = findViewById(R.id.hr_zone_pill);
+    activeStepTitle = findViewById(R.id.active_step_title);
+    activeStepTargetText = findViewById(R.id.active_step_target_text);
+    stepIntensityBadge = findViewById(R.id.step_intensity_badge);
+    activeStepProgressBar = findViewById(R.id.active_step_progress_bar);
     workoutList.setLayoutManager(new LinearLayoutManager(this));
     WorkoutAdapter adapter = new WorkoutAdapter(workoutRows);
     workoutList.setAdapter(adapter);
@@ -857,15 +870,18 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         double chr = workout.getHeartRate(Scope.CURRENT);
         currentHr.setText(formatter.formatHeartRate(Formatter.Format.TXT_SHORT, chr));
         currentHr.setVisibility(View.VISIBLE);
+        updateHrZonePill(chr);
         if (hrDebug != null) {
           hrDebug.setVisibility(View.VISIBLE);
           mTracker.setHrDebug(hrDebug);
         }
       } else {
         currentHr.setVisibility(View.GONE);
+        updateHrZonePill(0);
       }
 
       Step curr = workout.getCurrentStep();
+      updateActiveStepBanner(curr);
       if (curr != currentStep) {
         ((WorkoutAdapter) workoutList.getAdapter()).notifyDataSetChanged();
         currentStep = curr;
@@ -874,6 +890,98 @@ public class RunActivity extends AppCompatActivity implements TickListener {
           RecyclerView.SmoothScroller scroller = new LinearSmoothScroller(this);
           scroller.setTargetPosition(getPosition(workoutRows, currentStep));
           lm.startSmoothScroll(scroller);
+        }
+      }
+    }
+  }
+
+  @SuppressLint("SetTextI18n")
+  private void updateHrZonePill(double currentBpm) {
+    if (hrZonePill == null) return;
+    if (currentBpm <= 0) {
+      hrZonePill.setVisibility(View.GONE);
+      return;
+    }
+    HRZones hrZones = new HRZones(this);
+    if (!hrZones.isConfigured()) {
+      hrZonePill.setVisibility(View.GONE);
+      return;
+    }
+    int zoneIdx = Math.min(Math.max(hrZones.getZoneInt(currentBpm), 0), 4);
+    int zoneColorId;
+    switch (zoneIdx) {
+      case 1:
+        zoneColorId = R.color.hrZone2;
+        break;
+      case 2:
+        zoneColorId = R.color.hrZone3;
+        break;
+      case 3:
+        zoneColorId = R.color.hrZone4;
+        break;
+      case 4:
+        zoneColorId = R.color.hrZone5;
+        break;
+      default:
+        zoneColorId = R.color.hrZone1;
+        break;
+    }
+    hrZonePill.setText("Z" + (zoneIdx + 1));
+    GradientDrawable bg = new GradientDrawable();
+    bg.setShape(GradientDrawable.RECTANGLE);
+    bg.setCornerRadius(6 * getResources().getDisplayMetrics().density);
+    bg.setColor(ContextCompat.getColor(this, zoneColorId));
+    hrZonePill.setBackground(bg);
+    hrZonePill.setVisibility(View.VISIBLE);
+  }
+
+  @SuppressLint("SetTextI18n")
+  private void updateActiveStepBanner(Step curr) {
+    if (curr == null) return;
+    if (curr.getIntensity() != null && stepIntensityBadge != null) {
+      stepIntensityBadge.setText(curr.getIntensity().getTextId());
+    }
+    double stepTime = workout.getTime(Scope.STEP);
+    double stepDist = workout.getDistance(Scope.STEP);
+
+    double progressPct = 0;
+    String titleText = "";
+    if (curr.getDurationType() == null) {
+      titleText = getString(org.runnerup.common.R.string.Until_press);
+    } else {
+      double targetVal = curr.getDurationValue();
+      if (curr.getDurationType() == org.runnerup.workout.Dimension.DISTANCE) {
+        double remDist = Math.max(0, targetVal - stepDist);
+        titleText =
+            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(remDist)) + " left";
+        if (targetVal > 0) progressPct = Math.min(100, (stepDist / targetVal) * 100.0);
+      } else if (curr.getDurationType() == org.runnerup.workout.Dimension.TIME) {
+        double remTime = Math.max(0, targetVal - stepTime);
+        titleText =
+            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(remTime)) + " left";
+        if (targetVal > 0) progressPct = Math.min(100, (stepTime / targetVal) * 100.0);
+      }
+    }
+    if (activeStepTitle != null) activeStepTitle.setText(titleText);
+    if (activeStepProgressBar != null) {
+      activeStepProgressBar.setProgress((int) progressPct);
+    }
+    if (activeStepTargetText != null) {
+      if (curr.getTargetType() == null) {
+        activeStepTargetText.setText("");
+      } else {
+        double minVal = curr.getTargetValue().minValue;
+        double maxVal = curr.getTargetValue().maxValue;
+        if (minVal == maxVal) {
+          activeStepTargetText.setText(
+              formatter.format(Formatter.Format.TXT_SHORT, curr.getTargetType(), minVal));
+        } else {
+          activeStepTargetText.setText(
+              String.format(
+                  Locale.getDefault(),
+                  "%s-%s",
+                  formatter.format(Formatter.Format.TXT_SHORT, curr.getTargetType(), minVal),
+                  formatter.format(Formatter.Format.TXT_SHORT, curr.getTargetType(), maxVal)));
         }
       }
     }
