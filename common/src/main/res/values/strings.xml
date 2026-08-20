@@ -420,7 +420,8 @@
     <string name="Delete_barcode_text">The stored parkrun barcode will be removed.</string>
     <string name="Inside_repeat">Inside repeat</string>
     <string name="Add_step_inside_repeat">Add step inside repeat</string>
-    <string name="No_steps_yet">No steps yet. Tap + to add a step or a repeat.</string>
+    <string name="No_steps_yet_title">No steps yet</string>
+    <string name="No_steps_yet_hint">Tap + to add your first step or interval repeat</string>
     <string name="Move_up">Move up</string>
     <string name="Move_down">Move down</string>
 </resources>
