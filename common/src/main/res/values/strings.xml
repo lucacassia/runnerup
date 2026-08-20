@@ -422,5 +422,5 @@
     <string name="Add_step_inside_repeat">Add step inside repeat</string>
     <string name="No_steps_yet_title">No steps yet</string>
     <string name="No_steps_yet_hint">Tap + to add your first step or interval repeat</string>
-    <string name="Move_up">Move up</string>
+    <string name="Drag_to_reorder">Drag to reorder</string>
 </resources>
