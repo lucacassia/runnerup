@@ -276,8 +276,14 @@
     <string name="Statistics_last_12_years">Last 12 years</string>
     <string name="Statistics_switch_to_bars">Switch to bar chart</string>
     <string name="Statistics_switch_to_line">Switch to line chart</string>
+    <plurals name="Statistics_activities_count">
+        <item quantity="one">%d activity</item>
+        <item quantity="other">%d activities</item>
+    </plurals>
     <string name="pref_statistics_chart">pref_statistics_chart</string>
     <string name="pref_statistics_metric">pref_statistics_metric</string>
+    <string name="Statistics_all_sports">All sports</string>
+    <string name="pref_statistics_sport">pref_statistics_sport</string>
     <string name="Basic">Basic</string>
     <string name="Advanced">Advanced</string>
     <string name="Manual_activity_title">Add manual entry</string>

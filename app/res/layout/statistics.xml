@@ -203,6 +203,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:minWidth="0dp"
+                android:textAllCaps="false"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
                 android:text="@string/Statistics_day" />
 
             <com.google.android.material.button.MaterialButton
@@ -211,6 +215,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:minWidth="0dp"
+                android:textAllCaps="false"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
                 android:text="@string/Statistics_week" />
 
             <com.google.android.material.button.MaterialButton
@@ -219,6 +227,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:minWidth="0dp"
+                android:textAllCaps="false"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
                 android:text="@string/Statistics_month" />
 
             <com.google.android.material.button.MaterialButton
@@ -227,6 +239,10 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:minWidth="0dp"
+                android:textAllCaps="false"
+                android:insetLeft="0dp"
+                android:insetRight="0dp"
                 android:text="@string/Statistics_year" />
         </com.google.android.material.button.MaterialButtonToggleGroup>
     </LinearLayout>
