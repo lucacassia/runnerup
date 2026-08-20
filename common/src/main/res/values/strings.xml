@@ -272,6 +272,11 @@
     <string name="Statistics_distance">Distance</string>
     <string name="Statistics_time">Time</string>
     <string name="Statistics_elevation">Elevation</string>
+    <string name="Statistics_year">Year</string>
+    <string name="Statistics_last_12_years">Last 12 years</string>
+    <string name="Statistics_switch_to_bars">Switch to bar chart</string>
+    <string name="Statistics_switch_to_line">Switch to line chart</string>
+    <string name="pref_statistics_chart">pref_statistics_chart</string>
     <string name="pref_statistics_metric">pref_statistics_metric</string>
     <string name="Basic">Basic</string>
     <string name="Advanced">Advanced</string>
