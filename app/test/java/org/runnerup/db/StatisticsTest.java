@@ -168,8 +168,8 @@ public class StatisticsTest {
             at("2014-12-31"), 9999.0);
     double[] buckets = Statistics.bucketize(rows, Metric.DISTANCE, BucketPeriod.YEAR, now, UTC);
     assertEquals(12, buckets.length);
-    assertEquals(4000.0, buckets[0], 0.0);  // 2015
-    assertEquals(3000.0, buckets[6], 0.0);  // 2021
+    assertEquals(4000.0, buckets[0], 0.0); // 2015
+    assertEquals(3000.0, buckets[6], 0.0); // 2021
     assertEquals(2000.0, buckets[10], 0.0); // 2025
     assertEquals(1000.0, buckets[11], 0.0); // 2026
   }
