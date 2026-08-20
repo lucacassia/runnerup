@@ -157,6 +157,41 @@ public class StatisticsTest {
   }
 
   @Test
+  public void bucketizeYearGroupsByCalendarYear() {
+    long now = at("2026-08-14") + 12 * 3600;
+    List<ActivityRow> rows =
+        rows(
+            at("2026-08-03"), 1000.0,
+            at("2025-06-20"), 2000.0,
+            at("2021-01-10"), 3000.0,
+            at("2015-01-01"), 4000.0,
+            at("2014-12-31"), 9999.0);
+    double[] buckets = Statistics.bucketize(rows, Metric.DISTANCE, BucketPeriod.YEAR, now, UTC);
+    assertEquals(12, buckets.length);
+    assertEquals(4000.0, buckets[0], 0.0);  // 2015
+    assertEquals(3000.0, buckets[6], 0.0);  // 2021
+    assertEquals(2000.0, buckets[10], 0.0); // 2025
+    assertEquals(1000.0, buckets[11], 0.0); // 2026
+  }
+
+  @Test
+  public void bucketStartsYearAlignToJanFirst() {
+    long now = at("2026-08-14") + 12 * 3600;
+    long[] years = Statistics.bucketStarts(BucketPeriod.YEAR, now, UTC);
+    assertEquals(12, years.length);
+    assertEquals(at("2015-01-01"), years[0]);
+    assertEquals(at("2026-01-01"), years[11]);
+    for (int i = 0; i < years.length - 1; i++) {
+      assertTrue(years[i] < years[i + 1]);
+    }
+  }
+
+  @Test
+  public void bucketCountYearIsTwelve() {
+    assertEquals(12, Statistics.bucketCount(BucketPeriod.YEAR));
+  }
+
+  @Test
   public void totalsTimeSumsActivityDuration() {
     long now = at("2026-08-14") + 12 * 3600;
     List<ActivityRow> rows = new ArrayList<>();

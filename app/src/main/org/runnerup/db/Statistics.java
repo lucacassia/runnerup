@@ -16,7 +16,8 @@ public final class Statistics {
   public enum BucketPeriod {
     DAY,
     WEEK,
-    MONTH
+    MONTH,
+    YEAR
   }
 
   public enum Metric {
@@ -57,6 +58,7 @@ public final class Statistics {
       case DAY:
       case WEEK:
       case MONTH:
+      case YEAR:
       default:
         return 12;
     }
@@ -123,6 +125,7 @@ public final class Statistics {
       switch (period) {
         case DAY:
         case MONTH:
+        case YEAR:
           offset = (int) dayDiff;
           break;
         case WEEK:
@@ -153,6 +156,9 @@ public final class Statistics {
           break;
         case MONTH:
           date = today.withDayOfMonth(1).minusMonths(count - 1 - i);
+          break;
+        case YEAR:
+          date = LocalDate.of(today.getYear() - count + 1 + i, 1, 1);
           break;
         default:
           throw new IllegalArgumentException("unknown period " + period);
@@ -242,6 +248,8 @@ public final class Statistics {
         return date.toEpochDay() - (date.getDayOfWeek().getValue() - 1);
       case MONTH:
         return date.getYear() * 12L + (date.getMonthValue() - 1);
+      case YEAR:
+        return date.getYear();
       default:
         throw new IllegalArgumentException("unknown period " + period);
     }
