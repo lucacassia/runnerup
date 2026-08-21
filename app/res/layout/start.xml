@@ -56,13 +56,14 @@
                 android:maxLines="1"
                 android:textAppearance="?attr/textAppearanceTitleLarge" />
 
-            <ImageView
-                android:id="@+id/sport_caret"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:layout_marginStart="4dp"
-                app:srcCompat="@drawable/ic_arrow_drop_down_24dp"
-                tools:ignore="ContentDescription" />
+    <ImageView
+        android:id="@+id/sport_caret"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="4dp"
+        android:tint="?attr/colorControlNormal"
+        app:srcCompat="@drawable/ic_arrow_drop_down_24dp"
+        tools:ignore="ContentDescription" />
 
         </LinearLayout>
 

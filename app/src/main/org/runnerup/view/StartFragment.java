@@ -346,7 +346,12 @@ public class StartFragment extends Fragment implements TickListener {
       icon.setTint(ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
     }
     sportIcon.setImageDrawable(icon);
-    sportName.setText(Sport.getStringArray(getResources())[sport]);
+    String[] sports = Sport.getStringArray(getResources());
+    if (sport >= 0 && sport < sports.length) {
+      sportName.setText(sports[sport]);
+    } else {
+      sportName.setText(sports[DB.ACTIVITY.SPORT_RUNNING]);
+    }
   }
 
   private void showSportPickerDialog() {
