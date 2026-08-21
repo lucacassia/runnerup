@@ -77,7 +77,14 @@
     </style>
 
     <style name="CompactToggleButton" parent="Widget.Material3.Button.OutlinedButton">
-        <item name="cornerRadius">8dp</item>
+        <item name="shapeAppearance">@style/CompactToggleShape</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <style name="CompactToggleShape" parent="ShapeAppearance.Material3.Corner.Full">
+        <item name="cornerSize">8dp</item>
     </style>
 
     <style name="PreferenceThemeOverlay.Material3" parent="PreferenceThemeOverlay.v14.Material">
