@@ -42,8 +42,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -87,7 +85,6 @@ import org.runnerup.tracker.component.TrackerWear;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SafeParse;
 import org.runnerup.util.TickListener;
-import org.runnerup.widget.MaterialSportSpinner;
 import org.runnerup.widget.MaterialTitleSpinner;
 import org.runnerup.widget.SpinnerInterface.OnCloseDialogListener;
 import org.runnerup.widget.SpinnerInterface.OnSetValueListener;
@@ -131,6 +128,8 @@ public class StartFragment extends Fragment implements TickListener {
 
   private ImageView expandIcon = null;
   private TextView noDevicesConnected = null;
+  private ImageView sportIcon = null;
+  private TextView sportName = null;
 
   private Button gpsEnable = null;
   private ImageView gpsIndicator = null;
@@ -213,13 +212,13 @@ public class StartFragment extends Fragment implements TickListener {
     bindGpsTracker();
     mGpsStatus = new org.runnerup.tracker.GpsStatus(context);
 
-    MaterialSportSpinner sportSpinner = view.findViewById(R.id.sport_spinner);
-    ArrayAdapter<CharSequence> adapter =
-        new ArrayAdapter<>(
-            context, R.layout.actionbar_spinner, Sport.getStringArray(getResources()));
-    sportSpinner.setAdapter(adapter);
+    LinearLayout sportSelector = view.findViewById(R.id.sport_selector);
+    sportIcon = view.findViewById(R.id.sport_icon);
+    sportName = view.findViewById(R.id.sport_name);
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-    sportSpinner.setViewSelection(
+
+    sportSelector.setOnClickListener(v -> showSportPickerDialog());
+    updateSportIcon(
         prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING));
 
     startButton = view.findViewById(R.id.start_button);
@@ -313,31 +312,6 @@ public class StartFragment extends Fragment implements TickListener {
 
     mWearNotifier = new TrackerWear.WearNotifier(requireActivity().getApplicationContext());
     mWearNotifier.onViewCreated();
-
-    var listener = sportSpinner.getViewOnItemSelectedListener();
-    sportSpinner.setViewOnItemSelectedListener(
-        new AdapterView.OnItemSelectedListener() {
-          @Override
-          public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-            if (listener != null) {
-              listener.onItemSelected(parent, view, position, id);
-            }
-            setGpsNotRequired(Sport.isWithoutGps((int) id));
-            StartFragment.this.updateView();
-          }
-
-          @Override
-          public void onNothingSelected(AdapterView<?> parent) {
-            if (listener != null) {
-              listener.onNothingSelected(parent);
-            }
-          }
-        });
-
-    sportSpinner.setOnOpenListener(() -> showSportPickerDialog(sportSpinner));
-    updateSportIcon(
-        sportSpinner,
-        prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING));
   }
 
   private void setGpsNotRequired(boolean val) {
@@ -365,17 +339,17 @@ public class StartFragment extends Fragment implements TickListener {
     }
   }
 
-  private void updateSportIcon(MaterialSportSpinner sportSpinner, int sport) {
+  private void updateSportIcon(int sport) {
     Drawable icon =
         AppCompatResources.getDrawable(requireContext(), Sport.drawableColored16Of(sport));
     if (icon != null) {
       icon.setTint(ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
     }
-    Drawable arrow = sportSpinner.getCompoundDrawablesRelative()[2];
-    sportSpinner.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, arrow, null);
+    sportIcon.setImageDrawable(icon);
+    sportName.setText(Sport.getStringArray(getResources())[sport]);
   }
 
-  private void showSportPickerDialog(MaterialSportSpinner sportSpinner) {
+  private void showSportPickerDialog() {
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
     int checked =
         prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
@@ -390,11 +364,12 @@ public class StartFragment extends Fragment implements TickListener {
             .show();
     list.setOnItemClickListener(
         (parent, view, position, id) -> {
-          AdapterView.OnItemSelectedListener l = sportSpinner.getViewOnItemSelectedListener();
-          if (l != null) {
-            l.onItemSelected(null, null, position, position);
-          }
-          updateSportIcon(sportSpinner, position);
+          SharedPreferences.Editor e = prefs.edit();
+          e.putInt(getResources().getString(R.string.pref_sport), position);
+          e.commit();
+          setGpsNotRequired(Sport.isWithoutGps(position));
+          updateSportIcon(position);
+          updateView();
           dialog.dismiss();
         });
   }
