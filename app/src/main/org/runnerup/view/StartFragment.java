@@ -366,7 +366,7 @@ public class StartFragment extends Fragment implements TickListener {
         (parent, view, position, id) -> {
           SharedPreferences.Editor e = prefs.edit();
           e.putInt(getResources().getString(R.string.pref_sport), position);
-          e.commit();
+          e.apply();
           setGpsNotRequired(Sport.isWithoutGps(position));
           updateSportIcon(position);
           updateView();
