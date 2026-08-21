@@ -29,18 +29,42 @@
         android:layout_height="wrap_content"
         tools:ignore="UnusedAttribute">
 
-        <org.runnerup.widget.MaterialSportSpinner
-            android:id="@+id/sport_spinner"
+        <LinearLayout
+            android:id="@+id/sport_selector"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:contentDescription="@string/Sport"
-            android:cursorVisible="false"
-            android:drawablePadding="8dp"
-            android:focusable="false"
-            android:inputType="none"
-            android:key="@string/pref_sport"
-            android:minWidth="48dp"
-            android:minHeight="48dp" />
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackground"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/sport_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="@string/Sport" />
+
+            <TextView
+                android:id="@+id/sport_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceTitleLarge" />
+
+            <ImageView
+                android:id="@+id/sport_caret"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginStart="4dp"
+                app:srcCompat="@drawable/ic_arrow_drop_down_24dp"
+                tools:ignore="ContentDescription" />
+
+        </LinearLayout>
 
     </com.google.android.material.appbar.MaterialToolbar>
 
