@@ -29,6 +29,7 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -49,6 +50,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -98,6 +100,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private TextView statistics7Value;
   private TextView statistics30Value;
   private TextView statistics365Value;
+  private Integer currentSport = null; // null = all sports
+  private MaterialAutoCompleteTextView sportSelector;
+  private TextView sportCountText;
 
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
@@ -142,6 +147,40 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     statistics30Value = view.findViewById(R.id.statistics_30_value);
     statistics365Value = view.findViewById(R.id.statistics_365_value);
     statisticsChart.setLabelFormatter(this::formatChartValue);
+
+    sportSelector = view.findViewById(R.id.history_sport_selector);
+    sportCountText = view.findViewById(R.id.history_sport_count);
+    SharedPreferences sportPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+    int savedSport =
+        sportPrefs.getInt(getString(org.runnerup.common.R.string.pref_statistics_sport), -1);
+    currentSport = savedSport >= 0 ? savedSport : null;
+    String[] sportNames = Sport.getStringArray(getResources());
+    String[] entries = new String[sportNames.length + 1];
+    entries[0] = getString(org.runnerup.common.R.string.Statistics_all_sports);
+    System.arraycopy(sportNames, 0, entries, 1, sportNames.length);
+    ArrayAdapter<String> sportAdapter =
+        new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, entries);
+    sportSelector.setAdapter(sportAdapter);
+    sportSelector.setText(entries[currentSport == null ? 0 : currentSport + 1], false);
+    sportSelector.setOnItemClickListener(
+        (parent, v, position, id) -> {
+          currentSport = position == 0 ? null : position - 1;
+          sportPrefs
+              .edit()
+              .putInt(
+                  getString(org.runnerup.common.R.string.pref_statistics_sport),
+                  currentSport == null ? -1 : currentSport)
+              .apply();
+          LoaderManager.getInstance(this).restartLoader(0, null, this);
+          if (currentTab == TAB_STATISTICS_INDEX) {
+            loadStatistics();
+          }
+          updateSportCount();
+        });
+    updateSportCount();
+    if (currentSport != null) {
+      LoaderManager.getInstance(this).restartLoader(0, null, this);
+    }
 
     TabLayout historyTabs = view.findViewById(R.id.history_tabs);
     historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Activities));
@@ -263,14 +302,19 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           DB.ACTIVITY.SPORT,
           DB.ACTIVITY.AVG_HR
         };
-
+    String selection = "deleted == 0";
+    String[] args = null;
+    if (currentSport != null) {
+      selection += " AND " + DB.ACTIVITY.SPORT + " = ?";
+      args = new String[] {Integer.toString(currentSport)};
+    }
     return new SimpleCursorLoader(
         requireContext(),
         mDB,
         DB.ACTIVITY.TABLE,
         from,
-        "deleted == 0",
-        null,
+        selection,
+        args,
         DB.ACTIVITY.START_TIME + " desc");
   }
 
@@ -311,7 +355,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           long now = System.currentTimeMillis() / 1000;
           long from =
               Statistics.bucketStarts(Statistics.BucketPeriod.YEAR, now, ZoneId.systemDefault())[0];
-          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from);
+          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from, currentSport);
           mainHandler.post(
               () -> {
                 statisticsRows = rows;
@@ -324,6 +368,33 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                             renderChart();
                           });
                     });
+              });
+        });
+  }
+
+  private void updateSportCount() {
+    if (mDB == null) {
+      return;
+    }
+    statisticsExecutor.execute(
+        () -> {
+          int[] counts = Statistics.sportCounts(mDB);
+          mainHandler.post(
+              () -> {
+                int count = 0;
+                if (currentSport == null) {
+                  for (int c : counts) {
+                    count += c;
+                  }
+                } else if (currentSport >= 0 && currentSport < counts.length) {
+                  count = counts[currentSport];
+                }
+                sportCountText.setText(
+                    getResources()
+                        .getQuantityString(
+                            org.runnerup.common.R.plurals.Statistics_activities_count,
+                            count,
+                            count));
               });
         });
   }
