@@ -76,6 +76,10 @@
         <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
     </style>
 
+    <style name="CompactToggleButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="cornerRadius">8dp</item>
+    </style>
+
     <style name="PreferenceThemeOverlay.Material3" parent="PreferenceThemeOverlay.v14.Material">
         <item name="preferenceCategoryTitleTextAppearance">@style/TextAppearance.PreferenceCategoryTitle.Material3</item>
         <item name="preferenceCategoryTitleTextColor">?attr/colorPrimary</item>

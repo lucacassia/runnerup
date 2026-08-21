@@ -199,7 +199,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/statistics_toggle_day"
-                style="?attr/materialButtonOutlinedStyle"
+                style="@style/CompactToggleButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -211,7 +211,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/statistics_toggle_week"
-                style="?attr/materialButtonOutlinedStyle"
+                style="@style/CompactToggleButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -223,7 +223,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/statistics_toggle_month"
-                style="?attr/materialButtonOutlinedStyle"
+                style="@style/CompactToggleButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -235,7 +235,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/statistics_toggle_year"
-                style="?attr/materialButtonOutlinedStyle"
+                style="@style/CompactToggleButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"

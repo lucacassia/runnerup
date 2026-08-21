@@ -149,6 +149,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     statisticsChart.setLabelFormatter(this::formatChartValue);
 
     sportSelector = view.findViewById(R.id.history_sport_selector);
+    sportSelector.setSaveEnabled(false);
     sportCountText = view.findViewById(R.id.history_sport_count);
     SharedPreferences sportPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     int savedSport =
