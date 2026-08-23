@@ -420,6 +420,13 @@
     <string name="import_cancelled">Import cancelled</string>
     <string name="export_cancelled">Export cancelled</string>
     <string name="import_error_invalid_database">Selected file is not a valid RunnerUp database!</string>
+    <string name="pref_export_activities">pref_export_activities</string>
+    <string name="Export_activities_summary">Export all activities as a zip of GPX or TCX files</string>
+    <string name="Export_activities">Export activities</string>
+    <string name="export_activities_progress">Exporting %1$d of %2$d activities…</string>
+    <string name="export_activities_done">Exported %1$d of %2$d activities (%3$d failed)</string>
+    <string name="export_activities_cancelled">Export cancelled</string>
+    <string name="export_activities_nothing">No activities to export</string>
     <string name="Recenter">Recenter</string>
     <string name="Scan_parkrun_barcode">Scan parkrun barcode</string>
     <string name="Barcode_scan_hint">Point the camera at your parkrun barcode</string>
