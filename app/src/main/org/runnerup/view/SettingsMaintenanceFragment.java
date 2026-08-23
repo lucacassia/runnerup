@@ -219,34 +219,10 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
 
   private void startBulkExport(Uri zipUri, boolean isGpx) {
     Context ctx = requireContext();
-    SQLiteDatabase db = DBHelper.getReadableDatabase(ctx);
-
-    List<long[]> activities = new ArrayList<>();
-    try (Cursor cursor =
-        db.query(
-            DB.ACTIVITY.TABLE,
-            new String[] {DB.PRIMARY_KEY, DB.ACTIVITY.START_TIME, DB.ACTIVITY.SPORT},
-            DB.ACTIVITY.DELETED + " = 0",
-            null,
-            null,
-            null,
-            DB.ACTIVITY.START_TIME + " asc")) {
-      while (cursor.moveToNext()) {
-        activities.add(new long[] {cursor.getLong(0), cursor.getLong(1), cursor.getInt(2)});
-      }
-    }
-
-    int total = activities.size();
-    if (total == 0) {
-      Toast.makeText(
-              ctx, org.runnerup.common.R.string.export_activities_nothing, Toast.LENGTH_SHORT)
-          .show();
-      return;
-    }
 
     ProgressDialog progressDialog = new ProgressDialog(ctx);
     progressDialog.setMessage(
-        ctx.getString(org.runnerup.common.R.string.export_activities_progress, 0, total));
+        ctx.getString(org.runnerup.common.R.string.export_activities_progress, 0, 0));
     progressDialog.setCancelable(true);
     progressDialog.setButton(
         DialogInterface.BUTTON_NEGATIVE,
@@ -255,12 +231,54 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
     progressDialog.show();
 
     exportCancelled = false;
-    PathSimplifier simplifier = PathSimplifier.getPathSimplifierForExport(ctx);
-    ExportOptions exportOptions = ExportOptions.getDefault();
-    String ext = isGpx ? "gpx" : "tcx";
 
     executor.execute(
         () -> {
+          SQLiteDatabase db = DBHelper.getReadableDatabase(ctx);
+          Cursor cursor =
+              db.query(
+                  DB.ACTIVITY.TABLE,
+                  new String[] {DB.PRIMARY_KEY, DB.ACTIVITY.START_TIME, DB.ACTIVITY.SPORT},
+                  DB.ACTIVITY.DELETED + " = 0",
+                  null,
+                  null,
+                  null,
+                  DB.ACTIVITY.START_TIME + " asc");
+
+          int total = cursor.getCount();
+          if (total == 0) {
+            cursor.close();
+            mainHandler.post(
+                () -> {
+                  progressDialog.dismiss();
+                  Toast.makeText(
+                          ctx,
+                          org.runnerup.common.R.string.export_activities_nothing,
+                          Toast.LENGTH_SHORT)
+                      .show();
+                });
+            return;
+          }
+
+          List<long[]> activityRows = new ArrayList<>(total);
+          try {
+            while (cursor.moveToNext()) {
+              activityRows.add(new long[] {cursor.getLong(0), cursor.getLong(1), cursor.getInt(2)});
+            }
+          } finally {
+            cursor.close();
+          }
+
+          mainHandler.post(
+              () ->
+                  progressDialog.setMessage(
+                      ctx.getString(
+                          org.runnerup.common.R.string.export_activities_progress, 0, total)));
+
+          PathSimplifier simplifier = PathSimplifier.getPathSimplifierForExport(ctx);
+          ExportOptions exportOptions = ExportOptions.getDefault();
+          String ext = isGpx ? "gpx" : "tcx";
+
           int success = 0;
           int failed = 0;
           try (OutputStream fos = ctx.getContentResolver().openOutputStream(zipUri);
@@ -270,7 +288,7 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
             for (int i = 0; i < total; i++) {
               if (exportCancelled) break;
 
-              long[] row = activities.get(i);
+              long[] row = activityRows.get(i);
               long id = row[0];
               long startTime = row[1];
               int sportDb = (int) row[2];
@@ -279,15 +297,19 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
                 Sport sport = Sport.valueOf(sportDb);
                 String fileName =
                     FileNameHelper.getExportFileName(startTime, sport.TapiriikType()) + ext;
-                zos.putNextEntry(new ZipEntry(fileName));
 
-                Writer writer = new OutputStreamWriter(zos);
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                Writer writer =
+                    new OutputStreamWriter(baos, java.nio.charset.StandardCharsets.UTF_8);
                 if (isGpx) {
                   new GPX(db, exportOptions, simplifier).export(id, writer);
                 } else {
                   new TCX(db, exportOptions, simplifier).export(id, writer);
                 }
                 writer.flush();
+
+                zos.putNextEntry(new ZipEntry(fileName));
+                zos.write(baos.toByteArray());
                 zos.closeEntry();
                 success++;
               } catch (Exception e) {
