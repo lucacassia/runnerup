@@ -1,9 +1,13 @@
 package org.runnerup.view;
 
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -15,8 +19,25 @@ import androidx.annotation.Nullable;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import java.io.BufferedOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import org.runnerup.R;
+import org.runnerup.common.util.Constants.DB;
 import org.runnerup.db.DBHelper;
+import org.runnerup.db.PathSimplifier;
+import org.runnerup.export.format.ExportOptions;
+import org.runnerup.export.format.GPX;
+import org.runnerup.export.format.TCX;
+import org.runnerup.util.FileNameHelper;
+import org.runnerup.workout.Sport;
 
 public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
 
@@ -71,6 +92,53 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
               Log.w(TAG, "Import cancelled or URI not found.");
             }
           });
+
+  private final ExecutorService executor = Executors.newSingleThreadExecutor();
+  private final android.os.Handler mainHandler =
+      new android.os.Handler(android.os.Looper.getMainLooper());
+  private volatile boolean exportCancelled = false;
+
+  private boolean exportFormatIsGpx = false;
+
+  private final ActivityResultLauncher<Intent> exportActivitiesLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(),
+          result -> {
+            Uri uri = getUriFromResult(result);
+            if (uri != null) {
+              startBulkExport(uri, exportFormatIsGpx);
+            } else {
+              Toast.makeText(
+                      requireContext(),
+                      org.runnerup.common.R.string.export_activities_cancelled,
+                      Toast.LENGTH_SHORT)
+                  .show();
+            }
+          });
+
+  private final Preference.OnPreferenceClickListener onExportActivitiesClick =
+      preference -> {
+        String[] formats = {"GPX", "TCX"};
+        new MaterialAlertDialogBuilder(requireContext())
+            .setTitle(org.runnerup.common.R.string.Export_activities)
+            .setSingleChoiceItems(
+                formats,
+                1,
+                (dialog, which) -> {
+                  exportFormatIsGpx = (which == 0);
+                  dialog.dismiss();
+                  Intent intent =
+                      new Intent(Intent.ACTION_CREATE_DOCUMENT)
+                          .addCategory(Intent.CATEGORY_OPENABLE)
+                          .setType("application/zip")
+                          .putExtra(Intent.EXTRA_TITLE, "runnerup-activities.zip");
+                  exportActivitiesLauncher.launch(intent);
+                })
+            .setNegativeButton(
+                org.runnerup.common.R.string.Cancel, (dialog, which) -> dialog.dismiss())
+            .show();
+        return true;
+      };
 
   private final Preference.OnPreferenceClickListener onExportClick =
       preference -> {
@@ -140,6 +208,122 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
         btn.setOnPreferenceClickListener(onPruneClick);
       }
     }
+    {
+      Preference btn =
+          findPreference(res.getString(org.runnerup.common.R.string.pref_export_activities));
+      if (btn != null) {
+        btn.setOnPreferenceClickListener(onExportActivitiesClick);
+      }
+    }
+  }
+
+  private void startBulkExport(Uri zipUri, boolean isGpx) {
+    Context ctx = requireContext();
+    SQLiteDatabase db = DBHelper.getReadableDatabase(ctx);
+
+    List<long[]> activities = new ArrayList<>();
+    try (Cursor cursor =
+        db.query(
+            DB.ACTIVITY.TABLE,
+            new String[] {DB.PRIMARY_KEY, DB.ACTIVITY.START_TIME, DB.ACTIVITY.SPORT},
+            DB.ACTIVITY.DELETED + " = 0",
+            null,
+            null,
+            null,
+            DB.ACTIVITY.START_TIME + " asc")) {
+      while (cursor.moveToNext()) {
+        activities.add(new long[] {cursor.getLong(0), cursor.getLong(1), cursor.getInt(2)});
+      }
+    }
+
+    int total = activities.size();
+    if (total == 0) {
+      Toast.makeText(
+              ctx, org.runnerup.common.R.string.export_activities_nothing, Toast.LENGTH_SHORT)
+          .show();
+      return;
+    }
+
+    ProgressDialog progressDialog = new ProgressDialog(ctx);
+    progressDialog.setMessage(
+        ctx.getString(org.runnerup.common.R.string.export_activities_progress, 0, total));
+    progressDialog.setCancelable(true);
+    progressDialog.setButton(
+        DialogInterface.BUTTON_NEGATIVE,
+        ctx.getString(org.runnerup.common.R.string.Cancel),
+        (dialog, which) -> exportCancelled = true);
+    progressDialog.show();
+
+    exportCancelled = false;
+    PathSimplifier simplifier = PathSimplifier.getPathSimplifierForExport(ctx);
+    ExportOptions exportOptions = ExportOptions.getDefault();
+    String ext = isGpx ? "gpx" : "tcx";
+
+    executor.execute(
+        () -> {
+          int success = 0;
+          int failed = 0;
+          try (OutputStream fos = ctx.getContentResolver().openOutputStream(zipUri);
+              BufferedOutputStream bos = new BufferedOutputStream(fos);
+              ZipOutputStream zos = new ZipOutputStream(bos)) {
+
+            for (int i = 0; i < total; i++) {
+              if (exportCancelled) break;
+
+              long[] row = activities.get(i);
+              long id = row[0];
+              long startTime = row[1];
+              int sportDb = (int) row[2];
+
+              try {
+                Sport sport = Sport.valueOf(sportDb);
+                String fileName =
+                    FileNameHelper.getExportFileName(startTime, sport.TapiriikType()) + ext;
+                zos.putNextEntry(new ZipEntry(fileName));
+
+                Writer writer = new OutputStreamWriter(zos);
+                if (isGpx) {
+                  new GPX(db, exportOptions, simplifier).export(id, writer);
+                } else {
+                  new TCX(db, exportOptions, simplifier).export(id, writer);
+                }
+                writer.flush();
+                zos.closeEntry();
+                success++;
+              } catch (Exception e) {
+                Log.e(TAG, "Failed to export activity " + id, e);
+                failed++;
+              }
+
+              final int current = i + 1;
+              mainHandler.post(
+                  () ->
+                      progressDialog.setMessage(
+                          ctx.getString(
+                              org.runnerup.common.R.string.export_activities_progress,
+                              current,
+                              total)));
+            }
+          } catch (Exception e) {
+            Log.e(TAG, "Bulk export failed", e);
+          }
+
+          final int fSuccess = success;
+          final int fFailed = failed;
+          mainHandler.post(
+              () -> {
+                progressDialog.dismiss();
+                Toast.makeText(
+                        ctx,
+                        ctx.getString(
+                            org.runnerup.common.R.string.export_activities_done,
+                            fSuccess,
+                            total,
+                            fFailed),
+                        Toast.LENGTH_SHORT)
+                    .show();
+              });
+        });
   }
 
   /**
