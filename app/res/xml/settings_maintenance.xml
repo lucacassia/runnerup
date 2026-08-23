@@ -37,6 +37,12 @@
             app:iconSpaceReserved="false" />
 
         <Preference
+            android:key="@string/pref_export_activities"
+            android:summary="@string/Export_activities_summary"
+            android:title="@string/Export_activities"
+            app:iconSpaceReserved="false" />
+
+        <Preference
             android:key="@string/pref_importdb"
             android:summary="@string/Import_database_from_sdcard_eg_after_upgrade"
             android:title="@string/Import"
