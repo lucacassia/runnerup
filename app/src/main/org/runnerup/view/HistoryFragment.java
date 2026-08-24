@@ -666,13 +666,13 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       if (item.avgHr != null) {
         holder.additionalText.setText(
             formatter.formatHeartRate(Formatter.Format.TXT_SHORT, item.avgHr));
-        holder.additionalText.setTextColor(sportColor);
+        holder.additionalText.setTextColor(secondaryColor);
         Drawable hrIcon = AppCompatResources.getDrawable(context, R.drawable.ic_history_hr);
         if (hrIcon != null) {
-          hrIcon.setTint(sportColor);
+          hrIcon.setTint(secondaryColor);
         }
         holder.additionalText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-            null, null, hrIcon, null);
+            hrIcon, null, null, null);
       } else {
         holder.additionalText.setText(null);
         holder.additionalText.setCompoundDrawablesRelativeWithIntrinsicBounds(

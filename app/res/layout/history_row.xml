@@ -85,6 +85,8 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:singleLine="true"
+                    android:ellipsize="end"
                     android:drawableStart="@drawable/ic_history_duration"
                     android:drawablePadding="4dp" />
 
@@ -94,7 +96,10 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:layout_marginStart="8dp"
                     android:gravity="end"
+                    android:singleLine="true"
+                    android:ellipsize="end"
                     android:drawableStart="@drawable/ic_history_pace"
                     android:drawablePadding="4dp" />
 
@@ -104,7 +109,11 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="end" />
+                    android:layout_marginStart="8dp"
+                    android:gravity="end"
+                    android:singleLine="true"
+                    android:ellipsize="end"
+                    android:drawablePadding="4dp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
