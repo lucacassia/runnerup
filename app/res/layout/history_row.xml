@@ -68,7 +68,9 @@
                 android:id="@+id/history_list_date"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp" />
+                android:layout_marginTop="2dp"
+                android:drawableStart="@drawable/ic_history_date"
+                android:drawablePadding="4dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -81,7 +83,9 @@
                     android:id="@+id/history_list_duration"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1" />
+                    android:layout_weight="1"
+                    android:drawableStart="@drawable/ic_history_duration"
+                    android:drawablePadding="4dp" />
 
                 <TextView
                     style="@style/ListDescription"
@@ -89,7 +93,9 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="end" />
+                    android:gravity="end"
+                    android:drawableEnd="@drawable/ic_history_pace"
+                    android:drawablePadding="4dp" />
 
                 <TextView
                     style="@style/ListDescription"
@@ -97,7 +103,9 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="end" />
+                    android:gravity="end"
+                    android:drawableEnd="@drawable/ic_history_hr"
+                    android:drawablePadding="4dp" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

@@ -26,6 +26,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,6 +41,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.TextViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.app.LoaderManager.LoaderCallbacks;
@@ -648,16 +650,25 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       }
 
       int sportColor = ContextCompat.getColor(context, Sport.colorOf(item.sport));
+      TypedValue tv = new TypedValue();
+      context
+          .getTheme()
+          .resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, tv, true);
+      int secondaryColor = tv.data;
       Drawable sportDrawable =
           AppCompatResources.getDrawable(context, Sport.drawableColored16Of(item.sport));
       holder.emblem.setImageDrawable(sportDrawable);
       holder.emblem.setColorFilter(sportColor);
       holder.distanceText.setTextColor(sportColor);
+      TextViewCompat.setCompoundDrawableTintList(
+          holder.distanceText, android.content.res.ColorStateList.valueOf(sportColor));
 
       if (item.avgHr != null) {
         holder.additionalText.setText(
             formatter.formatHeartRate(Formatter.Format.TXT_SHORT, item.avgHr));
         holder.additionalText.setTextColor(sportColor);
+        TextViewCompat.setCompoundDrawableTintList(
+            holder.additionalText, android.content.res.ColorStateList.valueOf(sportColor));
       } else {
         holder.additionalText.setText(null);
       }
@@ -668,6 +679,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       } else {
         holder.durationText.setText("");
       }
+      TextViewCompat.setCompoundDrawableTintList(
+          holder.durationText, android.content.res.ColorStateList.valueOf(secondaryColor));
 
       String paceTextContents = "";
       if (d != null && dur != null && dur != 0) {
@@ -675,6 +688,11 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
             formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / dur);
       }
       holder.paceText.setText(paceTextContents);
+      TextViewCompat.setCompoundDrawableTintList(
+          holder.paceText, android.content.res.ColorStateList.valueOf(secondaryColor));
+
+      TextViewCompat.setCompoundDrawableTintList(
+          holder.dateText, android.content.res.ColorStateList.valueOf(secondaryColor));
     }
 
     @Override
