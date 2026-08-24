@@ -667,10 +667,16 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         holder.additionalText.setText(
             formatter.formatHeartRate(Formatter.Format.TXT_SHORT, item.avgHr));
         holder.additionalText.setTextColor(sportColor);
-        TextViewCompat.setCompoundDrawableTintList(
-            holder.additionalText, android.content.res.ColorStateList.valueOf(sportColor));
+        Drawable hrIcon = AppCompatResources.getDrawable(context, R.drawable.ic_history_hr);
+        if (hrIcon != null) {
+          hrIcon.setTint(sportColor);
+        }
+        holder.additionalText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            null, null, hrIcon, null);
       } else {
         holder.additionalText.setText(null);
+        holder.additionalText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            null, null, null, null);
       }
 
       Long dur = item.time;

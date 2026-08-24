@@ -57,8 +57,9 @@
                 android:id="@+id/history_list_distance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_history_distance"
+                android:drawablePadding="6dp"
                 app:drawableEndCompat="@drawable/ic_chevron_right_24dp"
-                android:drawablePadding="8dp"
                 android:gravity="center_vertical"
                 android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textStyle="bold" />
@@ -94,7 +95,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="end"
-                    android:drawableEnd="@drawable/ic_history_pace"
+                    android:drawableStart="@drawable/ic_history_pace"
                     android:drawablePadding="4dp" />
 
                 <TextView
@@ -103,9 +104,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:gravity="end"
-                    android:drawableEnd="@drawable/ic_history_hr"
-                    android:drawablePadding="4dp" />
+                    android:gravity="end" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
