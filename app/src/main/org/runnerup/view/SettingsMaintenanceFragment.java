@@ -118,15 +118,14 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
 
   private final Preference.OnPreferenceClickListener onExportActivitiesClick =
       preference -> {
-        String[] formats = {"GPX", "TCX"};
+        final int[] which = {1};
+        final CharSequence[] items = {"GPX", "TCX"};
         new MaterialAlertDialogBuilder(requireContext())
             .setTitle(org.runnerup.common.R.string.Export_activities)
-            .setSingleChoiceItems(
-                formats,
-                1,
-                (dialog, which) -> {
-                  exportFormatIsGpx = (which == 0);
-                  dialog.dismiss();
+            .setPositiveButton(
+                org.runnerup.common.R.string.OK,
+                (dialog, w) -> {
+                  exportFormatIsGpx = (which[0] == 0);
                   Intent intent =
                       new Intent(Intent.ACTION_CREATE_DOCUMENT)
                           .addCategory(Intent.CATEGORY_OPENABLE)
@@ -135,7 +134,8 @@ public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
                   exportActivitiesLauncher.launch(intent);
                 })
             .setNegativeButton(
-                org.runnerup.common.R.string.Cancel, (dialog, which) -> dialog.dismiss())
+                org.runnerup.common.R.string.Cancel, (dialog, which1) -> dialog.dismiss())
+            .setSingleChoiceItems(items, which[0], (dialog, w) -> which[0] = w)
             .show();
         return true;
       };
