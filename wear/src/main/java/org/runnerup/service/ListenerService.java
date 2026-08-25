@@ -187,24 +187,21 @@ public class ListenerService extends WearableListenerService {
    * @return
    */
   public static String getChannelId(Context context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      if (mChannel == null) {
-        NotificationManager notificationManager =
-            (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        String id = "runnerup_ongoing";
-        CharSequence name = context.getString(org.runnerup.common.R.string.app_name);
-        String description =
-            context.getString(org.runnerup.common.R.string.channel_notification_ongoing);
-        int importance = NotificationManager.IMPORTANCE_HIGH;
-        mChannel = new NotificationChannel(id, name, importance);
-        mChannel.setDescription(description);
-        mChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-        mChannel.setBypassDnd(true);
-        notificationManager.createNotificationChannel(mChannel);
-      }
-      return mChannel.getId();
+    if (mChannel == null) {
+      NotificationManager notificationManager =
+          (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+      String id = "runnerup_ongoing";
+      CharSequence name = context.getString(org.runnerup.common.R.string.app_name);
+      String description =
+          context.getString(org.runnerup.common.R.string.channel_notification_ongoing);
+      int importance = NotificationManager.IMPORTANCE_HIGH;
+      mChannel = new NotificationChannel(id, name, importance);
+      mChannel.setDescription(description);
+      mChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+      mChannel.setBypassDnd(true);
+      notificationManager.createNotificationChannel(mChannel);
     }
-    return "unused prior to Oreo";
+    return mChannel.getId();
   }
 
   private void showNotification() {
