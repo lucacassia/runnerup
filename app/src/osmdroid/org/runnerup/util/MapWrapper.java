@@ -24,6 +24,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -61,6 +62,20 @@ public class MapWrapper implements Constants {
   private static final float MARKER_DIAMETER_PX = 3 * TRACK_WIDTH_PX;
   private static final float MARKER_ICON_VIEWPORT = 24f;
   private static final float MARKER_CIRCLE_VIEWPORT = 18f;
+
+  private static final float INTERVAL_BOX_CORNER_DP = 8f;
+  private static final float INTERVAL_BOX_PADDING_H_DP = 8f;
+  private static final float INTERVAL_BOX_PADDING_V_DP = 6f;
+  private static final float INTERVAL_BADGE_DIAM_DP = 16f;
+  private static final float INTERVAL_BADGE_GAP_DP = 6f;
+  private static final float INTERVAL_DIVIDER_WIDTH_DP = 1f;
+  private static final float INTERVAL_DIVIDER_GAP_DP = 6f;
+  private static final float INTERVAL_TEXT_SIZE_SP = 12f;
+  private static final float INTERVAL_BADGE_TEXT_SIZE_SP = 10f;
+  private static final float INTERVAL_ARROW_WIDTH_DP = 8f;
+  private static final float INTERVAL_ARROW_HEIGHT_DP = 4f;
+  private static final int INTERVAL_BOX_ALPHA_DAY = 0xE6; // 90% white
+  private static final int INTERVAL_BOX_ALPHA_NIGHT = 0xE6; // 90% dark
 
   public MapWrapper(
       Context context,
@@ -148,14 +163,14 @@ public class MapWrapper implements Constants {
         } else {
           Marker marker = new Marker(mapView);
           marker.setPosition(point);
-          java.lang.String info =
-              "#"
-                  + loc.getLap()
-                  + " "
-                  + formatter.formatDistance(TXT_SHORT, loc.getDistance().longValue())
-                  + " "
-                  + formatter.formatElapsedTime(TXT_SHORT, Math.round(loc.getElapsed() / 1000.0));
-          marker.setTextIcon(info);
+          String dist = formatter.formatDistance(TXT_SHORT, loc.getDistance().longValue());
+          String elapsed =
+              formatter.formatElapsedTime(TXT_SHORT, Math.round(loc.getElapsed() / 1000.0));
+          marker.setIcon(
+              new android.graphics.drawable.BitmapDrawable(
+                  mapView.getContext().getResources(),
+                  createIntervalIcon(
+                      loc.getLap(), dist, elapsed, MapTheme.routeColor(isNight), isNight)));
           marker.setInfoWindow(null);
           marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
           markers.add(marker);
@@ -196,6 +211,112 @@ public class MapWrapper implements Constants {
     icon.setBounds(0, 0, size, size);
     icon.draw(canvas);
     return new BitmapDrawable(mapView.getContext().getResources(), bitmap);
+  }
+
+  private Bitmap createIntervalIcon(
+      int lap, String distance, String elapsed, int routeColor, boolean isNight) {
+    float density = mapView.getContext().getResources().getDisplayMetrics().density;
+
+    // Paints
+    Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    textPaint.setTextSize(INTERVAL_TEXT_SIZE_SP * density);
+    textPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+    textPaint.setColor(isNight ? 0xFFFFFFFF : android.graphics.Color.argb(0xFF, 0x1C, 0x1C, 0x1C));
+
+    Paint badgePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    badgePaint.setColor(routeColor);
+
+    Paint badgeTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    badgeTextPaint.setTextSize(INTERVAL_BADGE_TEXT_SIZE_SP * density);
+    badgeTextPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+    badgeTextPaint.setColor(0xFFFFFFFF);
+    badgeTextPaint.setTextAlign(Paint.Align.CENTER);
+
+    Paint dividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    int outlineAlpha = isNight ? 0x4D : 0x4D; // 30%
+    dividerPaint.setColor(android.graphics.Color.argb(outlineAlpha, 0x80, 0x80, 0x80));
+    dividerPaint.setStrokeWidth(INTERVAL_DIVIDER_WIDTH_DP * density);
+
+    // Measure text
+    Paint.FontMetrics textFm = textPaint.getFontMetrics();
+    float distWidth = textPaint.measureText(distance);
+    float elapsedWidth = textPaint.measureText(elapsed);
+    float textHeight = textFm.ascent + textFm.descent;
+
+    // Dimensions
+    float badgeDiam = INTERVAL_BADGE_DIAM_DP * density;
+    float badgeGap = INTERVAL_BADGE_GAP_DP * density;
+    float dividerGap = INTERVAL_DIVIDER_GAP_DP * density;
+    float dividerWidth = INTERVAL_DIVIDER_WIDTH_DP * density;
+    float paddingH = INTERVAL_BOX_PADDING_H_DP * density;
+    float paddingV = INTERVAL_BOX_PADDING_V_DP * density;
+    float cornerRadius = INTERVAL_BOX_CORNER_DP * density;
+
+    float contentWidth =
+        badgeDiam + badgeGap + distWidth + dividerGap + dividerWidth + dividerGap + elapsedWidth;
+    float boxWidth = paddingH + contentWidth + paddingH;
+    float boxHeight = paddingV + Math.max(badgeDiam, textHeight) + paddingV;
+
+    // Arrow dimensions
+    float arrowWidth = INTERVAL_ARROW_WIDTH_DP * density;
+    float arrowHeight = INTERVAL_ARROW_HEIGHT_DP * density;
+
+    // Total bitmap height includes arrow
+    int bitmapWidth = Math.round(boxWidth);
+    int bitmapHeight = Math.round(boxHeight + arrowHeight);
+
+    Bitmap bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888);
+    Canvas canvas = new Canvas(bitmap);
+
+    // Background color
+    int bgColor =
+        isNight
+            ? android.graphics.Color.argb(INTERVAL_BOX_ALPHA_NIGHT, 0x1C, 0x1C, 0x1C)
+            : android.graphics.Color.argb(INTERVAL_BOX_ALPHA_DAY, 0xFF, 0xFF, 0xFF);
+    Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    bgPaint.setColor(bgColor);
+
+    // Draw rounded rect background
+    android.graphics.RectF rect = new android.graphics.RectF(0, 0, boxWidth, boxHeight);
+    canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint);
+
+    // Draw downward arrow triangle at bottom center
+    Path arrow = new Path();
+    float arrowCenterX = boxWidth / 2f;
+    float arrowTop = boxHeight - arrowHeight;
+    arrow.moveTo(arrowCenterX - arrowWidth / 2f, arrowTop);
+    arrow.lineTo(arrowCenterX + arrowWidth / 2f, arrowTop);
+    arrow.lineTo(arrowCenterX, boxHeight + arrowHeight);
+    arrow.close();
+    canvas.drawPath(arrow, bgPaint);
+
+    // Draw badge circle
+    float badgeCenterX = paddingH + badgeDiam / 2f;
+    float badgeCenterY = paddingV + Math.max(badgeDiam, textHeight) / 2f;
+    canvas.drawCircle(badgeCenterX, badgeCenterY, badgeDiam / 2f, badgePaint);
+
+    // Draw lap number in badge
+    Paint.FontMetrics badgeFm = badgeTextPaint.getFontMetrics();
+    float badgeTextY = badgeCenterY - (badgeFm.ascent + badgeFm.descent) / 2f;
+    canvas.drawText(String.valueOf(lap), badgeCenterX, badgeTextY, badgeTextPaint);
+
+    // Draw stats text (distance and elapsed on same line)
+    float textX = paddingH + badgeDiam + badgeGap;
+    float textBaseline =
+        paddingV + Math.max(badgeDiam, textHeight) / 2f - textHeight / 2f - textFm.ascent;
+    canvas.drawText(distance, textX, textBaseline, textPaint);
+
+    // Draw divider
+    float dividerX = textX + distWidth + dividerGap;
+    float dividerTop = badgeCenterY - (textHeight / 2f);
+    float dividerBottom = badgeCenterY + (textHeight / 2f);
+    canvas.drawLine(dividerX, dividerTop, dividerX, dividerBottom, dividerPaint);
+
+    // Draw elapsed text
+    float elapsedX = dividerX + dividerWidth + dividerGap;
+    canvas.drawText(elapsed, elapsedX, textBaseline, textPaint);
+
+    return bitmap;
   }
 
   private Polyline newPolyline(int color, float width) {
