@@ -23,8 +23,11 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -220,21 +223,21 @@ public class MapWrapper implements Constants {
     // Paints
     Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     textPaint.setTextSize(INTERVAL_TEXT_SIZE_SP * density);
-    textPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-    textPaint.setColor(isNight ? 0xFFFFFFFF : android.graphics.Color.argb(0xFF, 0x1C, 0x1C, 0x1C));
+    textPaint.setTypeface(Typeface.DEFAULT_BOLD);
+    textPaint.setColor(isNight ? 0xFFFFFFFF : Color.argb(0xFF, 0x1C, 0x1C, 0x1C));
 
     Paint badgePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     badgePaint.setColor(routeColor);
 
     Paint badgeTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     badgeTextPaint.setTextSize(INTERVAL_BADGE_TEXT_SIZE_SP * density);
-    badgeTextPaint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+    badgeTextPaint.setTypeface(Typeface.DEFAULT_BOLD);
     badgeTextPaint.setColor(0xFFFFFFFF);
     badgeTextPaint.setTextAlign(Paint.Align.CENTER);
 
     Paint dividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     int outlineAlpha = 0x4D; // 30%
-    dividerPaint.setColor(android.graphics.Color.argb(outlineAlpha, 0x80, 0x80, 0x80));
+    dividerPaint.setColor(Color.argb(outlineAlpha, 0x80, 0x80, 0x80));
     dividerPaint.setStrokeWidth(INTERVAL_DIVIDER_WIDTH_DP * density);
 
     // Measure text
@@ -271,13 +274,13 @@ public class MapWrapper implements Constants {
     // Background color
     int bgColor =
         isNight
-            ? android.graphics.Color.argb(INTERVAL_BOX_ALPHA_NIGHT, 0x1C, 0x1C, 0x1C)
-            : android.graphics.Color.argb(INTERVAL_BOX_ALPHA_DAY, 0xFF, 0xFF, 0xFF);
+            ? Color.argb(INTERVAL_BOX_ALPHA_NIGHT, 0x1C, 0x1C, 0x1C)
+            : Color.argb(INTERVAL_BOX_ALPHA_DAY, 0xFF, 0xFF, 0xFF);
     Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     bgPaint.setColor(bgColor);
 
     // Draw rounded rect background
-    android.graphics.RectF rect = new android.graphics.RectF(0, 0, boxWidth, boxHeight);
+    RectF rect = new RectF(0, 0, boxWidth, boxHeight);
     canvas.drawRoundRect(rect, cornerRadius, cornerRadius, bgPaint);
 
     // Draw downward arrow triangle at bottom center
