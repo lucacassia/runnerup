@@ -91,7 +91,6 @@
         android:id="@+id/tab_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/buttons"
         android:layout_below="@id/appbarlayout"
         android:orientation="vertical">
 
@@ -188,16 +187,26 @@
                         android:paddingBottom="4dp" />
                 </LinearLayout>
 
-                <LinearLayout
+                <FrameLayout
                     android:id="@+id/tab_map"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
                     <org.runnerup.util.MapViewWrapper
                         android:id="@+id/mapview"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent" />
-                </LinearLayout>
+
+                    <com.google.android.material.floatingactionbutton.FloatingActionButton
+                        android:id="@+id/map_lap_toggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="bottom|end"
+                        android:layout_marginEnd="16dp"
+                        android:layout_marginBottom="80dp"
+                        android:contentDescription="@string/Laps"
+                        android:src="@drawable/ic_list_24dp" />
+                </FrameLayout>
 
                 <ScrollView
                     android:id="@+id/tab_graph"

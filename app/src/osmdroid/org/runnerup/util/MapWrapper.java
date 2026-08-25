@@ -58,6 +58,9 @@ public class MapWrapper implements Constants {
 
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
+  private List<Marker> intervalMarkers = new ArrayList<>();
+  private boolean intervalMarkersVisible = false;
+
   private static final java.lang.String OSMDROID_USER_AGENT = "org.runnerup.free";
 
   private static final float TRACK_WIDTH_PX = 10.f;
@@ -67,14 +70,14 @@ public class MapWrapper implements Constants {
   private static final float MARKER_CIRCLE_VIEWPORT = 18f;
 
   private static final float INTERVAL_BOX_CORNER_DP = 8f;
-  private static final float INTERVAL_BOX_PADDING_H_DP = 8f;
-  private static final float INTERVAL_BOX_PADDING_V_DP = 6f;
-  private static final float INTERVAL_BADGE_DIAM_DP = 16f;
-  private static final float INTERVAL_BADGE_GAP_DP = 6f;
+  private static final float INTERVAL_BOX_PADDING_H_DP = 2f;
+  private static final float INTERVAL_BOX_PADDING_V_DP = 2f;
+  private static final float INTERVAL_BADGE_DIAM_DP = 14f;
+  private static final float INTERVAL_BADGE_GAP_DP = 2f;
   private static final float INTERVAL_DIVIDER_WIDTH_DP = 1f;
-  private static final float INTERVAL_DIVIDER_GAP_DP = 6f;
-  private static final float INTERVAL_TEXT_SIZE_SP = 12f;
-  private static final float INTERVAL_BADGE_TEXT_SIZE_SP = 10f;
+  private static final float INTERVAL_DIVIDER_GAP_DP = 2f;
+  private static final float INTERVAL_TEXT_SIZE_SP = 10f;
+  private static final float INTERVAL_BADGE_TEXT_SIZE_SP = 8f;
   private static final float INTERVAL_ARROW_WIDTH_DP = 8f;
   private static final float INTERVAL_ARROW_HEIGHT_DP = 4f;
   private static final int INTERVAL_BOX_ALPHA_DAY = 0xE6; // 90% white
@@ -144,6 +147,25 @@ public class MapWrapper implements Constants {
         });
   }
 
+  public void setIntervalMarkersVisible(boolean visible) {
+    intervalMarkersVisible = visible;
+    mapView.post(
+        () -> {
+          if (visible) {
+            for (Marker marker : intervalMarkers) {
+              mapView.getOverlays().add(marker);
+            }
+          } else {
+            mapView.getOverlays().removeAll(intervalMarkers);
+          }
+          mapView.invalidate();
+        });
+  }
+
+  public boolean areIntervalMarkersVisible() {
+    return intervalMarkersVisible;
+  }
+
   /** The long-running database query and data processing logic. */
   private Route loadRouteData(boolean isNight) {
     Polyline edge = newPolyline(MapTheme.edgeColor(isNight), TRACK_EDGE_WIDTH_PX);
@@ -151,6 +173,7 @@ public class MapWrapper implements Constants {
 
     java.util.List<Marker> markers = new ArrayList<>();
     java.util.List<GeoPoint> points = new LinkedList<>();
+    java.util.List<Marker> newIntervalMarkers = new ArrayList<>();
 
     LocationEntity.LocationList<LocationEntity> ll = new LocationEntity.LocationList<>(mDB, mID);
     int lastLap = -1;
@@ -176,24 +199,19 @@ public class MapWrapper implements Constants {
                       loc.getLap(), dist, elapsed, MapTheme.routeColor(isNight), isNight)));
           marker.setInfoWindow(null);
           marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-          markers.add(marker);
+          newIntervalMarkers.add(marker);
         }
       }
     }
     ll.close();
     if (!points.isEmpty()) {
-      if (!markers.isEmpty()) {
-        Marker lastMarker = markers.get(markers.size() - 1);
-        if (lastMarker.getPosition().equals(points.get(points.size() - 1))) {
-          markers.remove(markers.size() - 1);
-        }
-      }
       markers.add(newIconMarker(R.drawable.ic_map_marker_end, points.get(points.size() - 1)));
     }
     edge.setPoints(points);
     track.setPoints(points);
 
     GeoPoint firstPoint = points.isEmpty() ? null : points.get(0);
+    this.intervalMarkers = newIntervalMarkers;
     return new Route(List.of(edge, track), markers, firstPoint);
   }
 

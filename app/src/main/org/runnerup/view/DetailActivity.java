@@ -61,6 +61,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,6 +125,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
   private MapWrapper mapWrapper = null;
   private GraphWrapper graphWrapper = null;
+  private FloatingActionButton mapLapToggle = null;
 
   private SyncManager syncManager = null;
   private Formatter formatter = null;
@@ -231,6 +233,14 @@ public class DetailActivity extends AppCompatActivity implements Constants {
       Object mapView = findViewById(R.id.mapview);
       mapWrapper = new MapWrapper(this, mDB, mID, formatter, mapView);
       mapWrapper.onCreate(savedInstanceState);
+
+      mapLapToggle = findViewById(R.id.map_lap_toggle);
+      mapLapToggle.setOnClickListener(
+          v -> {
+            boolean visible = !mapWrapper.areIntervalMarkersVisible();
+            mapWrapper.setIntervalMarkersVisible(visible);
+            mapLapToggle.setElevation(visible ? 6f : 2f);
+          });
     }
 
     saveButton.setOnClickListener(saveButtonClick);

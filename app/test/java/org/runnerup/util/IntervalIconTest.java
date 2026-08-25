@@ -19,7 +19,6 @@ public class IntervalIconTest {
   @Test
   public void routeColorsAreDistinctForDayAndNight() {
     assertTrue(
-        "Day and night route colors should differ",
-        MapTheme.ROUTE_DAY != MapTheme.ROUTE_NIGHT);
+        "Day and night route colors should differ", MapTheme.ROUTE_DAY != MapTheme.ROUTE_NIGHT);
   }
 }
