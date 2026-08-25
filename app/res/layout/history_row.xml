@@ -57,7 +57,7 @@
                 android:id="@+id/history_list_distance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:drawableStart="@drawable/ic_history_distance"
+                app:drawableStartCompat="@drawable/ic_history_distance"
                 android:drawablePadding="6dp"
                 app:drawableEndCompat="@drawable/ic_chevron_right_24dp"
                 android:gravity="center_vertical"
@@ -70,7 +70,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:drawableStart="@drawable/ic_history_date"
+                app:drawableStartCompat="@drawable/ic_history_date"
                 android:drawablePadding="4dp" />
 
             <LinearLayout
@@ -87,7 +87,7 @@
                     android:layout_weight="3"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    android:drawableStart="@drawable/ic_history_duration"
+                    app:drawableStartCompat="@drawable/ic_history_duration"
                     android:drawablePadding="4dp" />
 
                 <TextView
@@ -99,7 +99,7 @@
                     android:layout_marginStart="8dp"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    android:drawableStart="@drawable/ic_history_pace"
+                    app:drawableStartCompat="@drawable/ic_history_pace"
                     android:drawablePadding="4dp" />
 
                 <TextView
