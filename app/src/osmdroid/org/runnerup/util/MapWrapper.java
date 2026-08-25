@@ -233,7 +233,7 @@ public class MapWrapper implements Constants {
     badgeTextPaint.setTextAlign(Paint.Align.CENTER);
 
     Paint dividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    int outlineAlpha = isNight ? 0x4D : 0x4D; // 30%
+    int outlineAlpha = 0x4D; // 30%
     dividerPaint.setColor(android.graphics.Color.argb(outlineAlpha, 0x80, 0x80, 0x80));
     dividerPaint.setStrokeWidth(INTERVAL_DIVIDER_WIDTH_DP * density);
 
