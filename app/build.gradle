@@ -69,6 +69,15 @@ android {
 
     signingConfigs {
         release {
+            def keystoreB64 = System.getenv("ANDROID_KEYSTORE_BASE64")
+            if (keystoreB64 != null && !keystoreB64.isEmpty()) {
+                def keystoreFile = file("/tmp/runnerup-keystore.jks")
+                keystoreFile.bytes = Base64.decoder.decode(keystoreB64)
+                storeFile = keystoreFile
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
         }
     }
 
