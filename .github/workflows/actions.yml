@@ -8,6 +8,9 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+
 env:
   ANDROID_API: 36.1
   ANDROID_BUILD_TOOLS: 37.0.0
