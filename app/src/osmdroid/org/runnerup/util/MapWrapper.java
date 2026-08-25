@@ -241,7 +241,7 @@ public class MapWrapper implements Constants {
     Paint.FontMetrics textFm = textPaint.getFontMetrics();
     float distWidth = textPaint.measureText(distance);
     float elapsedWidth = textPaint.measureText(elapsed);
-    float textHeight = textFm.ascent + textFm.descent;
+    float textHeight = textFm.descent - textFm.ascent;
 
     // Dimensions
     float badgeDiam = INTERVAL_BADGE_DIAM_DP * density;
