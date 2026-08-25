@@ -274,4 +274,15 @@
             file="res/drawable-hdpi/title_spinner_pressed.9.png"/>
     </issue>
 
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.okhttp3:okhttp than 5.4.0 is available: 5.5.0"
+        errorLine1="    implementation &quot;com.squareup.okhttp3:okhttp:5.4.0&quot;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle"
+            line="183"
+            column="20"/>
+    </issue>
+
 </issues>
