@@ -5,8 +5,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -22,6 +20,7 @@ import java.util.concurrent.Executors;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.CustomZoomButtonsController;
 import org.osmdroid.views.MapView;
@@ -43,7 +42,6 @@ public class LiveMap {
 
   private final MapView mapView;
   private final View recenterButton;
-  private final View attribution;
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
   private final List<GeoPoint> points = new ArrayList<>();
@@ -68,27 +66,18 @@ public class LiveMap {
     }
   }
 
-  public LiveMap(MapViewWrapper mapView, View recenterButton, View attribution) {
+  public LiveMap(MapViewWrapper mapView, View recenterButton) {
     this.mapView = mapView;
     this.recenterButton = recenterButton;
-    this.attribution = attribution;
     org.osmdroid.config.Configuration.getInstance().setUserAgentValue(OSMDROID_USER_AGENT);
     recenterButton.setOnClickListener(v -> recenter());
   }
 
   public void onCreate(Bundle savedInstanceState) {
     boolean isNight = isNightMode();
-    mapView.setTileSource(CartoTileSource.forNight(isNight));
-    mapView.setBackgroundColor(mapView.getContext().getColor(R.color.mapBackground));
-    mapView
-        .getOverlayManager()
-        .getTilesOverlay()
-        .setColorFilter(
-            new ColorMatrixColorFilter(
-                new ColorMatrix(isNight ? MapTheme.NIGHT_TILE_MATRIX : MapTheme.DAY_TILE_MATRIX)));
+    mapView.setTileSource(TileSourceFactory.MAPNIK);
     track.getOutlinePaint().setColor(MapTheme.routeColor(isNight));
     edge.getOutlinePaint().setColor(MapTheme.edgeColor(isNight));
-    attribution.setVisibility(View.VISIBLE);
     mapView.getZoomController().setVisibility(CustomZoomButtonsController.Visibility.NEVER);
     mapView.setMultiTouchControls(true);
     mapView.getController().setZoom(INITIAL_ZOOM);

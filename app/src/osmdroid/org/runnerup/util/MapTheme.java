@@ -8,16 +8,6 @@ public final class MapTheme {
   public static final int ROUTE_NIGHT = 0xFFFAB283;
   public static final int EDGE_DAY = 0xFFFFFFFF;
   public static final int EDGE_NIGHT = 0xFF0A0A0A;
-  public static final String CARTO_DARK_BASE = "https://basemaps.cartocdn.com/dark_all";
-  public static final String CARTO_LIGHT_BASE = "https://basemaps.cartocdn.com/light_all";
-
-  public static final float[] DAY_TILE_MATRIX = {
-    1.3f, 0, 0, 0, -76.5f, 0, 1.3f, 0, 0, -76.5f, 0, 0, 1.3f, 0, -76.5f, 0, 0, 0, 1, 0
-  };
-
-  public static final float[] NIGHT_TILE_MATRIX = {
-    1.8f, 0, 0, 0, 0, 0, 1.8f, 0, 0, 0, 0, 0, 1.8f, 0, 0, 0, 0, 0, 1, 0
-  };
 
   public static int routeColor(boolean isNight) {
     return isNight ? ROUTE_NIGHT : ROUTE_DAY;
@@ -25,9 +15,5 @@ public final class MapTheme {
 
   public static int edgeColor(boolean isNight) {
     return isNight ? EDGE_NIGHT : EDGE_DAY;
-  }
-
-  public static String tileBaseUrl(boolean isNight) {
-    return isNight ? CARTO_DARK_BASE : CARTO_LIGHT_BASE;
   }
 }
