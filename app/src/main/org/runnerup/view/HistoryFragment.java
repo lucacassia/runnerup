@@ -30,7 +30,6 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -41,7 +40,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
-import androidx.core.widget.TextViewCompat;
 import androidx.fragment.app.Fragment;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.app.LoaderManager.LoaderCallbacks;
@@ -51,8 +49,9 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButtonToggleGroup;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.tabs.TabLayout;
-import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -103,7 +102,6 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private TextView statistics30Value;
   private TextView statistics365Value;
   private Integer currentSport = null; // null = all sports
-  private MaterialAutoCompleteTextView sportSelector;
   private TextView sportCountText;
 
   private final ActivityResultLauncher<Intent> reloadLauncher =
@@ -130,6 +128,13 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           reloadLauncher.launch(i);
         });
 
+    View emptyButton = view.findViewById(R.id.history_empty_button);
+    emptyButton.setOnClickListener(
+        v -> {
+          Intent i = new Intent(context, ManualActivity.class);
+          reloadLauncher.launch(i);
+        });
+
     mDB = DBHelper.getReadableDatabase(context);
     formatter = new Formatter(context);
     listView.setLayoutManager(new LinearLayoutManager(context));
@@ -150,24 +155,43 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     statistics365Value = view.findViewById(R.id.statistics_365_value);
     statisticsChart.setLabelFormatter(this::formatChartValue);
 
-    sportSelector = view.findViewById(R.id.history_sport_selector);
-    sportSelector.setSaveEnabled(false);
+    ChipGroup chipGroup = view.findViewById(R.id.history_sport_chips);
     sportCountText = view.findViewById(R.id.history_sport_count);
     SharedPreferences sportPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     int savedSport =
         sportPrefs.getInt(getString(org.runnerup.common.R.string.pref_statistics_sport), -1);
     currentSport = savedSport >= 0 ? savedSport : null;
     String[] sportNames = Sport.getStringArray(getResources());
-    String[] entries = new String[sportNames.length + 1];
-    entries[0] = getString(org.runnerup.common.R.string.Statistics_all_sports);
-    System.arraycopy(sportNames, 0, entries, 1, sportNames.length);
-    ArrayAdapter<String> sportAdapter =
-        new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, entries);
-    sportSelector.setAdapter(sportAdapter);
-    sportSelector.setText(entries[currentSport == null ? 0 : currentSport + 1], false);
-    sportSelector.setOnItemClickListener(
-        (parent, v, position, id) -> {
-          currentSport = position == 0 ? null : position - 1;
+    Chip allChip = new Chip(context);
+    allChip.setId(View.generateViewId());
+    allChip.setText(getString(org.runnerup.common.R.string.Statistics_all_sports));
+    allChip.setCheckable(true);
+    allChip.setTag(null);
+    chipGroup.addView(allChip);
+    for (int dbValue = 0; dbValue < sportNames.length; dbValue++) {
+      Chip chip = new Chip(context);
+      chip.setId(View.generateViewId());
+      chip.setText(sportNames[dbValue]);
+      chip.setCheckable(true);
+      chip.setTag(dbValue);
+      Drawable icon = AppCompatResources.getDrawable(context, Sport.drawableColored16Of(dbValue));
+      if (icon != null) {
+        icon.mutate();
+        icon.setTint(ContextCompat.getColor(context, Sport.colorOf(dbValue)));
+        chip.setChipIcon(icon);
+      }
+      chipGroup.addView(chip);
+    }
+    Chip initial = (Chip) chipGroup.getChildAt(SportFilter.positionForSport(currentSport));
+    initial.setChecked(true);
+    chipGroup.setOnCheckedStateChangeListener(
+        (group, checkedIds) -> {
+          if (checkedIds.isEmpty()) {
+            return;
+          }
+          Chip checked = group.findViewById(checkedIds.get(0));
+          Integer sport = (Integer) checked.getTag();
+          currentSport = sport;
           sportPrefs
               .edit()
               .putInt(
@@ -323,8 +347,12 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
 
   @Override
   public void onLoadFinished(@NonNull Loader<Cursor> arg0, Cursor arg1) {
+    boolean empty = arg1 == null || arg1.getCount() == 0;
     if (emptyView != null) {
-      emptyView.setVisibility(arg1 == null || arg1.getCount() == 0 ? View.VISIBLE : View.GONE);
+      emptyView.setVisibility(empty ? View.VISIBLE : View.GONE);
+    }
+    if (fab != null) {
+      fab.setVisibility(!empty && currentTab == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
     }
     adapter.setData(arg1);
   }
@@ -660,8 +688,6 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       holder.emblem.setImageDrawable(sportDrawable);
       holder.emblem.setColorFilter(sportColor);
       holder.distanceText.setTextColor(sportColor);
-      TextViewCompat.setCompoundDrawableTintList(
-          holder.distanceText, android.content.res.ColorStateList.valueOf(sportColor));
 
       if (item.avgHr != null) {
         holder.additionalText.setText(
@@ -685,8 +711,6 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       } else {
         holder.durationText.setText("");
       }
-      TextViewCompat.setCompoundDrawableTintList(
-          holder.durationText, android.content.res.ColorStateList.valueOf(secondaryColor));
 
       String paceTextContents = "";
       if (d != null && dur != null && dur != 0) {
@@ -694,11 +718,6 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
             formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / dur);
       }
       holder.paceText.setText(paceTextContents);
-      TextViewCompat.setCompoundDrawableTintList(
-          holder.paceText, android.content.res.ColorStateList.valueOf(secondaryColor));
-
-      TextViewCompat.setCompoundDrawableTintList(
-          holder.dateText, android.content.res.ColorStateList.valueOf(secondaryColor));
     }
 
     @Override

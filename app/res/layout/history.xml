@@ -23,13 +23,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/history_toolbar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:title="@string/History"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/history_tabs"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/history_toolbar" />
 
     <LinearLayout
         android:id="@+id/history_sport_filter"
@@ -44,29 +53,32 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/history_tabs">
 
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/history_sport_field"
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense.ExposedDropdownMenu"
+        <HorizontalScrollView
+            android:id="@+id/history_sport_chips_scroller"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1">
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingStart="0dp"
+            android:paddingEnd="8dp"
+            android:scrollbars="none">
 
-            <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                android:id="@+id/history_sport_selector"
-                android:layout_width="match_parent"
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/history_sport_chips"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:cursorVisible="false"
-                android:focusable="false"
-                android:hint="@string/Statistics_all_sports"
-                android:inputType="none" />
-        </com.google.android.material.textfield.TextInputLayout>
+                app:chipSpacingHorizontal="8dp"
+                app:selectionRequired="true"
+                app:singleLine="true"
+                app:singleSelection="true" />
+        </HorizontalScrollView>
 
         <TextView
             android:id="@+id/history_sport_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:layout_marginStart="8dp"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
             android:textColor="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
 
@@ -87,19 +99,50 @@
             android:paddingBottom="@dimen/margin_for_fab"
             android:scrollbarStyle="outsideOverlay" />
 
-        <TextView
+        <LinearLayout
             android:id="@+id/history_empty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            app:drawableTopCompat="@drawable/sport_running"
-            android:drawablePadding="8dp"
+            android:layout_gravity="center"
             android:gravity="center"
+            android:orientation="vertical"
             android:padding="24dp"
-            android:text="@string/history_empty"
-            android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:visibility="gone"
-            android:layout_gravity="center" />
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:background="@drawable/history_empty_bg"
+                android:contentDescription="@string/History"
+                android:padding="24dp"
+                app:srcCompat="@drawable/ic_tab_history_24dp"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/history_empty"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="?attr/colorOnSurface" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/history_empty_description"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/history_empty_button"
+                style="?attr/materialButtonTonalStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="@string/Add_manual_entry" />
+        </LinearLayout>
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/history_add"
