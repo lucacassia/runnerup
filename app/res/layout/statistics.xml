@@ -23,7 +23,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                app:cardCornerRadius="@dimen/history_row_corner">
+                app:cardCornerRadius="@dimen/history_row_corner"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerHigh">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -43,7 +44,10 @@
                         android:id="@+id/statistics_7_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:layout_marginTop="4dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
                         android:textColor="?attr/colorOnSurface" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -55,7 +59,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="8dp"
-                app:cardCornerRadius="@dimen/history_row_corner">
+                app:cardCornerRadius="@dimen/history_row_corner"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerHigh">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -75,7 +80,10 @@
                         android:id="@+id/statistics_30_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:layout_marginTop="4dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
                         android:textColor="?attr/colorOnSurface" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -86,7 +94,8 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                app:cardCornerRadius="@dimen/history_row_corner">
+                app:cardCornerRadius="@dimen/history_row_corner"
+                app:cardBackgroundColor="?attr/colorSurfaceContainerHigh">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -106,7 +115,10 @@
                         android:id="@+id/statistics_365_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:layout_marginTop="4dp"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
                         android:textColor="?attr/colorOnSurface" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
