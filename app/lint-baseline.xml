@@ -13,14 +13,58 @@
     </issue>
 
     <issue
-        id="AppBundleLocaleChanges"
-        message="Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the `bundle` configuration"
-        errorLine1="      configuration.setLocale(locale);"
-        errorLine2="      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-core than 1.6.1 is available: 1.6.2"
+        errorLine1="    implementation &quot;androidx.camera:camera-core:${rootProject.ext.camerax_version}&quot;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="src/main/org/runnerup/util/Formatter.java"
-            line="830"
-            column="7"/>
+            file="build.gradle"
+            line="184"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-camera2 than 1.6.1 is available: 1.6.2"
+        errorLine1="    implementation &quot;androidx.camera:camera-camera2:${rootProject.ext.camerax_version}&quot;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle"
+            line="185"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-lifecycle than 1.6.1 is available: 1.6.2"
+        errorLine1="    implementation &quot;androidx.camera:camera-lifecycle:${rootProject.ext.camerax_version}&quot;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle"
+            line="186"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="GradleDependency"
+        message="A newer version of androidx.camera:camera-view than 1.6.1 is available: 1.6.2"
+        errorLine1="    implementation &quot;androidx.camera:camera-view:${rootProject.ext.camerax_version}&quot;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle"
+            line="187"
+            column="20"/>
+    </issue>
+
+    <issue
+        id="NewerVersionAvailable"
+        message="A newer version of com.squareup.okhttp3:okhttp than 5.4.0 is available: 5.5.0"
+        errorLine1="    implementation &quot;com.squareup.okhttp3:okhttp:5.4.0&quot;"
+        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="build.gradle"
+            line="183"
+            column="20"/>
     </issue>
 
     <issue
@@ -41,7 +85,7 @@
         errorLine2="      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/org/runnerup/view/RunActivity.java"
-            line="188"
+            line="203"
             column="7"/>
     </issue>
 
@@ -272,17 +316,6 @@
             file="res/drawable-hdpi/title_spinner_selected.9.png"/>
         <location
             file="res/drawable-hdpi/title_spinner_pressed.9.png"/>
-    </issue>
-
-    <issue
-        id="NewerVersionAvailable"
-        message="A newer version of com.squareup.okhttp3:okhttp than 5.4.0 is available: 5.5.0"
-        errorLine1="    implementation &quot;com.squareup.okhttp3:okhttp:5.4.0&quot;"
-        errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="build.gradle"
-            line="183"
-            column="20"/>
     </issue>
 
 </issues>
