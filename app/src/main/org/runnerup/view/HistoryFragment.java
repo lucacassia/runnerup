@@ -371,7 +371,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     view.findViewById(R.id.history_list_content)
         .setVisibility(index == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
     statisticsContent.setVisibility(index == TAB_STATISTICS_INDEX ? View.VISIBLE : View.GONE);
-    fab.setVisibility(index == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
+    fab.setVisibility(
+        index == TAB_HISTORY_INDEX && adapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
     if (index == TAB_STATISTICS_INDEX) {
       loadStatistics();
     }
