@@ -28,6 +28,7 @@
     android:focusable="true"
     app:cardCornerRadius="@dimen/history_row_corner"
     app:cardElevation="0dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
     app:rippleColor="?attr/colorControlHighlight">
 
     <LinearLayout
@@ -57,11 +58,12 @@
                 android:id="@+id/history_list_distance"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:drawableStartCompat="@drawable/ic_history_distance"
                 android:drawablePadding="6dp"
                 app:drawableEndCompat="@drawable/ic_chevron_right_24dp"
                 android:gravity="center_vertical"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:maxLines="1"
+                android:ellipsize="end"
                 android:textStyle="bold" />
 
             <TextView
@@ -70,7 +72,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                app:drawableStartCompat="@drawable/ic_history_date"
                 android:drawablePadding="4dp" />
 
             <LinearLayout
@@ -87,7 +88,6 @@
                     android:layout_weight="3"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    app:drawableStartCompat="@drawable/ic_history_duration"
                     android:drawablePadding="4dp" />
 
                 <TextView
@@ -99,7 +99,6 @@
                     android:layout_marginStart="8dp"
                     android:singleLine="true"
                     android:ellipsize="end"
-                    app:drawableStartCompat="@drawable/ic_history_pace"
                     android:drawablePadding="4dp" />
 
                 <TextView
