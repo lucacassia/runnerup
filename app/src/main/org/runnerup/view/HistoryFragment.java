@@ -426,6 +426,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   }
 
   private void applySportBadges(int[] counts) {
+    if (!isAdded()) {
+      return;
+    }
     int allSportsColor =
         ContextCompat.getColor(requireContext(), org.runnerup.R.color.historyBadgeAllSports);
     for (int i = 0; i < sportChips.size(); i++) {
