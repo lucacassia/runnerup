@@ -99,7 +99,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Tracker mTracker = null;
   private final Handler handler = new Handler();
 
-  private static final long HOLD_TO_STOP_MILLIS = 1500L;
+  private static final long HOLD_TO_STOP_MILLIS = 750L;
 
   private final ActivityResultLauncher<Intent> saveLauncher =
       registerForActivityResult(
