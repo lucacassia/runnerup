@@ -105,12 +105,10 @@ public class StartFragment extends Fragment implements TickListener {
   }
 
   private static final String TAB_BASIC = "basic";
-  private static final String TAB_INTERVAL = "interval";
   static final String TAB_ADVANCED = "advanced";
 
   private static final int TAB_BASIC_INDEX = 0;
-  private static final int TAB_INTERVAL_INDEX = 1;
-  private static final int TAB_ADVANCED_INDEX = 2;
+  private static final int TAB_ADVANCED_INDEX = 1;
 
   private boolean statusDetailsShown = false;
 
@@ -153,14 +151,6 @@ public class StartFragment extends Fragment implements TickListener {
   MaterialTitleSpinner simpleTargetHrz = null;
   AudioSchemeListAdapter simpleAudioListAdapter = null;
   HRZonesListAdapter hrZonesAdapter = null;
-
-  MaterialTitleSpinner intervalType = null;
-  MaterialTitleSpinner intervalTime = null;
-  MaterialTitleSpinner intervalDistance = null;
-  MaterialTitleSpinner intervalRestType = null;
-  MaterialTitleSpinner intervalRestTime = null;
-  MaterialTitleSpinner intervalRestDistance = null;
-  AudioSchemeListAdapter intervalAudioListAdapter = null;
 
   MaterialTitleSpinner advancedWorkoutSpinner = null;
   WorkoutListAdapter advancedWorkoutListAdapter = null;
@@ -246,7 +236,6 @@ public class StartFragment extends Fragment implements TickListener {
 
     tabLayout = view.findViewById(R.id.tab_layout);
     tabLayout.addTab(tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Basic)));
-    tabLayout.addTab(tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Interval)));
     tabLayout.addTab(tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Advanced)));
     tabLayout.addOnTabSelectedListener(onTabSelectedListener);
     setTabContentVisibility();
@@ -263,23 +252,6 @@ public class StartFragment extends Fragment implements TickListener {
     simpleTargetHrz = view.findViewById(R.id.tab_basic_target_hrz);
     simpleTargetHrz.setAdapter(hrZonesAdapter);
     simpleTargetType.setOnCloseDialogListener(simpleTargetTypeClick);
-
-    intervalType = view.findViewById(R.id.interval_type);
-    intervalTime = view.findViewById(R.id.start_interval_time);
-    intervalTime.setOnSetValueListener(onSetTimeValidator);
-    intervalDistance = view.findViewById(R.id.interval_distance);
-    intervalType.setOnSetValueListener(intervalTypeSetValue);
-    intervalRestType = view.findViewById(R.id.interval_rest_type);
-    intervalRestTime = view.findViewById(R.id.interval_rest_time);
-    intervalRestTime.setOnSetValueListener(onSetTimeValidator);
-    intervalRestDistance = view.findViewById(R.id.interval_rest_distance);
-    intervalRestType.setOnSetValueListener(intervalRestTypeSetValue);
-    intervalAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
-    intervalAudioListAdapter.reload();
-    MaterialTitleSpinner intervalAudioSpinner = view.findViewById(R.id.interval_audio_cue_spinner);
-    intervalAudioSpinner.setAdapter(intervalAudioListAdapter);
-    intervalAudioSpinner.setOnSetValueListener(
-        new OnConfigureAudioListener(intervalAudioListAdapter));
 
     advancedAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
     advancedAudioListAdapter.reload();
@@ -483,7 +455,6 @@ public class StartFragment extends Fragment implements TickListener {
   public void onResume() {
     super.onResume();
     simpleAudioListAdapter.reload();
-    intervalAudioListAdapter.reload();
     advancedAudioListAdapter.reload();
     advancedWorkoutListAdapter.reload();
 
@@ -745,8 +716,6 @@ public class StartFragment extends Fragment implements TickListener {
 
   private String getCurrentTabTag() {
     switch (currentTabIndex) {
-      case TAB_INTERVAL_INDEX:
-        return TAB_INTERVAL;
       case TAB_ADVANCED_INDEX:
         return TAB_ADVANCED;
       default:
@@ -761,8 +730,6 @@ public class StartFragment extends Fragment implements TickListener {
     }
     view.findViewById(R.id.start_basic_tab)
         .setVisibility(currentTabIndex == TAB_BASIC_INDEX ? View.VISIBLE : View.GONE);
-    view.findViewById(R.id.start_interval_tab)
-        .setVisibility(currentTabIndex == TAB_INTERVAL_INDEX ? View.VISIBLE : View.GONE);
     view.findViewById(R.id.start_advanced_tab)
         .setVisibility(currentTabIndex == TAB_ADVANCED_INDEX ? View.VISIBLE : View.GONE);
   }
@@ -778,10 +745,6 @@ public class StartFragment extends Fragment implements TickListener {
           WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_basic_audio));
       Dimension target = Dimension.valueOf(simpleTargetType.getValueInt());
       w = WorkoutBuilder.createDefaultWorkout(getResources(), pref, target);
-    } else if (getCurrentTabTag().contentEquals(TAB_INTERVAL)) {
-      audioPref =
-          WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_interval_audio));
-      w = WorkoutBuilder.createDefaultIntervalWorkout(getResources(), pref);
     } else if (getCurrentTabTag().contentEquals(TAB_ADVANCED)) {
       audioPref =
           WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_advanced_audio));
@@ -1421,40 +1384,6 @@ public class StartFragment extends Fragment implements TickListener {
     }
   }
 
-  private final OnSetValueListener intervalTypeSetValue =
-      new OnSetValueListener() {
-
-        @Override
-        public String preSetValue(String newValue) throws IllegalArgumentException {
-          return newValue;
-        }
-
-        @Override
-        public int preSetValue(int newValue) throws IllegalArgumentException {
-          boolean time = (newValue == 0);
-          intervalTime.setVisibility(time ? View.VISIBLE : View.GONE);
-          intervalDistance.setVisibility(time ? View.GONE : View.VISIBLE);
-          return newValue;
-        }
-      };
-
-  private final OnSetValueListener intervalRestTypeSetValue =
-      new OnSetValueListener() {
-
-        @Override
-        public String preSetValue(String newValue) throws IllegalArgumentException {
-          return newValue;
-        }
-
-        @Override
-        public int preSetValue(int newValue) throws IllegalArgumentException {
-          boolean time = (newValue == 0);
-          intervalRestTime.setVisibility(time ? View.VISIBLE : View.GONE);
-          intervalRestDistance.setVisibility(time ? View.GONE : View.VISIBLE);
-          return newValue;
-        }
-      };
-
   @SuppressLint("NotifyDataSetChanged")
   private void loadAdvanced(String name) {
     Context ctx = requireActivity().getApplicationContext();
@@ -1528,23 +1457,6 @@ public class StartFragment extends Fragment implements TickListener {
                     org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
                 .show();
           }
-        }
-      };
-
-  private final OnSetValueListener onSetTimeValidator =
-      new OnSetValueListener() {
-
-        @Override
-        public String preSetValue(String newValue) throws IllegalArgumentException {
-
-          if (WorkoutBuilder.validateSeconds(newValue)) return newValue;
-
-          throw new IllegalArgumentException("Unable to parse time value: " + newValue);
-        }
-
-        @Override
-        public int preSetValue(int newValue) throws IllegalArgumentException {
-          return newValue;
         }
       };
 
