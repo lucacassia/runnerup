@@ -41,6 +41,7 @@
     <color name="sportTreadmill">#2aa198</color>
     <color name="sportGym">#dc322f</color>
     <color name="sportStationaryBike">#268bd2</color>
+    <color name="historyBadgeAllSports">#586e75</color>
 
     <color name="markerCurrent">#3b7dd8</color>
     <color name="markerCurrentStroke">#2968c3</color>

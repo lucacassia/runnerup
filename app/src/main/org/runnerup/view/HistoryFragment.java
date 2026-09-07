@@ -26,6 +26,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -102,7 +104,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private TextView statistics30Value;
   private TextView statistics365Value;
   private Integer currentSport = null; // null = all sports
-  private TextView sportCountText;
+  private final List<Chip> sportChips = new ArrayList<>();
+  private final List<String> sportChipLabels = new ArrayList<>();
 
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
@@ -156,7 +159,6 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     statisticsChart.setLabelFormatter(this::formatChartValue);
 
     ChipGroup chipGroup = view.findViewById(R.id.history_sport_chips);
-    sportCountText = view.findViewById(R.id.history_sport_count);
     SharedPreferences sportPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     int savedSport =
         sportPrefs.getInt(getString(org.runnerup.common.R.string.pref_statistics_sport), -1);
@@ -168,6 +170,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     allChip.setCheckable(true);
     allChip.setTag(null);
     chipGroup.addView(allChip);
+    sportChips.add(allChip);
+    sportChipLabels.add(getString(org.runnerup.common.R.string.Statistics_all_sports));
     for (int dbValue = 0; dbValue < sportNames.length; dbValue++) {
       Chip chip = new Chip(context);
       chip.setId(View.generateViewId());
@@ -181,6 +185,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         chip.setChipIcon(icon);
       }
       chipGroup.addView(chip);
+      sportChips.add(chip);
+      sportChipLabels.add(sportNames[dbValue]);
     }
     Chip initial = (Chip) chipGroup.getChildAt(SportFilter.positionForSport(currentSport));
     initial.setChecked(true);
@@ -202,9 +208,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           if (currentTab == TAB_STATISTICS_INDEX) {
             loadStatistics();
           }
-          updateSportCount();
+          refreshSportBadges();
         });
-    updateSportCount();
+    refreshSportBadges();
     if (currentSport != null) {
       LoaderManager.getInstance(this).restartLoader(0, null, this);
     }
@@ -355,6 +361,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       fab.setVisibility(!empty && currentTab == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
     }
     adapter.setData(arg1);
+    refreshSportBadges();
   }
 
   @Override
@@ -404,7 +411,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         });
   }
 
-  private void updateSportCount() {
+  private void refreshSportBadges() {
     if (mDB == null) {
       return;
     }
@@ -413,22 +420,43 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           int[] counts = Statistics.sportCounts(mDB);
           mainHandler.post(
               () -> {
-                int count = 0;
-                if (currentSport == null) {
-                  for (int c : counts) {
-                    count += c;
-                  }
-                } else if (currentSport >= 0 && currentSport < counts.length) {
-                  count = counts[currentSport];
-                }
-                sportCountText.setText(
-                    getResources()
-                        .getQuantityString(
-                            org.runnerup.common.R.plurals.Statistics_activities_count,
-                            count,
-                            count));
+                applySportBadges(counts);
               });
         });
+  }
+
+  private void applySportBadges(int[] counts) {
+    int allSportsColor =
+        ContextCompat.getColor(requireContext(), org.runnerup.R.color.historyBadgeAllSports);
+    for (int i = 0; i < sportChips.size(); i++) {
+      Chip chip = sportChips.get(i);
+      Integer sport = (Integer) chip.getTag();
+      SportCountBadge.Badge badge = SportCountBadge.forSport(sport, counts);
+      if (badge == null) {
+        chip.setText(sportChipLabels.get(i));
+        continue;
+      }
+      int pillColor =
+          sport == null
+              ? allSportsColor
+              : ContextCompat.getColor(requireContext(), Sport.colorOf(sport));
+      chip.setText(
+          buildChipText(
+              sportChipLabels.get(i),
+              pillColor,
+              badge.count,
+              getResources().getDisplayMetrics().density));
+    }
+  }
+
+  private CharSequence buildChipText(String label, int pillColor, int count, float density) {
+    SpannableStringBuilder sb = new SpannableStringBuilder(label);
+    sb.append(" ");
+    int start = sb.length();
+    sb.append(Integer.toString(count));
+    int end = sb.length();
+    sb.setSpan(new PillSpan(pillColor, density), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+    return sb;
   }
 
   private void renderChart() {
