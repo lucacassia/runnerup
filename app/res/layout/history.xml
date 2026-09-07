@@ -40,7 +40,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/history_toolbar" />
 
-    <HorizontalScrollView
+    <org.runnerup.view.HistoryChipScroller
         android:id="@+id/history_sport_filter"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -61,7 +61,7 @@
             app:selectionRequired="true"
             app:singleLine="true"
             app:singleSelection="true" />
-    </HorizontalScrollView>
+    </org.runnerup.view.HistoryChipScroller>
 
     <FrameLayout
         android:id="@+id/history_list_content"
