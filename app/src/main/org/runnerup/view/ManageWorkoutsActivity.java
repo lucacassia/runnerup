@@ -112,6 +112,10 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
             requery();
           });
 
+  private final ActivityResultLauncher<Intent> editLauncher =
+      registerForActivityResult(
+          new ActivityResultContracts.StartActivityForResult(), result -> clearSelection());
+
   /** Called when the activity is first created. */
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -535,7 +539,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
         intent.putExtra(WORKOUT_NAME, selected.workoutName());
         intent.putExtra(WORKOUT_EDIT_MODE, true);
-        startActivity(intent);
+        editLauncher.launch(intent);
       };
 
   private void onWorkoutChecked(WorkoutRef workout, boolean isChecked) {

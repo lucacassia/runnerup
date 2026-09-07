@@ -4,8 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -213,6 +215,13 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     getMenuInflater().inflate(R.menu.workout_editor_menu, menu);
+    TypedValue colorOnSurface = new TypedValue();
+    if (getTheme()
+        .resolveAttribute(
+            com.google.android.material.R.attr.colorOnSurface, colorOnSurface, true)) {
+      menu.findItem(R.id.menu_save_workout)
+          .setIconTintList(ColorStateList.valueOf(colorOnSurface.data));
+    }
     menu.findItem(R.id.menu_rename_workout).setVisible(workoutEditMode);
     menu.findItem(R.id.menu_discard_workout).setVisible(!workoutEditMode);
     return true;
