@@ -72,6 +72,7 @@ import org.runnerup.export.SyncManager.Callback;
 import org.runnerup.export.SyncManager.WorkoutRef;
 import org.runnerup.export.Synchronizer;
 import org.runnerup.export.Synchronizer.Status;
+import org.runnerup.util.HRZones;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.Workout;
 import org.runnerup.workout.WorkoutSerializer;
@@ -184,7 +185,13 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
       } catch (Exception e) {
         new MaterialAlertDialogBuilder(this)
             .setTitle(org.runnerup.common.R.string.Error)
-            .setMessage(getString(org.runnerup.common.R.string.Failed_to_import) + ": " + fileName)
+            .setMessage(
+                getString(
+                        e instanceof WorkoutSerializer.UnsupportedFormatException
+                            ? org.runnerup.common.R.string.Unsupported_workout_format
+                            : org.runnerup.common.R.string.Failed_to_import)
+                    + ": "
+                    + fileName)
             .setPositiveButton(
                 org.runnerup.common.R.string.OK,
                 (dialog, which) -> {
@@ -223,7 +230,9 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     if (is == null) {
       throw new Exception("Failed to get input stream");
     }
-    Workout w = WorkoutSerializer.readJSON(new BufferedReader(new InputStreamReader(is)));
+    Workout w =
+        WorkoutSerializer.readJSON(
+            new BufferedReader(new InputStreamReader(is)), new HRZones(this));
     is.close();
     if (w == null) throw new Exception("Failed to parse content");
 

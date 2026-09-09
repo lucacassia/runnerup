@@ -310,6 +310,7 @@
     <string name="Clear_uploads_from_phone">Clear uploads (from phone)</string>
     <string name="my_phone">My phone</string>
     <string name="Failed_to_import">Failed to import</string>
+    <string name="Unsupported_workout_format">Unsupported workout format</string>
     <string name="Import_workout">Import workout</string>
     <string name="Saving_as">Saving as</string>
     <string name="Overwrite_existing">Overwrite existing</string>

@@ -21,7 +21,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.util.Log;
-import android.util.Pair;
 import androidx.preference.PreferenceManager;
 import java.util.Vector;
 import org.runnerup.R;
@@ -100,12 +99,12 @@ public class HRZones {
     return z - 1;
   }
 
-  public Pair<Integer, Integer> getHRValues(int zone) {
-    if (zones != null && zone < zones.length) {
-      if (zone == 0) {
-        return new Pair<>(0, zones[0]);
+  public int[] getHRValues(int zone) {
+    if (zones != null && zone >= 1 && zone <= zones.length) {
+      if (zone == 1) {
+        return new int[] {0, zones[0]};
       } else {
-        return new Pair<>(zones[zone - 1], zones[zone]);
+        return new int[] {zones[zone - 2], zones[zone - 1]};
       }
     }
     return null;

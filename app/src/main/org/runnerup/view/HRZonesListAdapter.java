@@ -18,7 +18,6 @@
 package org.runnerup.view;
 
 import android.content.Context;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,8 +51,8 @@ class HRZonesListAdapter extends BaseAdapter {
     if (position == lastPosition) return lastString;
 
     if (position < hrZones.getCount()) {
-      Pair<Integer, Integer> val = hrZones.getHRValues(position + 1);
-      String str = "Zone " + (position + 1) + " (" + val.first + " - " + val.second + ")";
+      int[] val = hrZones.getHRValues(position + 1);
+      String str = "Zone " + (position + 1) + " (" + val[0] + " - " + val[1] + ")";
 
       lastPosition = position;
       lastString = str;

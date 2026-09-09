@@ -22,7 +22,6 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.text.format.DateUtils;
 import android.util.Log;
-import android.util.Pair;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -88,10 +87,10 @@ public class WorkoutBuilder {
       HRZones hrCalc = new HRZones(res, prefs);
       int zone = prefs.getInt(res.getString(R.string.pref_basic_target_hrz), -1);
       if (zone >= 0) {
-        Pair<Integer, Integer> vals = hrCalc.getHRValues(zone + 1);
+        int[] vals = hrCalc.getHRValues(zone + 1);
         if (vals != null) {
           step.targetType = Dimension.HR;
-          step.targetValue = new Range(vals.first, vals.second);
+          step.targetValue = new Range(vals[0], vals[1]);
         }
       }
     }

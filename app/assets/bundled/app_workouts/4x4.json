@@ -1,1 +1,101 @@
-{"com.garmin.connect.workout.json.UserWorkoutJson":{"workoutSteps":[{"stepTypeKey":"warmup","endConditionTypeKey":"lap.button","endConditionUnitKey":"dimensionless","targetTypeKey":"no.target","targetValueUnitKey":"dimensionless","stepOrder":1,"groupId":1},{"stepTypeKey":"repeat","endConditionTypeKey":"iterations","endConditionValue":4,"endConditionUnitKey":"dimensionless","stepOrder":2,"groupId":2},{"stepTypeKey":"interval","endConditionTypeKey":"time","endConditionValue":240000,"endConditionUnitKey":"ms","targetTypeKey":"no.target","targetValueUnitKey":"dimensionless","stepOrder":3,"groupId":2,"parentGroupId":2},{"stepTypeKey":"recovery","endConditionTypeKey":"time","endConditionValue":180000,"endConditionUnitKey":"ms","targetTypeKey":"no.target","targetValueUnitKey":"dimensionless","stepOrder":4,"groupId":2,"parentGroupId":2},{"stepTypeKey":"cooldown","endConditionTypeKey":"lap.button","endConditionUnitKey":"dimensionless","targetTypeKey":"no.target","targetValueUnitKey":"dimensionless","stepOrder":5,"groupId":3}]}}
+{
+  "workoutName": "4x4",
+  "sportType": {
+    "sportTypeId": 1,
+    "sportTypeKey": "running"
+  },
+  "workoutSegments": [
+    {
+      "segmentOrder": 1,
+      "sportType": {
+        "sportTypeId": 1,
+        "sportTypeKey": "running"
+      },
+      "workoutSteps": [
+        {
+          "type": "ExecutableStepDTO",
+          "stepOrder": 1,
+          "stepType": {
+            "stepTypeId": 1,
+            "stepTypeKey": "warmup"
+          },
+          "endCondition": {
+            "conditionTypeId": 1,
+            "conditionTypeKey": "lap.button"
+          },
+          "targetType": {
+            "workoutTargetTypeId": 1,
+            "workoutTargetTypeKey": "no.target"
+          }
+        },
+        {
+          "type": "RepeatGroupDTO",
+          "stepOrder": 2,
+          "stepType": {
+            "stepTypeId": 6,
+            "stepTypeKey": "repeat"
+          },
+          "numberOfIterations": 4,
+          "smartRepeat": false,
+          "endCondition": {
+            "conditionTypeId": 7,
+            "conditionTypeKey": "iterations"
+          },
+          "endConditionValue": 4,
+          "workoutSteps": [
+            {
+              "type": "ExecutableStepDTO",
+              "stepOrder": 3,
+              "stepType": {
+                "stepTypeId": 3,
+                "stepTypeKey": "interval"
+              },
+              "endCondition": {
+                "conditionTypeId": 2,
+                "conditionTypeKey": "time"
+              },
+              "endConditionValue": 240,
+              "targetType": {
+                "workoutTargetTypeId": 1,
+                "workoutTargetTypeKey": "no.target"
+              }
+            },
+            {
+              "type": "ExecutableStepDTO",
+              "stepOrder": 4,
+              "stepType": {
+                "stepTypeId": 4,
+                "stepTypeKey": "recovery"
+              },
+              "endCondition": {
+                "conditionTypeId": 2,
+                "conditionTypeKey": "time"
+              },
+              "endConditionValue": 180,
+              "targetType": {
+                "workoutTargetTypeId": 1,
+                "workoutTargetTypeKey": "no.target"
+              }
+            }
+          ]
+        },
+        {
+          "type": "ExecutableStepDTO",
+          "stepOrder": 5,
+          "stepType": {
+            "stepTypeId": 2,
+            "stepTypeKey": "cooldown"
+          },
+          "endCondition": {
+            "conditionTypeId": 1,
+            "conditionTypeKey": "lap.button"
+          },
+          "targetType": {
+            "workoutTargetTypeId": 1,
+            "workoutTargetTypeKey": "no.target"
+          }
+        }
+      ]
+    }
+  ]
+}

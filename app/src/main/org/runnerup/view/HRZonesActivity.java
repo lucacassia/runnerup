@@ -240,15 +240,13 @@ public class HRZonesActivity extends AppCompatActivity implements Constants {
 
   private void load() {
     for (int zone = 0; zone < zones.size() / 2; zone++) {
-      Pair<Integer, Integer> values = hrZones.getHRValues(zone + 1);
+      int[] values = hrZones.getHRValues(zone + 1);
       if (values != null) {
         EditText lo = zones.get(2 * zone /*+ 0*/);
         EditText hi = zones.get(2 * zone + 1);
-        lo.setText(String.format(Locale.getDefault(), "%d", values.first));
-        hi.setText(String.format(Locale.getDefault(), "%d", values.second));
-        Log.i(
-            getClass().getName(),
-            "loaded " + (zone + 1) + " " + values.first + "-" + values.second);
+        lo.setText(String.format(Locale.getDefault(), "%d", values[0]));
+        hi.setText(String.format(Locale.getDefault(), "%d", values[1]));
+        Log.i(getClass().getName(), "loaded " + (zone + 1) + " " + values[0] + "-" + values[1]);
       }
     }
   }

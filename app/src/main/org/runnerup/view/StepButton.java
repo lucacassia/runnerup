@@ -21,7 +21,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.GradientDrawable;
 import android.util.AttributeSet;
-import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -394,9 +393,8 @@ public class StepButton extends LinearLayout {
           }
         case DIMENSION.HRZ:
           step.setTargetType(Dimension.HR);
-          Pair<Integer, Integer> range =
-              hrZonesAdapter.hrZones.getHRValues(targetHrz.getValueInt() + 1);
-          step.setTargetValue(range.first, range.second);
+          int[] range = hrZonesAdapter.hrZones.getHRValues(targetHrz.getValueInt() + 1);
+          step.setTargetValue(range[0], range[1]);
       }
     };
   }

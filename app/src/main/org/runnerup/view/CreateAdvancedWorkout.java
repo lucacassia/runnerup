@@ -261,7 +261,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   }
 
   private void createAdvancedWorkout(String name, boolean workoutEditMode)
-      throws JSONException, IOException {
+      throws JSONException, IOException, WorkoutSerializer.UnsupportedFormatException {
     if (workoutEditMode) {
       advancedWorkout = WorkoutSerializer.readFile(getApplicationContext(), name);
     } else {
