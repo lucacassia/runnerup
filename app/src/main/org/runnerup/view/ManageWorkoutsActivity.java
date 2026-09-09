@@ -30,10 +30,12 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -44,6 +46,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -58,6 +61,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import org.runnerup.R;
@@ -71,6 +75,7 @@ import org.runnerup.export.Synchronizer.Status;
 import org.runnerup.util.HRZones;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.Workout;
+import org.runnerup.workout.WorkoutOrder;
 import org.runnerup.workout.WorkoutSerializer;
 
 public class ManageWorkoutsActivity extends AppCompatActivity implements Constants {
@@ -86,6 +91,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
   private final HashSet<String> expandedProviders = new HashSet<>();
   private final HashSet<String> loadedProviders = new HashSet<>();
   private WorkoutListAdapter adapter = null;
+  private ItemTouchHelper itemTouchHelper = null;
 
   private boolean uploading = false;
   private SyncManager syncManager = null;
@@ -132,6 +138,58 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     RecyclerView list = findViewById(R.id.workout_list);
     list.setLayoutManager(new LinearLayoutManager(this));
     list.setAdapter(adapter);
+
+    itemTouchHelper =
+        new ItemTouchHelper(
+            new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+              @Override
+              public boolean isLongPressDragEnabled() {
+                return false;
+              }
+
+              @Override
+              public boolean isItemViewSwipeEnabled() {
+                return false;
+              }
+
+              @Override
+              public boolean onMove(
+                  @NonNull RecyclerView recyclerView,
+                  @NonNull RecyclerView.ViewHolder viewHolder,
+                  @NonNull RecyclerView.ViewHolder target) {
+                int fromPos = viewHolder.getBindingAdapterPosition();
+                int toPos = target.getBindingAdapterPosition();
+                if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION) {
+                  return false;
+                }
+                Object fromItem = adapter.items.get(fromPos);
+                Object toItem = adapter.items.get(toPos);
+                if (!(fromItem instanceof WorkoutRef) || !(toItem instanceof WorkoutRef)) {
+                  return false;
+                }
+                WorkoutRef fromRef = (WorkoutRef) fromItem;
+                WorkoutRef toRef = (WorkoutRef) toItem;
+                if (!PHONE_STRING.contentEquals(fromRef.synchronizer())
+                    || !PHONE_STRING.contentEquals(toRef.synchronizer())) {
+                  return false;
+                }
+                Collections.swap(adapter.items, fromPos, toPos);
+                adapter.notifyItemMoved(fromPos, toPos);
+                adapter.orderDirty = true;
+                return true;
+              }
+
+              @Override
+              public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
+
+              @Override
+              public void clearView(
+                  @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                super.clearView(recyclerView, viewHolder);
+                adapter.persistOrder();
+              }
+            });
+    itemTouchHelper.attachToRecyclerView(list);
 
     FloatingActionButton createButton = findViewById(R.id.create_workout_button);
     createButton.setOnClickListener(createButtonClick);
@@ -438,6 +496,7 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
     private final Context context;
     private final ArrayList<Object> items = new ArrayList<>();
+    private boolean orderDirty = false;
 
     WorkoutListAdapter(Context ctx) {
       context = ctx;
@@ -540,6 +599,38 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     private void bindWorkout(WorkoutViewHolder holder, WorkoutRef workout) {
       holder.name.setText(workout.workoutName());
       holder.itemView.setOnClickListener(v -> openEditor(workout));
+      if (PHONE_STRING.contentEquals(workout.synchronizer())) {
+        holder.dragHandle.setVisibility(View.VISIBLE);
+        holder.dragHandle.setOnTouchListener(
+            (v, event) -> {
+              if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                itemTouchHelper.startDrag(holder);
+              }
+              return false;
+            });
+      } else {
+        holder.dragHandle.setVisibility(View.GONE);
+        holder.dragHandle.setOnTouchListener(null);
+      }
+    }
+
+    private void persistOrder() {
+      if (!orderDirty) return;
+      orderDirty = false;
+      try {
+        ArrayList<String> names = new ArrayList<>();
+        for (Object item : items) {
+          if (item instanceof WorkoutRef) {
+            WorkoutRef ref = (WorkoutRef) item;
+            if (PHONE_STRING.contentEquals(ref.synchronizer())) {
+              names.add(ref.workoutName());
+            }
+          }
+        }
+        WorkoutOrder.write(WorkoutOrder.orderFile(context), names);
+      } catch (IOException e) {
+        Log.e(getClass().getName(), "persistOrder: " + e.getMessage());
+      }
     }
 
     final Callback onSynchronizerConfiguredCallback =
@@ -586,10 +677,12 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
 
   class WorkoutViewHolder extends RecyclerView.ViewHolder {
     final TextView name;
+    final ImageButton dragHandle;
 
     WorkoutViewHolder(@NonNull View itemView) {
       super(itemView);
       name = itemView.findViewById(R.id.workout_name);
+      dragHandle = itemView.findViewById(R.id.workout_drag_handle);
     }
   }
 }
