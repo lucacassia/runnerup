@@ -47,6 +47,7 @@ import org.runnerup.widget.NumberPicker;
 import org.runnerup.workout.RepeatStep;
 import org.runnerup.workout.Step;
 import org.runnerup.workout.Workout;
+import org.runnerup.workout.WorkoutOrder;
 import org.runnerup.workout.WorkoutSerializer;
 
 public class CreateAdvancedWorkout extends AppCompatActivity {
@@ -593,6 +594,10 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                   File f = WorkoutSerializer.getFile(getApplicationContext(), name);
                   //noinspection ResultOfMethodCallIgnored
                   f.delete();
+                  try {
+                    WorkoutOrder.remove(WorkoutOrder.orderFile(getApplicationContext()), name);
+                  } catch (IOException ignored) {
+                  }
                   SharedPreferences prefs =
                       PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
                   String key = getString(R.string.pref_advanced_workout);
@@ -657,6 +662,13 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                         WorkoutSerializer.getFile(getApplicationContext(), oldWorkoutName);
                     if (!oldFile.delete())
                       throw new IOException("Failed to delete old workout file");
+                    try {
+                      WorkoutOrder.replace(
+                          WorkoutOrder.orderFile(getApplicationContext()),
+                          oldWorkoutName,
+                          newWorkoutName);
+                    } catch (IOException ignored) {
+                    }
                     SharedPreferences prefs =
                         PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
                     String key = getString(R.string.pref_advanced_workout);
