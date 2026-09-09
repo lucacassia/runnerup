@@ -24,7 +24,7 @@
         android:contentDescription="@string/Drag_to_reorder"
         android:padding="8dp"
         android:src="@drawable/ic_drag_handle"
-        app:tint="?attr/colorOnSurfaceVariant" />
+        app:tint="@color/step_move_up_tint" />
 
     <view
         android:id="@+id/workout_step_button"
@@ -39,9 +39,9 @@
         android:id="@+id/del_button"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:background="@drawable/bg_delete_tonal"
+        android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/Delete"
         android:padding="9dp"
         android:src="@drawable/ic_delete"
-        app:tint="?attr/colorError" />
+        app:tint="@color/step_delete_tint" />
 </LinearLayout>

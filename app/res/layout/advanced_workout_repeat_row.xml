@@ -38,7 +38,7 @@
             android:contentDescription="@string/Drag_to_reorder"
             android:padding="8dp"
             android:src="@drawable/ic_drag_handle"
-            app:tint="?attr/colorOnSurfaceVariant" />
+            app:tint="@color/step_move_up_tint" />
 
         <TextView
             android:id="@+id/repeat_title"
@@ -61,7 +61,7 @@
             android:contentDescription="@string/Delete"
             android:padding="9dp"
             android:src="@drawable/ic_delete"
-            app:tint="?attr/colorError" />
+            app:tint="@color/step_delete_tint" />
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
