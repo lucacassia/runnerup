@@ -87,6 +87,11 @@ public class StepButton extends LinearLayout {
     mOnChangedListener = runnable;
   }
 
+  public void setNested(boolean nested) {
+    mLayout.setBackgroundResource(
+        nested ? R.drawable.bg_step_card_nested : R.drawable.bg_step_card);
+  }
+
   public void setStep(Step step) {
     this.step = step;
 

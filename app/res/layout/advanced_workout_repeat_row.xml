@@ -1,13 +1,28 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright (C) 2013 jonas.oreland@gmail.com
+  ~
+  ~  This program is free software: you can redistribute it and/or modify
+  ~  it under the terms of the GNU General Public License as published by
+  ~  the Free Software Foundation, either version 3 of the License, or
+  ~  (at your option) any later version.
+  ~
+  ~  This program is distributed in the hope that it will be useful,
+  ~  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~  GNU General Public License for more details.
+  ~
+  ~  You should have received a copy of the GNU General Public License
+  ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_repeat_group"
+    android:orientation="vertical"
     android:padding="8dp"
     android:layout_marginTop="6dp"
-    android:layout_marginBottom="2dp"
-    android:orientation="vertical">
+    android:layout_marginBottom="2dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,39 +41,44 @@
             app:tint="?attr/colorOnSurfaceVariant" />
 
         <TextView
-            android:id="@+id/repeat_chip"
+            android:id="@+id/repeat_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            android:background="@drawable/bg_repeat_chip"
-            android:paddingStart="16dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="10dp"
             android:textAppearance="?attr/textAppearanceTitleSmall"
+            android:textStyle="bold"
             android:textColor="?attr/colorPrimary" />
 
         <ImageButton
             android:id="@+id/del_button"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:background="@drawable/bg_delete_tonal"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/Delete"
             android:padding="9dp"
             android:src="@drawable/ic_delete"
             app:tint="?attr/colorError" />
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/repeat_children_host"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="48dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp"
-        android:text="@string/Inside_repeat"
-        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:nestedScrollingEnabled="false"
+        android:paddingTop="4dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/add_step_inside_repeat_button"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="48dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="4dp"
+        android:text="@string/Add_step_inside_repeat"
         android:textColor="?attr/colorPrimary" />
 </LinearLayout>

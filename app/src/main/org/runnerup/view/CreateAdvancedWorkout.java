@@ -15,7 +15,6 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -32,6 +31,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
@@ -140,32 +140,23 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                 if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION) {
                   return false;
                 }
-                Object fromItem = advancedWorkoutStepsAdapter.items.get(fromPos);
-                Object toItem = advancedWorkoutStepsAdapter.items.get(toPos);
-                if (fromItem instanceof Workout.StepListEntry
-                    && toItem instanceof Workout.StepListEntry) {
-                  Workout.StepListEntry fromEntry = (Workout.StepListEntry) fromItem;
-                  Workout.StepListEntry toEntry = (Workout.StepListEntry) toItem;
-                  if (fromEntry.parent() == toEntry.parent()) {
-                    List<Step> list = listFor(fromEntry);
-                    int fromIndex = list.indexOf(fromEntry.step());
-                    int toIndex = list.indexOf(toEntry.step());
-                    if (fromIndex >= 0 && toIndex >= 0) {
-                      if (StepReorder.swapIndex(list, fromIndex, toIndex)) {
-                        boolean repeatInvolved =
-                            fromEntry.step() instanceof RepeatStep
-                                || toEntry.step() instanceof RepeatStep;
-                        if (repeatInvolved) {
-                          advancedWorkoutStepsAdapter.refreshSteps();
-                        } else {
-                          Collections.swap(advancedWorkoutStepsAdapter.items, fromPos, toPos);
-                          advancedWorkoutStepsAdapter.notifyItemMoved(fromPos, toPos);
-                        }
-                        reorderDirty = true;
-                        return true;
-                      }
-                    }
-                  }
+                if (fromPos == toPos) {
+                  return true;
+                }
+                Workout.StepListEntry fromEntry =
+                    (Workout.StepListEntry) advancedWorkoutStepsAdapter.items.get(fromPos);
+                Workout.StepListEntry toEntry =
+                    (Workout.StepListEntry) advancedWorkoutStepsAdapter.items.get(toPos);
+                List<Step> list = advancedWorkout.getSteps();
+                int fromIndex = list.indexOf(fromEntry.step());
+                int toIndex = list.indexOf(toEntry.step());
+                if (fromIndex >= 0
+                    && toIndex >= 0
+                    && StepReorder.swapIndex(list, fromIndex, toIndex)) {
+                  Collections.swap(advancedWorkoutStepsAdapter.items, fromPos, toPos);
+                  advancedWorkoutStepsAdapter.notifyItemMoved(fromPos, toPos);
+                  reorderDirty = true;
+                  return true;
                 }
                 return false;
               }
@@ -284,15 +275,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
   private static final int VIEW_TYPE_STEP = 0;
   private static final int VIEW_TYPE_REPEAT = 1;
-  private static final int VIEW_TYPE_FOOTER = 2;
-
-  private static final class FooterItem {
-    final RepeatStep repeat;
-
-    FooterItem(RepeatStep repeat) {
-      this.repeat = repeat;
-    }
-  }
 
   final class WorkoutStepsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -301,20 +283,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     @SuppressLint("NotifyDataSetChanged")
     void refreshSteps() {
       items.clear();
-      RepeatStep openRepeat = null;
-      for (Workout.StepListEntry entry : advancedWorkout.getStepList()) {
-        if (openRepeat != null && entry.parent() != openRepeat) {
-          items.add(new FooterItem(openRepeat));
-          openRepeat = null;
-        }
-        items.add(entry);
-        if (entry.step() instanceof RepeatStep) {
-          openRepeat = (RepeatStep) entry.step();
-        }
-      }
-      if (openRepeat != null) {
-        items.add(new FooterItem(openRepeat));
-      }
+      items.addAll(advancedWorkout.entriesAtLevel(null));
       updateEmptyState();
       notifyDataSetChanged();
     }
@@ -333,13 +302,8 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
     @Override
     public int getItemViewType(int position) {
-      Object item = items.get(position);
-      if (item instanceof FooterItem) {
-        return VIEW_TYPE_FOOTER;
-      }
-      return ((Workout.StepListEntry) item).step() instanceof RepeatStep
-          ? VIEW_TYPE_REPEAT
-          : VIEW_TYPE_STEP;
+      Workout.StepListEntry entry = (Workout.StepListEntry) items.get(position);
+      return entry.step() instanceof RepeatStep ? VIEW_TYPE_REPEAT : VIEW_TYPE_STEP;
     }
 
     @NonNull
@@ -347,34 +311,25 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
       LayoutInflater inflater = getLayoutInflater();
       if (viewType == VIEW_TYPE_REPEAT) {
-        return new RepeatRowViewHolder(
-            inflater.inflate(R.layout.advanced_workout_repeat_row, parent, false));
-      } else if (viewType == VIEW_TYPE_FOOTER) {
-        return new FooterRowViewHolder(
-            inflater.inflate(R.layout.advanced_workout_repeat_footer, parent, false));
+        return new RepeatGroupViewHolder(
+            inflater.inflate(R.layout.advanced_workout_repeat_row, parent, false), itemTouchHelper);
       }
-      return new StepRowViewHolder(inflater.inflate(R.layout.advanced_workout_row, parent, false));
+      return new StepRowViewHolder(
+          inflater.inflate(R.layout.advanced_workout_row, parent, false), itemTouchHelper);
     }
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
+      Workout.StepListEntry entry = (Workout.StepListEntry) items.get(position);
       if (viewHolder instanceof StepRowViewHolder) {
         StepRowViewHolder holder = (StepRowViewHolder) viewHolder;
-        Workout.StepListEntry entry = (Workout.StepListEntry) items.get(position);
         holder.stepEntry = entry;
         holder.button.setStep(entry.step());
-        holder.nestedGuide.setVisibility(entry.parent() != null ? View.VISIBLE : View.GONE);
-      } else if (viewHolder instanceof RepeatRowViewHolder) {
-        RepeatRowViewHolder holder = (RepeatRowViewHolder) viewHolder;
-        Workout.StepListEntry entry = (Workout.StepListEntry) items.get(position);
-        holder.repeatStep = (RepeatStep) entry.step();
-        holder.chip.setText(
-            getString(
-                org.runnerup.common.R.string.repeat_times, holder.repeatStep.getRepeatCount()));
+        holder.button.setNested(false);
+        holder.nestedGuide.setVisibility(View.GONE);
       } else {
-        FooterRowViewHolder holder = (FooterRowViewHolder) viewHolder;
-        FooterItem footer = (FooterItem) items.get(position);
-        holder.repeat = footer.repeat;
+        RepeatGroupViewHolder holder = (RepeatGroupViewHolder) viewHolder;
+        holder.bind((RepeatStep) entry.step());
       }
     }
   }
@@ -386,7 +341,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     final View nestedGuide;
     Workout.StepListEntry stepEntry;
 
-    StepRowViewHolder(@NonNull View itemView) {
+    StepRowViewHolder(@NonNull View itemView, @NonNull ItemTouchHelper itemTouchHelper) {
       super(itemView);
       button = itemView.findViewById(R.id.workout_step_button);
       button.setOnChangedListener(onWorkoutChanged);
@@ -404,13 +359,16 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     }
   }
 
-  class RepeatRowViewHolder extends RecyclerView.ViewHolder {
+  class RepeatGroupViewHolder extends RecyclerView.ViewHolder {
     final ImageButton moveUp;
-    final TextView chip;
+    final TextView title;
     final ImageButton del;
+    final RecyclerView childrenHost;
+    final MaterialButton addInside;
+    final ItemTouchHelper innerTouchHelper;
     RepeatStep repeatStep;
 
-    RepeatRowViewHolder(@NonNull View itemView) {
+    RepeatGroupViewHolder(@NonNull View itemView, @NonNull ItemTouchHelper itemTouchHelper) {
       super(itemView);
       moveUp = itemView.findViewById(R.id.move_up_button);
       moveUp.setOnTouchListener(
@@ -420,28 +378,146 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
             }
             return false;
           });
-      chip = itemView.findViewById(R.id.repeat_chip);
-      chip.setOnClickListener(v -> editRepeatCount(repeatStep));
+      title = itemView.findViewById(R.id.repeat_title);
+      title.setOnClickListener(v -> editRepeatCount(repeatStep));
       del = itemView.findViewById(R.id.del_button);
       del.setOnClickListener(v -> confirmDeleteStep(repeatStep));
-    }
-  }
-
-  class FooterRowViewHolder extends RecyclerView.ViewHolder {
-    final Button addInside;
-    RepeatStep repeat;
-
-    FooterRowViewHolder(@NonNull View itemView) {
-      super(itemView);
       addInside = itemView.findViewById(R.id.add_step_inside_repeat_button);
-      addInside.setOnClickListener(v -> addStepInsideRepeat(repeat));
+      addInside.setOnClickListener(v -> addStepInsideRepeat(repeatStep));
+
+      childrenHost = itemView.findViewById(R.id.repeat_children_host);
+      childrenHost.setLayoutManager(new LinearLayoutManager(CreateAdvancedWorkout.this));
+      childrenHost.setNestedScrollingEnabled(false);
+      innerTouchHelper =
+          new ItemTouchHelper(
+              new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+                @Override
+                public boolean onMove(
+                    @NonNull RecyclerView recyclerView,
+                    @NonNull RecyclerView.ViewHolder viewHolder,
+                    @NonNull RecyclerView.ViewHolder target) {
+                  int fromPos = viewHolder.getBindingAdapterPosition();
+                  int toPos = target.getBindingAdapterPosition();
+                  if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION) {
+                    return false;
+                  }
+                  if (fromPos == toPos) {
+                    return true;
+                  }
+                  if (!(recyclerView.getAdapter() instanceof RepeatChildrenAdapter)) {
+                    return false;
+                  }
+                  RepeatChildrenAdapter childAdapter =
+                      (RepeatChildrenAdapter) recyclerView.getAdapter();
+                  if (fromPos >= childAdapter.items.size() || toPos >= childAdapter.items.size()) {
+                    return false;
+                  }
+                  Workout.StepListEntry fromEntry = childAdapter.items.get(fromPos);
+                  Workout.StepListEntry toEntry = childAdapter.items.get(toPos);
+                  List<Step> list = repeatStep.getSteps();
+                  int fromIndex = list.indexOf(fromEntry.step());
+                  int toIndex = list.indexOf(toEntry.step());
+                  if (fromIndex >= 0
+                      && toIndex >= 0
+                      && StepReorder.swapIndex(list, fromIndex, toIndex)) {
+                    Collections.swap(childAdapter.items, fromPos, toPos);
+                    childAdapter.notifyItemMoved(fromPos, toPos);
+                    reorderDirty = true;
+                    return true;
+                  }
+                  return false;
+                }
+
+                @Override
+                public void clearView(
+                    @NonNull RecyclerView recyclerView,
+                    @NonNull RecyclerView.ViewHolder viewHolder) {
+                  super.clearView(recyclerView, viewHolder);
+                  if (reorderDirty) {
+                    reorderDirty = false;
+                    onWorkoutChanged.run();
+                  }
+                }
+
+                @Override
+                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
+
+                @Override
+                public boolean isLongPressDragEnabled() {
+                  return false;
+                }
+              });
+      innerTouchHelper.attachToRecyclerView(childrenHost);
+    }
+
+    void bind(RepeatStep repeat) {
+      repeatStep = repeat;
+      title.setText(getString(org.runnerup.common.R.string.repeat_times, repeat.getRepeatCount()));
+      RecyclerView.Adapter<?> adapter = childrenHost.getAdapter();
+      RepeatChildrenAdapter childAdapter;
+      if (adapter == null) {
+        childAdapter = new RepeatChildrenAdapter(innerTouchHelper);
+        childrenHost.setAdapter(childAdapter);
+      } else {
+        childAdapter = (RepeatChildrenAdapter) adapter;
+      }
+      childAdapter.bind(repeat);
     }
   }
 
-  private List<Step> listFor(Workout.StepListEntry entry) {
-    return entry.parent() != null
-        ? ((RepeatStep) entry.parent()).getSteps()
-        : advancedWorkout.getSteps();
+  final class RepeatChildrenAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    final List<Workout.StepListEntry> items = new ArrayList<>();
+    final ItemTouchHelper innerItemTouchHelper;
+
+    RepeatChildrenAdapter(ItemTouchHelper innerItemTouchHelper) {
+      this.innerItemTouchHelper = innerItemTouchHelper;
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    void bind(RepeatStep repeat) {
+      items.clear();
+      items.addAll(advancedWorkout.entriesAtLevel(repeat));
+      notifyDataSetChanged();
+    }
+
+    @Override
+    public int getItemCount() {
+      return items.size();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+      Workout.StepListEntry entry = items.get(position);
+      return entry.step() instanceof RepeatStep ? VIEW_TYPE_REPEAT : VIEW_TYPE_STEP;
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+      LayoutInflater inflater = getLayoutInflater();
+      if (viewType == VIEW_TYPE_REPEAT) {
+        return new RepeatGroupViewHolder(
+            inflater.inflate(R.layout.advanced_workout_repeat_row, parent, false),
+            innerItemTouchHelper);
+      }
+      return new StepRowViewHolder(
+          inflater.inflate(R.layout.advanced_workout_row, parent, false), innerItemTouchHelper);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
+      Workout.StepListEntry entry = items.get(position);
+      if (viewHolder instanceof StepRowViewHolder) {
+        StepRowViewHolder holder = (StepRowViewHolder) viewHolder;
+        holder.stepEntry = entry;
+        holder.button.setStep(entry.step());
+        holder.button.setNested(true);
+        holder.nestedGuide.setVisibility(View.VISIBLE);
+      } else {
+        RepeatGroupViewHolder holder = (RepeatGroupViewHolder) viewHolder;
+        holder.bind((RepeatStep) entry.step());
+      }
+    }
   }
 
   private void addStepInsideRepeat(RepeatStep repeat) {
