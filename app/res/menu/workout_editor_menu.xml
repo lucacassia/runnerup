@@ -7,8 +7,14 @@
         android:title="@string/Save"
         app:showAsAction="always" />
     <item
+        android:id="@+id/menu_share_workout"
+        android:title="@string/Share" />
+    <item
         android:id="@+id/menu_rename_workout"
         android:title="@string/Rename" />
+    <item
+        android:id="@+id/menu_delete_workout"
+        android:title="@string/Delete" />
     <item
         android:id="@+id/menu_discard_workout"
         android:title="@string/Discard" />

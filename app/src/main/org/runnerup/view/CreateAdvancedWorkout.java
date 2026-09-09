@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.util.TypedValue;
@@ -40,6 +41,7 @@ import java.util.Collections;
 import java.util.List;
 import org.json.JSONException;
 import org.runnerup.R;
+import org.runnerup.content.WorkoutFileProvider;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.widget.NumberPicker;
 import org.runnerup.workout.RepeatStep;
@@ -222,7 +224,9 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
       menu.findItem(R.id.menu_save_workout)
           .setIconTintList(ColorStateList.valueOf(colorOnSurface.data));
     }
+    menu.findItem(R.id.menu_share_workout).setVisible(workoutEditMode);
     menu.findItem(R.id.menu_rename_workout).setVisible(workoutEditMode);
+    menu.findItem(R.id.menu_delete_workout).setVisible(workoutEditMode);
     menu.findItem(R.id.menu_discard_workout).setVisible(!workoutEditMode);
     return true;
   }
@@ -233,8 +237,14 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     if (itemId == R.id.menu_save_workout) {
       saveWorkoutButtonClick.onClick(null);
       return true;
+    } else if (itemId == R.id.menu_share_workout) {
+      shareWorkout();
+      return true;
     } else if (itemId == R.id.menu_rename_workout) {
       renameWorkoutButtonClick.onClick(null);
+      return true;
+    } else if (itemId == R.id.menu_delete_workout) {
+      deleteWorkoutButtonClick.onClick(null);
       return true;
     } else if (itemId == R.id.menu_discard_workout) {
       discardWorkoutButtonClick.onClick(null);
@@ -538,6 +548,62 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
               .setNegativeButton(
                   org.runnerup.common.R.string.No, (dialog, which) -> dialog.dismiss())
               .show();
+
+  private void shareWorkout() {
+    if (currentWorkoutName == null) {
+      return;
+    }
+    try {
+      WorkoutSerializer.writeFile(getApplicationContext(), currentWorkoutName, advancedWorkout);
+    } catch (Exception e) {
+      handleWorkoutFileException(e);
+      return;
+    }
+    final String name = currentWorkoutName;
+    final Intent intent = new Intent(Intent.ACTION_SEND);
+
+    intent.putExtra(
+        Intent.EXTRA_SUBJECT,
+        getString(org.runnerup.common.R.string.RunnerUp_workout) + ": " + name);
+    intent.putExtra(
+        Intent.EXTRA_TEXT,
+        getString(org.runnerup.common.R.string.HinHere_is_a_workout_I_think_you_might_like));
+
+    intent.setType(WorkoutFileProvider.MIME);
+    Uri uri = Uri.parse("content://" + WorkoutFileProvider.AUTHORITY + "/" + name + ".json");
+    intent.putExtra(Intent.EXTRA_STREAM, uri);
+    startActivity(
+        Intent.createChooser(intent, getString(org.runnerup.common.R.string.Share_workout)));
+  }
+
+  private final View.OnClickListener deleteWorkoutButtonClick =
+      v -> {
+        if (currentWorkoutName == null) {
+          return;
+        }
+        new MaterialAlertDialogBuilder(CreateAdvancedWorkout.this)
+            .setTitle(
+                getString(org.runnerup.common.R.string.Delete_workout) + " " + currentWorkoutName)
+            .setMessage(org.runnerup.common.R.string.Are_you_sure)
+            .setPositiveButton(
+                org.runnerup.common.R.string.Yes,
+                (dialog, which) -> {
+                  dialog.dismiss();
+                  String name = currentWorkoutName;
+                  File f = WorkoutSerializer.getFile(getApplicationContext(), name);
+                  //noinspection ResultOfMethodCallIgnored
+                  f.delete();
+                  SharedPreferences prefs =
+                      PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                  String key = getString(R.string.pref_advanced_workout);
+                  if (name.contentEquals(prefs.getString(key, ""))) {
+                    prefs.edit().putString(key, "").apply();
+                  }
+                  finish();
+                })
+            .setNegativeButton(org.runnerup.common.R.string.No, (dialog, which) -> dialog.dismiss())
+            .show();
+      };
 
   private final View.OnClickListener renameWorkoutButtonClick =
       view -> {
