@@ -611,6 +611,16 @@ public class Workout implements WorkoutComponent, WorkoutInfo {
     return list;
   }
 
+  public List<StepListEntry> entriesAtLevel(Step parent) {
+    ArrayList<StepListEntry> out = new ArrayList<>();
+    for (StepListEntry entry : getStepList()) {
+      if (entry.parent() == parent) {
+        out.add(entry);
+      }
+    }
+    return out;
+  }
+
   public Step getCurrentStep() {
     if (currentStepNo >= 0 && currentStepNo < steps.size())
       return steps.get(currentStepNo).getCurrentStep();
