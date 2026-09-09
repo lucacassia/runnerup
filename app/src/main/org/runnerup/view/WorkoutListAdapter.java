@@ -24,6 +24,7 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 import java.io.File;
+import org.runnerup.workout.WorkoutOrder;
 import org.runnerup.workout.WorkoutSerializer;
 
 class WorkoutListAdapter extends BaseAdapter {
@@ -92,6 +93,9 @@ class WorkoutListAdapter extends BaseAdapter {
 
   public static String[] load(Context ctx) {
     File f = ctx.getDir(WorkoutSerializer.WORKOUTS_DIR, 0);
-    return f.list((dir, filename) -> filename.endsWith(".json"));
+    String[] list = f.list((dir, filename) -> filename.endsWith(".json"));
+    if (list == null) return null;
+    return WorkoutOrder.apply(java.util.Arrays.asList(list), WorkoutOrder.orderFile(ctx))
+        .toArray(new String[0]);
   }
 }
