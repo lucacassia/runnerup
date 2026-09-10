@@ -14,225 +14,169 @@
   ~  You should have received a copy of the GNU General Public License
   ~  along with this program.  If not, see <http://www.gnu.org/licenses/>.
   -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/start_tab1_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".view.StartFragment">
 
     <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/start_actionbar"
+        android:id="@+id/start_toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        app:title="@string/Record" />
+
+    <FrameLayout
+        android:id="@+id/tab_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/start_button"
+        android:layout_below="@id/start_toolbar">
+
+        <include layout="@layout/start_advanced" />
+    </FrameLayout>
+
+    <RelativeLayout
+        android:id="@+id/status_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:animateLayoutChanges="true"
+        android:background="?attr/colorSurfaceContainer"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="vertical"
         tools:ignore="UnusedAttribute">
 
         <LinearLayout
-            android:id="@+id/sport_selector"
+            android:id="@+id/status_frame"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:background="?attr/selectableItemBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:clickable="true"
-            android:focusable="true">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-            <ImageView
-                android:id="@+id/sport_icon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginEnd="8dp"
-                android:contentDescription="@string/Sport" />
-
-            <TextView
-                android:id="@+id/sport_name"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1"
-                android:textAppearance="?attr/textAppearanceTitleLarge" />
+                android:gravity="bottom|start"
+                android:orientation="horizontal">
 
-    <ImageView
-        android:id="@+id/sport_caret"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:layout_marginStart="4dp"
-        app:tint="?attr/colorControlNormal"
-        app:srcCompat="@drawable/ic_arrow_drop_down_24dp"
-        tools:ignore="ContentDescription" />
+                <TextView
+                    android:id="@+id/device_status"
+                    style="@style/StatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/No_devices_connected"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:id="@+id/hr_indicator"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="4dp"
+                    android:contentDescription="@string/Heart_Rate_Monitor"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_heartrate_white_24dp" />
+
+                <TextView
+                    android:id="@+id/hr_message"
+                    style="@style/StatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:visibility="gone" />
+
+                <ImageView
+                    android:id="@+id/wearos_indicator"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="4dp"
+                    android:contentDescription="@string/Wear_OS_Device"
+                    android:visibility="gone"
+                    app:srcCompat="@drawable/ic_watch_white_24dp" />
+
+                <TextView
+                    android:id="@+id/wearos_message"
+                    style="@style/StatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp" />
+
+                <ImageView
+                    android:id="@+id/gps_indicator"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="4dp"
+                    app:srcCompat="@drawable/ic_gps_1"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/gps_message"
+                    style="@style/StatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/gps_detail_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="bottom|start"
+                android:visibility="gone"
+                tools:ignore="UseCompoundDrawables">
+
+                <ImageView
+                    android:id="@+id/gps_detail_indicator"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:layout_marginEnd="4dp"
+                    app:srcCompat="@drawable/ic_gps_1"
+                    tools:ignore="ContentDescription" />
+
+                <TextView
+                    android:id="@+id/gps_detail_message"
+                    style="@style/StatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
-    </com.google.android.material.appbar.MaterialToolbar>
+        <ImageView
+            android:id="@+id/expand_icon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_centerVertical="true"
+            android:layout_toEndOf="@id/status_frame"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            app:srcCompat="@drawable/ic_expand_up_white_24dp"
+            tools:ignore="ContentDescription" />
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tab_layout"
-            android:layout_width="match_parent"
+        <Button
+            android:id="@+id/gps_enable_button"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            app:tabMode="fixed" />
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            tools:ignore="RelativeOverlap" />
 
-        <FrameLayout
-            android:id="@+id/tab_content"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_above="@id/start_button"
-            android:layout_below="@id/tab_layout">
+    </RelativeLayout>
 
-            <include layout="@layout/start_basic" />
+    <include
+        layout="@layout/start_fab"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/status_layout"
+        android:layout_marginStart="@dimen/activity_margin"
+        android:layout_marginEnd="@dimen/activity_margin"
+        android:layout_marginBottom="16dp" />
 
-            <include layout="@layout/start_advanced" />
-        </FrameLayout>
-
-            <RelativeLayout
-                android:id="@+id/status_layout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:animateLayoutChanges="true"
-                android:background="?attr/colorSurfaceContainer"
-                android:clickable="true"
-                android:focusable="true"
-                android:orientation="vertical"
-                tools:ignore="UnusedAttribute">
-
-                <LinearLayout
-                    android:id="@+id/status_frame"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="bottom|start"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/device_status"
-                            style="@style/StatusText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/No_devices_connected"
-                            android:visibility="gone" />
-
-                        <ImageView
-                            android:id="@+id/hr_indicator"
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/Heart_Rate_Monitor"
-                            android:visibility="gone"
-                            app:srcCompat="@drawable/ic_heartrate_white_24dp" />
-
-                        <TextView
-                            android:id="@+id/hr_message"
-                            style="@style/StatusText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:visibility="gone" />
-
-                        <ImageView
-                            android:id="@+id/wearos_indicator"
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/Wear_OS_Device"
-                            android:visibility="gone"
-                            app:srcCompat="@drawable/ic_watch_white_24dp" />
-
-                        <TextView
-                            android:id="@+id/wearos_message"
-                            style="@style/StatusText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp" />
-
-                        <ImageView
-                            android:id="@+id/gps_indicator"
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:layout_marginEnd="4dp"
-                            app:srcCompat="@drawable/ic_gps_1"
-                            tools:ignore="ContentDescription" />
-
-                        <TextView
-                            android:id="@+id/gps_message"
-                            style="@style/StatusText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/gps_detail_row"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="bottom|start"
-                        android:visibility="gone"
-                        tools:ignore="UseCompoundDrawables">
-
-                        <ImageView
-                            android:id="@+id/gps_detail_indicator"
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:layout_marginEnd="4dp"
-                            app:srcCompat="@drawable/ic_gps_1"
-                            tools:ignore="ContentDescription" />
-
-                        <TextView
-                            android:id="@+id/gps_detail_message"
-                            style="@style/StatusText"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-                <ImageView
-                    android:id="@+id/expand_icon"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_centerVertical="true"
-                    android:layout_toEndOf="@id/status_frame"
-                    android:minWidth="48dp"
-                    android:minHeight="48dp"
-                    app:srcCompat="@drawable/ic_expand_up_white_24dp"
-                    tools:ignore="ContentDescription" />
-
-                <Button
-                    android:id="@+id/gps_enable_button"
-                    style="@style/Widget.Material3.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    tools:ignore="RelativeOverlap" />
-
-            </RelativeLayout>
-
-            <include
-                layout="@layout/start_fab"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_above="@id/status_layout"
-                android:layout_marginStart="@dimen/activity_margin"
-                android:layout_marginEnd="@dimen/activity_margin"
-                android:layout_marginBottom="16dp" />
-
-        </RelativeLayout>
-
-</LinearLayout>
+</RelativeLayout>

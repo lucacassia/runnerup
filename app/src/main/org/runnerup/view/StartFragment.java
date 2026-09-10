@@ -45,10 +45,9 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.RadioButton;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -63,12 +62,11 @@ import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.common.tracker.TrackerState;
@@ -86,10 +84,11 @@ import org.runnerup.util.Formatter;
 import org.runnerup.util.SafeParse;
 import org.runnerup.util.TickListener;
 import org.runnerup.widget.MaterialTitleSpinner;
-import org.runnerup.widget.SpinnerInterface.OnCloseDialogListener;
+import org.runnerup.widget.NumberPicker;
 import org.runnerup.widget.SpinnerInterface.OnSetValueListener;
-import org.runnerup.workout.Dimension;
+import org.runnerup.workout.RepeatStep;
 import org.runnerup.workout.Sport;
+import org.runnerup.workout.Step;
 import org.runnerup.workout.Workout;
 import org.runnerup.workout.Workout.StepListEntry;
 import org.runnerup.workout.WorkoutBuilder;
@@ -104,11 +103,7 @@ public class StartFragment extends Fragment implements TickListener {
     GOOD
   }
 
-  private static final String TAB_BASIC = "basic";
   static final String TAB_ADVANCED = "advanced";
-
-  private static final int TAB_BASIC_INDEX = 0;
-  private static final int TAB_ADVANCED_INDEX = 1;
 
   private boolean statusDetailsShown = false;
 
@@ -120,14 +115,10 @@ public class StartFragment extends Fragment implements TickListener {
   private Tracker mTracker = null;
   private org.runnerup.tracker.GpsStatus mGpsStatus = null;
 
-  private TabLayout tabLayout = null;
-  private int currentTabIndex = TAB_BASIC_INDEX;
   private View startButton = null;
 
   private ImageView expandIcon = null;
   private TextView noDevicesConnected = null;
-  private ImageView sportIcon = null;
-  private TextView sportName = null;
 
   private Button gpsEnable = null;
   private ImageView gpsIndicator = null;
@@ -146,17 +137,15 @@ public class StartFragment extends Fragment implements TickListener {
   boolean sportWithoutGps = false;
   boolean batteryLevelMessageShown = false;
 
-  MaterialTitleSpinner simpleTargetType = null;
-  MaterialTitleSpinner simpleTargetPaceValue = null;
-  MaterialTitleSpinner simpleTargetHrz = null;
-  AudioSchemeListAdapter simpleAudioListAdapter = null;
-  HRZonesListAdapter hrZonesAdapter = null;
+  MaterialTitleSpinner sportSpinner = null;
+  SportAdapter sportAdapter = null;
+  boolean sportInitialized = false;
 
   MaterialTitleSpinner advancedWorkoutSpinner = null;
   WorkoutListAdapter advancedWorkoutListAdapter = null;
   Workout advancedWorkout = null;
   RecyclerView advancedStepList = null;
-  final WorkoutStepsAdapter advancedWorkoutStepsAdapter = new WorkoutStepsAdapter();
+  WorkoutPlanAdapter advancedWorkoutStepsAdapter = null;
   AudioSchemeListAdapter advancedAudioListAdapter = null;
 
   SQLiteDatabase mDB = null;
@@ -202,14 +191,38 @@ public class StartFragment extends Fragment implements TickListener {
     bindGpsTracker();
     mGpsStatus = new org.runnerup.tracker.GpsStatus(context);
 
-    LinearLayout sportSelector = view.findViewById(R.id.sport_selector);
-    sportIcon = view.findViewById(R.id.sport_icon);
-    sportName = view.findViewById(R.id.sport_name);
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
-    sportSelector.setOnClickListener(v -> showSportPickerDialog());
-    updateSportIcon(
-        prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING));
+    sportSpinner = view.findViewById(R.id.sport_spinner);
+    sportAdapter = new SportAdapter(context);
+    sportSpinner.setAdapter(sportAdapter);
+    sportSpinner.setOnSetValueListener(
+        new OnSetValueListener() {
+          @Override
+          public String preSetValue(String newValue) {
+            return newValue;
+          }
+
+          @Override
+          public int preSetValue(int newValueId) {
+            if (!sportInitialized) {
+              return newValueId;
+            }
+            SharedPreferences.Editor e =
+                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit();
+            e.putInt(getResources().getString(R.string.pref_sport), newValueId);
+            e.apply();
+            setGpsNotRequired(Sport.isWithoutGps(newValueId));
+            updateSportFieldIcon(newValueId);
+            updateView();
+            return newValueId;
+          }
+        });
+    int initialSport =
+        prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
+    sportSpinner.setValue(initialSport);
+    sportInitialized = true;
+    updateSportFieldIcon(initialSport);
 
     startButton = view.findViewById(R.id.start_button);
     startButton.setOnClickListener(startButtonClick);
@@ -234,25 +247,7 @@ public class StartFragment extends Fragment implements TickListener {
 
     view.findViewById(R.id.status_layout).setOnClickListener(v -> toggleStatusDetails());
 
-    tabLayout = view.findViewById(R.id.tab_layout);
-    tabLayout.addTab(tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Basic)));
-    tabLayout.addTab(tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Advanced)));
-    tabLayout.addOnTabSelectedListener(onTabSelectedListener);
-    setTabContentVisibility();
-
     LayoutInflater inflater = getLayoutInflater();
-    simpleAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
-    simpleAudioListAdapter.reload();
-    MaterialTitleSpinner simpleAudioSpinner = view.findViewById(R.id.basic_audio_cue_spinner);
-    simpleAudioSpinner.setAdapter(simpleAudioListAdapter);
-    simpleAudioSpinner.setOnSetValueListener(new OnConfigureAudioListener(simpleAudioListAdapter));
-    simpleTargetType = view.findViewById(R.id.tab_basic_target_type);
-    simpleTargetPaceValue = view.findViewById(R.id.tab_basic_target_pace_max);
-    hrZonesAdapter = new HRZonesListAdapter(context, inflater);
-    simpleTargetHrz = view.findViewById(R.id.tab_basic_target_hrz);
-    simpleTargetHrz.setAdapter(hrZonesAdapter);
-    simpleTargetType.setOnCloseDialogListener(simpleTargetTypeClick);
-
     advancedAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
     advancedAudioListAdapter.reload();
     MaterialTitleSpinner advancedAudioSpinner = view.findViewById(R.id.advanced_audio_cue_spinner);
@@ -268,19 +263,8 @@ public class StartFragment extends Fragment implements TickListener {
         new OnConfigureWorkoutsListener(advancedWorkoutListAdapter));
     advancedStepList = view.findViewById(R.id.advanced_step_list);
     advancedStepList.setLayoutManager(new LinearLayoutManager(context));
+    advancedWorkoutStepsAdapter = new WorkoutPlanAdapter(this::editRepeatCount, onWorkoutChanged);
     advancedStepList.setAdapter(advancedWorkoutStepsAdapter);
-
-    Intent i = requireActivity().getIntent();
-    if (i != null) {
-      if (i.hasExtra("mode")) {
-        if (Objects.equals(i.getStringExtra("mode"), TAB_ADVANCED)) {
-          selectTab(TAB_ADVANCED_INDEX);
-          i.removeExtra("mode");
-        }
-      }
-    }
-
-    updateTargetView();
 
     mWearNotifier = new TrackerWear.WearNotifier(requireActivity().getApplicationContext());
     mWearNotifier.onViewCreated();
@@ -311,55 +295,23 @@ public class StartFragment extends Fragment implements TickListener {
     }
   }
 
-  private void updateSportIcon(int sport) {
+  private void updateSportFieldIcon(int sport) {
     Drawable icon =
         AppCompatResources.getDrawable(requireContext(), Sport.drawableColored16Of(sport));
-    if (icon != null) {
-      icon.setTint(ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
+    if (icon == null) {
+      return;
     }
-    sportIcon.setImageDrawable(icon);
-    String[] sports = Sport.getStringArray(getResources());
-    if (sport >= 0 && sport < sports.length) {
-      sportName.setText(sports[sport]);
-    } else {
-      sportName.setText(sports[DB.ACTIVITY.SPORT_RUNNING]);
-    }
+    icon.setTint(ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
+    sportSpinner.setFieldDrawable(icon);
   }
 
-  private void showSportPickerDialog() {
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-    int checked =
-        prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
-    ListView list = new ListView(requireContext());
-    list.setAdapter(new SportPickerAdapter(requireContext(), getResources(), checked));
-    list.setDivider(null);
-    list.setDividerHeight(0);
-    AlertDialog dialog =
-        new MaterialAlertDialogBuilder(requireContext())
-            .setTitle(org.runnerup.common.R.string.Sport)
-            .setView(list)
-            .show();
-    list.setOnItemClickListener(
-        (parent, view, position, id) -> {
-          SharedPreferences.Editor e = prefs.edit();
-          e.putInt(getResources().getString(R.string.pref_sport), position);
-          e.apply();
-          setGpsNotRequired(Sport.isWithoutGps(position));
-          updateSportIcon(position);
-          updateView();
-          dialog.dismiss();
-        });
-  }
-
-  private static class SportPickerAdapter extends BaseAdapter {
+  private static class SportAdapter extends BaseAdapter {
     private final Context context;
     private final String[] sports;
-    private final int checked;
 
-    SportPickerAdapter(Context context, Resources resources, int checked) {
+    SportAdapter(Context context) {
       this.context = context;
-      this.sports = Sport.getStringArray(resources);
-      this.checked = checked;
+      this.sports = Sport.getStringArray(context.getResources());
     }
 
     @Override
@@ -379,19 +331,24 @@ public class StartFragment extends Fragment implements TickListener {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-      View row =
+      TextView row =
           convertView != null
-              ? convertView
-              : LayoutInflater.from(parent.getContext())
-                  .inflate(R.layout.sport_picker_row, parent, false);
-      ImageView iconView = row.findViewById(R.id.sport_picker_icon);
-      TextView labelView = row.findViewById(R.id.sport_picker_label);
-      RadioButton radioView = row.findViewById(R.id.sport_picker_radio);
-      iconView.setImageResource(Sport.drawableColored16Of(position));
-      iconView.setColorFilter(ContextCompat.getColor(context, Sport.colorOf(position)));
-      labelView.setText(sports[position]);
-      radioView.setChecked(position == checked);
+              ? (TextView) convertView
+              : (TextView)
+                  LayoutInflater.from(parent.getContext())
+                      .inflate(R.layout.sport_picker_row, parent, false);
+      Drawable icon = AppCompatResources.getDrawable(context, Sport.drawableColored16Of(position));
+      if (icon != null) {
+        icon.setTint(ContextCompat.getColor(context, Sport.colorOf(position)));
+      }
+      row.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
+      row.setText(sports[position]);
       return row;
+    }
+
+    @Override
+    public View getDropDownView(int position, View convertView, ViewGroup parent) {
+      return getView(position, convertView, parent);
     }
   }
 
@@ -454,7 +411,6 @@ public class StartFragment extends Fragment implements TickListener {
   @Override
   public void onResume() {
     super.onResume();
-    simpleAudioListAdapter.reload();
     advancedAudioListAdapter.reload();
     advancedWorkoutListAdapter.reload();
 
@@ -464,18 +420,8 @@ public class StartFragment extends Fragment implements TickListener {
     if (!currentWorkoutName.isEmpty() && advancedWorkoutSpinner != null) {
       advancedWorkoutSpinner.setValue(currentWorkoutName);
     }
-    hrZonesAdapter.reload();
-    simpleTargetHrz.setAdapter(hrZonesAdapter);
-    if (!hrZonesAdapter.hrZones.isConfigured()) {
-      simpleTargetType.addDisabledValue(DB.DIMENSION.HRZ);
-    } else {
-      simpleTargetType.clearDisabled();
-    }
 
-    if (getCurrentTabTag().contentEquals(TAB_ADVANCED)) {
-      loadAdvanced(null);
-    }
-
+    loadAdvanced(null);
     if (!mIsBound || mTracker == null) {
       bindGpsTracker();
     } else {
@@ -691,68 +637,12 @@ public class StartFragment extends Fragment implements TickListener {
         .show();
   }
 
-  private final TabLayout.OnTabSelectedListener onTabSelectedListener =
-      new TabLayout.OnTabSelectedListener() {
-        @Override
-        public void onTabSelected(TabLayout.Tab tab) {
-          selectTab(tab.getPosition());
-        }
-
-        @Override
-        public void onTabUnselected(TabLayout.Tab tab) {}
-
-        @Override
-        public void onTabReselected(TabLayout.Tab tab) {}
-      };
-
-  private void selectTab(int index) {
-    currentTabIndex = index;
-    setTabContentVisibility();
-    if (getCurrentTabTag().contentEquals(TAB_ADVANCED)) {
-      loadAdvanced(null);
-    }
-    updateView();
-  }
-
-  private String getCurrentTabTag() {
-    switch (currentTabIndex) {
-      case TAB_ADVANCED_INDEX:
-        return TAB_ADVANCED;
-      default:
-        return TAB_BASIC;
-    }
-  }
-
-  private void setTabContentVisibility() {
-    View view = getView();
-    if (view == null) {
-      return;
-    }
-    view.findViewById(R.id.start_basic_tab)
-        .setVisibility(currentTabIndex == TAB_BASIC_INDEX ? View.VISIBLE : View.GONE);
-    view.findViewById(R.id.start_advanced_tab)
-        .setVisibility(currentTabIndex == TAB_ADVANCED_INDEX ? View.VISIBLE : View.GONE);
-  }
-
   private Workout prepareWorkout() {
     Context ctx = requireActivity().getApplicationContext();
     SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
-    SharedPreferences audioPref;
-    Workout w;
-
-    if (getCurrentTabTag().contentEquals(TAB_BASIC)) {
-      audioPref =
-          WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_basic_audio));
-      Dimension target = Dimension.valueOf(simpleTargetType.getValueInt());
-      w = WorkoutBuilder.createDefaultWorkout(getResources(), pref, target);
-    } else if (getCurrentTabTag().contentEquals(TAB_ADVANCED)) {
-      audioPref =
-          WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_advanced_audio));
-      w = advancedWorkout;
-    } else {
-      w = null;
-      audioPref = null;
-    }
+    SharedPreferences audioPref =
+        WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_advanced_audio));
+    Workout w = advancedWorkout;
     if (w != null) {
       WorkoutBuilder.prepareWorkout(getResources(), pref, w);
       WorkoutBuilder.addAudioCuesToWorkout(getResources(), w, audioPref, pref);
@@ -1029,7 +919,7 @@ public class StartFragment extends Fragment implements TickListener {
         break;
       }
 
-      if (getCurrentTabTag().contentEquals(TAB_ADVANCED) && advancedWorkout == null) {
+      if (advancedWorkout == null) {
         break;
       }
 
@@ -1357,33 +1247,6 @@ public class StartFragment extends Fragment implements TickListener {
     updateView();
   }
 
-  private final OnCloseDialogListener simpleTargetTypeClick =
-      (spinner, ok) -> {
-        if (ok) {
-          updateTargetView();
-        }
-      };
-
-  private void updateTargetView() {
-    Dimension dim = Dimension.valueOf(simpleTargetType.getValueInt());
-    if (dim == null) {
-      simpleTargetPaceValue.setEnabled(false);
-      simpleTargetHrz.setEnabled(false);
-    } else {
-      switch (dim) {
-        case PACE:
-          simpleTargetPaceValue.setEnabled(true);
-          simpleTargetPaceValue.setVisibility(View.VISIBLE);
-          simpleTargetHrz.setVisibility(View.GONE);
-          break;
-        case HRZ:
-          simpleTargetPaceValue.setVisibility(View.GONE);
-          simpleTargetHrz.setEnabled(true);
-          simpleTargetHrz.setVisibility(View.VISIBLE);
-      }
-    }
-  }
-
   @SuppressLint("NotifyDataSetChanged")
   private void loadAdvanced(String name) {
     Context ctx = requireActivity().getApplicationContext();
@@ -1395,8 +1258,7 @@ public class StartFragment extends Fragment implements TickListener {
     if ("".contentEquals(name)) return;
     try {
       advancedWorkout = WorkoutSerializer.readFile(ctx, name);
-      advancedWorkoutStepsAdapter.steps = advancedWorkout.getStepList();
-      advancedWorkoutStepsAdapter.notifyDataSetChanged();
+      advancedWorkoutStepsAdapter.setWorkout(advancedWorkout);
     } catch (Exception ex) {
       ex.printStackTrace();
       new MaterialAlertDialogBuilder(requireActivity())
@@ -1407,37 +1269,210 @@ public class StartFragment extends Fragment implements TickListener {
     }
   }
 
-  final class WorkoutStepsAdapter extends RecyclerView.Adapter<WorkoutStepsAdapter.StepViewHolder> {
+  private void editRepeatCount(RepeatStep repeat) {
+    final NumberPicker numberPicker = new NumberPicker(requireContext(), null);
+    numberPicker.setOrientation(LinearLayout.VERTICAL);
+    numberPicker.setDigits(4);
+    numberPicker.setRange(0, 9999, true);
+    numberPicker.setValue(repeat.getRepeatCount());
+    new MaterialAlertDialogBuilder(requireContext())
+        .setTitle(org.runnerup.common.R.string.repeat)
+        .setView(numberPicker)
+        .setPositiveButton(
+            org.runnerup.common.R.string.OK,
+            (dialog, whichButton) -> {
+              repeat.setRepeatCount(numberPicker.getValue());
+              dialog.dismiss();
+              advancedWorkoutStepsAdapter.setWorkout(advancedWorkout);
+              onWorkoutChanged.run();
+            })
+        .setNegativeButton(
+            org.runnerup.common.R.string.Cancel, (dialog, whichButton) -> dialog.dismiss())
+        .show();
+  }
 
-    List<StepListEntry> steps = new ArrayList<>();
+  final class WorkoutPlanAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    @Override
-    public StepViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-      return new StepViewHolder(new StepButton(requireContext(), null));
+    interface EditRepeatCount {
+      void update(RepeatStep repeat);
     }
 
-    @Override
-    public void onBindViewHolder(StepViewHolder holder, int position) {
-      StepListEntry entry = steps.get(position);
-      StepButton button = holder.button;
-      button.setStep(entry.step());
+    static final int VIEW_TYPE_STEP = 0;
+    static final int VIEW_TYPE_REPEAT = 1;
 
-      float pxToDp = getResources().getDisplayMetrics().density;
-      button.setPadding((int) (entry.level() * 8 * pxToDp + 0.5f), 0, 0, 0);
-      button.setOnChangedListener(onWorkoutChanged);
+    private final EditRepeatCount onEdit;
+    final Runnable changed;
+    private final List<StepListEntry> items = new ArrayList<>();
+    private Workout workout = null;
+
+    WorkoutPlanAdapter(EditRepeatCount onEdit, Runnable changed) {
+      this.onEdit = onEdit;
+      this.changed = changed;
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    void setWorkout(Workout workout) {
+      this.workout = workout;
+      items.clear();
+      items.addAll(workout.entriesAtLevel(null));
+      notifyDataSetChanged();
     }
 
     @Override
     public int getItemCount() {
-      return steps.size();
+      return items.size();
     }
 
-    static class StepViewHolder extends RecyclerView.ViewHolder {
-      final StepButton button;
+    @Override
+    public int getItemViewType(int position) {
+      return items.get(position).step() instanceof RepeatStep ? VIEW_TYPE_REPEAT : VIEW_TYPE_STEP;
+    }
 
-      StepViewHolder(StepButton button) {
-        super(button);
-        this.button = button;
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+      LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+      if (viewType == VIEW_TYPE_REPEAT) {
+        return new PlanRepeatViewHolder(
+            inflater.inflate(R.layout.advanced_workout_repeat_row, parent, false), this);
+      }
+      return new PlanStepViewHolder(
+          inflater.inflate(R.layout.advanced_workout_row, parent, false), this.changed);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
+      StepListEntry entry = items.get(position);
+      if (viewHolder instanceof PlanStepViewHolder) {
+        ((PlanStepViewHolder) viewHolder).bind(entry.step());
+      } else {
+        ((PlanRepeatViewHolder) viewHolder).bind((RepeatStep) entry.step());
+      }
+    }
+
+    void editRepeatCount(RepeatStep repeat) {
+      onEdit.update(repeat);
+    }
+
+    List<StepListEntry> entriesOf(Step parent) {
+      return workout.entriesAtLevel(parent);
+    }
+  }
+
+  static class PlanStepViewHolder extends RecyclerView.ViewHolder {
+
+    final ImageButton moveUpButton;
+    final ImageButton delButton;
+    final StepButton button;
+
+    PlanStepViewHolder(@NonNull View itemView, Runnable changed) {
+      super(itemView);
+      moveUpButton = itemView.findViewById(R.id.move_up_button);
+      delButton = itemView.findViewById(R.id.del_button);
+      moveUpButton.setVisibility(View.GONE);
+      delButton.setVisibility(View.GONE);
+      button = itemView.findViewById(R.id.workout_step_button);
+      button.setOnChangedListener(changed);
+    }
+
+    void bind(Step step) {
+      button.setStep(step);
+      View buttonLayout = button.findViewById(R.id.step_button_layout);
+      buttonLayout.setBackground(null);
+      buttonLayout.setPadding(0, 0, 0, 0);
+    }
+  }
+
+  static class PlanRepeatViewHolder extends RecyclerView.ViewHolder {
+
+    final ImageButton moveUpButton;
+    final ImageButton delButton;
+    final MaterialButton addInsideButton;
+    final RecyclerView childrenHost;
+    final PlanChildrenAdapter childAdapter;
+    private final WorkoutPlanAdapter outerAdapter;
+    private final TextView title;
+
+    PlanRepeatViewHolder(@NonNull View itemView, WorkoutPlanAdapter outerAdapter) {
+      super(itemView);
+      this.outerAdapter = outerAdapter;
+      moveUpButton = itemView.findViewById(R.id.move_up_button);
+      delButton = itemView.findViewById(R.id.del_button);
+      addInsideButton = itemView.findViewById(R.id.add_step_inside_repeat_button);
+      moveUpButton.setVisibility(View.GONE);
+      delButton.setVisibility(View.GONE);
+      addInsideButton.setVisibility(View.GONE);
+      title = itemView.findViewById(R.id.repeat_title);
+      childrenHost = itemView.findViewById(R.id.repeat_children_host);
+      childrenHost.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
+      childAdapter = new PlanChildrenAdapter(this);
+      childrenHost.setAdapter(childAdapter);
+    }
+
+    void bind(RepeatStep repeat) {
+      title.setText(
+          itemView
+              .getContext()
+              .getString(org.runnerup.common.R.string.repeat_x, repeat.getRepeatCount()));
+      title.setOnClickListener(v -> outerAdapter.editRepeatCount(repeat));
+      LinearLayout.LayoutParams titleLp = (LinearLayout.LayoutParams) title.getLayoutParams();
+      if (titleLp.getMarginStart() != 0) {
+        titleLp.setMarginStart(0);
+        title.setLayoutParams(titleLp);
+      }
+      childAdapter.bind(repeat);
+    }
+  }
+
+  static class PlanChildrenAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+    private final List<StepListEntry> items = new ArrayList<>();
+    private final PlanRepeatViewHolder parent;
+
+    PlanChildrenAdapter(PlanRepeatViewHolder parent) {
+      this.parent = parent;
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    void bind(RepeatStep repeat) {
+      items.clear();
+      items.addAll(parent.outerAdapter.entriesOf(repeat));
+      notifyDataSetChanged();
+    }
+
+    @Override
+    public int getItemCount() {
+      return items.size();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+      return items.get(position).step() instanceof RepeatStep
+          ? WorkoutPlanAdapter.VIEW_TYPE_REPEAT
+          : WorkoutPlanAdapter.VIEW_TYPE_STEP;
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
+      LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
+      if (viewType == WorkoutPlanAdapter.VIEW_TYPE_REPEAT) {
+        return new PlanRepeatViewHolder(
+            inflater.inflate(R.layout.advanced_workout_repeat_row, viewGroup, false),
+            parent.outerAdapter);
+      }
+      return new PlanStepViewHolder(
+          inflater.inflate(R.layout.advanced_workout_row, viewGroup, false),
+          parent.outerAdapter.changed);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
+      StepListEntry entry = items.get(position);
+      if (viewHolder instanceof PlanStepViewHolder) {
+        ((PlanStepViewHolder) viewHolder).bind(entry.step());
+      } else {
+        ((PlanRepeatViewHolder) viewHolder).bind((RepeatStep) entry.step());
       }
     }
   }

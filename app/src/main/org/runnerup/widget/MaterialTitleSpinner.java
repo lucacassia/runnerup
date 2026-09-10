@@ -18,6 +18,7 @@
 package org.runnerup.widget;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -98,6 +99,12 @@ public class MaterialTitleSpinner extends LinearLayout implements SpinnerInterfa
   @Override
   public void setViewText(CharSequence charSequence) {
     mText.setText(charSequence, false);
+  }
+
+  /** Show a leading drawable inside the field (e.g. a sport icon). */
+  public void setFieldDrawable(Drawable drawable) {
+    mText.setCompoundDrawablesRelativeWithIntrinsicBounds(drawable, null, null, null);
+    mText.setCompoundDrawablePadding((int) (8 * getResources().getDisplayMetrics().density));
   }
 
   @Override

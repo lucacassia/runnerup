@@ -22,13 +22,24 @@
     android:orientation="vertical">
 
     <org.runnerup.widget.MaterialTitleSpinner
-        android:id="@+id/advanced_audio_cue_spinner"
+        android:id="@+id/sport_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_marginStart="@dimen/activity_margin"
         android:layout_marginTop="@dimen/activity_margin"
+        android:layout_marginEnd="@dimen/activity_margin"
+        android:text="@string/Sport"
+        runnerup:type="spinner" />
+
+    <org.runnerup.widget.MaterialTitleSpinner
+        android:id="@+id/advanced_audio_cue_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/sport_spinner"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="@dimen/activity_margin"
         android:layout_marginEnd="@dimen/activity_margin"
         android:key="@string/pref_advanced_audio"
         android:text="@string/Audio_cue_settings"
@@ -52,13 +63,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/advanced_workout_spinner"
-        android:background="?attr/colorSurfaceContainerLow"
         android:clipToPadding="false"
         android:minWidth="48dp"
         android:minHeight="48dp"
-        android:paddingLeft="@dimen/activity_margin"
-        android:paddingTop="@dimen/activity_margin"
-        android:paddingRight="@dimen/activity_margin"
+        android:paddingTop="8dp"
         android:paddingBottom="@dimen/margin_for_fab" />
 
 </RelativeLayout>
