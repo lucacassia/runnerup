@@ -36,6 +36,7 @@
     <string name="warm_up">warmup</string>
     <string name="cool_down">cooldown</string>
     <string name="repeat">Repeat</string>
+    <string name="repeat_x">Repeat x%1$d</string>
     <string name="repeat_times">Repeat %1$d times</string>
     <string name="Time">Time</string>
     <string name="time">time</string>

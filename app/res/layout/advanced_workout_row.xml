@@ -3,18 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_step_card"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:padding="4dp">
-
-    <View
-        android:id="@+id/nested_guide"
-        android:layout_width="2dp"
-        android:layout_height="match_parent"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="46dp"
-        android:background="?attr/colorOutlineVariant"
-        android:visibility="gone" />
+    android:padding="12dp">
 
     <ImageButton
         android:id="@+id/move_up_button"
@@ -42,6 +37,6 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/Delete"
         android:padding="9dp"
-        android:src="@drawable/ic_delete"
+        android:src="@drawable/ic_close"
         app:tint="@color/step_delete_tint" />
 </LinearLayout>

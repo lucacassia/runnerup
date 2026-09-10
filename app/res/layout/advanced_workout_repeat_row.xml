@@ -18,17 +18,25 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginBottom="8dp"
     android:background="@drawable/bg_repeat_group"
+    android:clipToPadding="false"
     android:orientation="vertical"
-    android:padding="8dp"
-    android:layout_marginTop="6dp"
-    android:layout_marginBottom="2dp">
+    android:padding="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="-12dp"
+        android:layout_marginTop="-12dp"
+        android:layout_marginEnd="-12dp"
+        android:background="@drawable/bg_repeat_header"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
 
         <ImageButton
             android:id="@+id/move_up_button"
@@ -38,20 +46,19 @@
             android:contentDescription="@string/Drag_to_reorder"
             android:padding="8dp"
             android:src="@drawable/ic_drag_handle"
-            app:tint="@color/step_move_up_tint" />
+            app:tint="@color/step_move_up_tint_on_primary" />
 
         <TextView
             android:id="@+id/repeat_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:paddingTop="10dp"
-            android:paddingBottom="10dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
             android:layout_marginStart="8dp"
-            android:layout_marginEnd="8dp"
             android:textAppearance="?attr/textAppearanceTitleSmall"
             android:textStyle="bold"
-            android:textColor="?attr/colorPrimary" />
+            android:textColor="?attr/colorOnPrimary" />
 
         <ImageButton
             android:id="@+id/del_button"
@@ -60,10 +67,9 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/Delete"
             android:padding="9dp"
-            android:src="@drawable/ic_delete"
-            app:tint="@color/step_delete_tint" />
-</LinearLayout>
-
+            android:src="@drawable/ic_close"
+            app:tint="@color/step_delete_tint_on_primary" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/repeat_children_host"
@@ -77,9 +83,8 @@
         style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="48dp"
-        android:layout_marginEnd="16dp"
         android:layout_marginTop="4dp"
         android:text="@string/Add_step_inside_repeat"
-        android:textColor="?attr/colorPrimary" />
+        android:textColor="?attr/colorPrimary"
+        android:gravity="center" />
 </LinearLayout>

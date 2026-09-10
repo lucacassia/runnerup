@@ -35,6 +35,7 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,6 +60,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   private boolean reorderDirty = false;
   private boolean dontAskAgain = false;
   private boolean workoutEditMode = false;
+  private byte[] originalWorkoutSnapshot;
   private final Runnable onWorkoutChanged =
       () -> {
         String advWorkoutName = currentWorkoutName;
@@ -184,20 +186,18 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
     try {
       createAdvancedWorkout(advWorkoutName, workoutEditMode);
+      snapshotOriginalWorkout(advWorkoutName);
     } catch (Exception e) {
       handleWorkoutFileException(e);
     }
 
-    // Persist the currently displayed workout name when leaving via the back button so that
-    // StartFragment's advanced tab points at (and shows) this workout when we return.
     getOnBackPressedDispatcher()
         .addCallback(
             this,
             new OnBackPressedCallback(true) {
               @Override
               public void handleOnBackPressed() {
-                persistCurrentWorkoutName();
-                finish();
+                showBackPressDialog();
               }
             });
 
@@ -240,8 +240,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
       discardWorkoutButtonClick.onClick(null);
       return true;
     } else if (itemId == android.R.id.home) {
-      persistCurrentWorkoutName();
-      finish();
+      showBackPressDialog();
       return true;
     }
     return super.onOptionsItemSelected(item);
@@ -257,6 +256,59 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
       prefs.edit().putString(getString(R.string.pref_advanced_workout), currentWorkoutName).apply();
     } catch (Exception ignored) {
       // If the spinner value can't be read, fall back to the default back behaviour.
+    }
+  }
+
+  private void snapshotOriginalWorkout(String name) {
+    if (name == null) {
+      return;
+    }
+    try {
+      File f = WorkoutSerializer.getFile(getApplicationContext(), name);
+      if (f.exists()) {
+        FileInputStream fis = new FileInputStream(f);
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int len;
+        while ((len = fis.read(buf)) != -1) {
+          bos.write(buf, 0, len);
+        }
+        fis.close();
+        originalWorkoutSnapshot = bos.toByteArray();
+      }
+    } catch (Exception ignored) {
+    }
+  }
+
+  private void showBackPressDialog() {
+    new MaterialAlertDialogBuilder(this)
+        .setTitle(org.runnerup.common.R.string.Are_you_sure)
+        .setPositiveButton(
+            org.runnerup.common.R.string.Save,
+            (dialog, which) -> {
+              persistCurrentWorkoutName();
+              finish();
+            })
+        .setNegativeButton(
+            org.runnerup.common.R.string.Discard,
+            (dialog, which) -> {
+              revertToSnapshot();
+              finish();
+            })
+        .setNeutralButton(org.runnerup.common.R.string.Cancel, (dialog, which) -> dialog.dismiss())
+        .show();
+  }
+
+  private void revertToSnapshot() {
+    if (currentWorkoutName == null || originalWorkoutSnapshot == null) {
+      return;
+    }
+    try {
+      File f = WorkoutSerializer.getFile(getApplicationContext(), currentWorkoutName);
+      java.io.FileOutputStream fos = new java.io.FileOutputStream(f);
+      fos.write(originalWorkoutSnapshot);
+      fos.close();
+    } catch (Exception ignored) {
     }
   }
 
@@ -323,8 +375,9 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
         StepRowViewHolder holder = (StepRowViewHolder) viewHolder;
         holder.stepEntry = entry;
         holder.button.setStep(entry.step());
-        holder.button.setNested(false);
-        holder.nestedGuide.setVisibility(View.GONE);
+        View buttonLayout = holder.button.findViewById(R.id.step_button_layout);
+        buttonLayout.setBackground(null);
+        buttonLayout.setPadding(0, 0, 0, 0);
       } else {
         RepeatGroupViewHolder holder = (RepeatGroupViewHolder) viewHolder;
         holder.bind((RepeatStep) entry.step());
@@ -336,14 +389,12 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     final StepButton button;
     final ImageButton moveUp;
     final ImageButton del;
-    final View nestedGuide;
     Workout.StepListEntry stepEntry;
 
     StepRowViewHolder(@NonNull View itemView, @NonNull ItemTouchHelper itemTouchHelper) {
       super(itemView);
       button = itemView.findViewById(R.id.workout_step_button);
       button.setOnChangedListener(onWorkoutChanged);
-      nestedGuide = itemView.findViewById(R.id.nested_guide);
       moveUp = itemView.findViewById(R.id.move_up_button);
       moveUp.setOnTouchListener(
           (v, event) -> {
@@ -450,7 +501,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
     void bind(RepeatStep repeat) {
       repeatStep = repeat;
-      title.setText(getString(org.runnerup.common.R.string.repeat_times, repeat.getRepeatCount()));
+      title.setText(getString(org.runnerup.common.R.string.repeat_x, repeat.getRepeatCount()));
       RecyclerView.Adapter<?> adapter = childrenHost.getAdapter();
       RepeatChildrenAdapter childAdapter;
       if (adapter == null) {
@@ -509,8 +560,9 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
         StepRowViewHolder holder = (StepRowViewHolder) viewHolder;
         holder.stepEntry = entry;
         holder.button.setStep(entry.step());
-        holder.button.setNested(true);
-        holder.nestedGuide.setVisibility(View.VISIBLE);
+        View buttonLayout = holder.button.findViewById(R.id.step_button_layout);
+        buttonLayout.setBackground(null);
+        buttonLayout.setPadding(0, 0, 0, 0);
       } else {
         RepeatGroupViewHolder holder = (RepeatGroupViewHolder) viewHolder;
         holder.bind((RepeatStep) entry.step());
