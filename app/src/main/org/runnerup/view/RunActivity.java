@@ -938,6 +938,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (curr == null) return;
     if (curr.getIntensity() != null && stepIntensityBadge != null) {
       stepIntensityBadge.setText(curr.getIntensity().getTextId());
+      StepButton.styleIntensityBadge(stepIntensityBadge, curr.getIntensity(), RunActivity.this);
     }
     double stepTime = workout.getTime(Scope.STEP);
     double stepDist = workout.getDistance(Scope.STEP);

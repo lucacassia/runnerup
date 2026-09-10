@@ -87,12 +87,10 @@ public class StepButton extends LinearLayout {
     mOnChangedListener = runnable;
   }
 
-  public void setStep(Step step) {
-    this.step = step;
-
+  public static void styleIntensityBadge(TextView badge, Intensity intensity, Context context) {
     int badgeTextColorId;
     int badgeBgColorId;
-    switch (step.getIntensity()) {
+    switch (intensity) {
       case ACTIVE:
         badgeTextColorId = R.color.stepActive;
         badgeBgColorId = R.color.stepActiveBg;
@@ -121,13 +119,19 @@ public class StepButton extends LinearLayout {
         badgeTextColorId = R.color.stepResting;
         badgeBgColorId = R.color.stepRestingBg;
     }
-    mIntensityBadge.setText(step.getIntensity().getTextId());
-    mIntensityBadge.setTextColor(ContextCompat.getColor(mContext, badgeTextColorId));
+    badge.setTextColor(ContextCompat.getColor(context, badgeTextColorId));
     GradientDrawable badgeBg = new GradientDrawable();
     badgeBg.setShape(GradientDrawable.RECTANGLE);
-    badgeBg.setCornerRadius(dp_to_px(6));
-    badgeBg.setColor(ContextCompat.getColor(mContext, badgeBgColorId));
-    mIntensityBadge.setBackground(badgeBg);
+    badgeBg.setCornerRadius(6 * context.getResources().getDisplayMetrics().density);
+    badgeBg.setColor(ContextCompat.getColor(context, badgeBgColorId));
+    badge.setBackground(badgeBg);
+  }
+
+  public void setStep(Step step) {
+    this.step = step;
+
+    styleIntensityBadge(mIntensityBadge, step.getIntensity(), mContext);
+    mIntensityBadge.setText(step.getIntensity().getTextId());
 
     mDurationValue.setVisibility(VISIBLE);
     switch (step.getIntensity()) {
@@ -176,10 +180,6 @@ public class StepButton extends LinearLayout {
     if (editStepButton) {
       mLayout.setOnClickListener(onStepClickListener);
     }
-  }
-
-  private int dp_to_px(int dp) {
-    return (int) (dp * mContext.getResources().getDisplayMetrics().density);
   }
 
   private final OnClickListener onRepeatClickListener =

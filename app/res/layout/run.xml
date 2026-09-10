@@ -543,13 +543,11 @@
                             android:id="@+id/step_intensity_badge"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:background="@drawable/bg_hr_zone_pill"
                             android:paddingStart="8dp"
                             android:paddingTop="2dp"
                             android:paddingEnd="8dp"
                             android:paddingBottom="2dp"
                             android:textAllCaps="true"
-                            android:textColor="#0A0A0A"
                             android:textSize="11sp"
                             android:textStyle="bold"
                             tools:text="ACTIVE" />
