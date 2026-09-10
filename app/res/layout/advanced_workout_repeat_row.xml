@@ -62,7 +62,8 @@
             android:padding="9dp"
             android:src="@drawable/ic_delete"
             app:tint="@color/step_delete_tint" />
-    </LinearLayout>
+</LinearLayout>
+
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/repeat_children_host"

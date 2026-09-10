@@ -143,10 +143,8 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                 if (fromPos == toPos) {
                   return true;
                 }
-                Workout.StepListEntry fromEntry =
-                    (Workout.StepListEntry) advancedWorkoutStepsAdapter.items.get(fromPos);
-                Workout.StepListEntry toEntry =
-                    (Workout.StepListEntry) advancedWorkoutStepsAdapter.items.get(toPos);
+                Workout.StepListEntry fromEntry = advancedWorkoutStepsAdapter.items.get(fromPos);
+                Workout.StepListEntry toEntry = advancedWorkoutStepsAdapter.items.get(toPos);
                 List<Step> list = advancedWorkout.getSteps();
                 int fromIndex = list.indexOf(fromEntry.step());
                 int toIndex = list.indexOf(toEntry.step());
@@ -278,7 +276,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
   final class WorkoutStepsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    final List<Object> items = new ArrayList<>();
+    final List<Workout.StepListEntry> items = new ArrayList<>();
 
     @SuppressLint("NotifyDataSetChanged")
     void refreshSteps() {
@@ -302,7 +300,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
     @Override
     public int getItemViewType(int position) {
-      Workout.StepListEntry entry = (Workout.StepListEntry) items.get(position);
+      Workout.StepListEntry entry = items.get(position);
       return entry.step() instanceof RepeatStep ? VIEW_TYPE_REPEAT : VIEW_TYPE_STEP;
     }
 
@@ -320,7 +318,7 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-      Workout.StepListEntry entry = (Workout.StepListEntry) items.get(position);
+      Workout.StepListEntry entry = items.get(position);
       if (viewHolder instanceof StepRowViewHolder) {
         StepRowViewHolder holder = (StepRowViewHolder) viewHolder;
         holder.stepEntry = entry;
