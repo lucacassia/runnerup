@@ -33,7 +33,7 @@
         android:id="@+id/tab_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/start_button"
+        android:layout_above="@id/status_layout"
         android:layout_below="@id/start_toolbar">
 
         <include layout="@layout/start_advanced" />
