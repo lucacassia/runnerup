@@ -17,7 +17,12 @@
 
 package org.runnerup.workout.feedback;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import androidx.core.content.ContextCompat;
 import org.runnerup.workout.Feedback;
 import org.runnerup.workout.Workout;
 
@@ -30,7 +35,16 @@ public class VibrationFeedback extends Feedback {
 
   @Override
   public void emit(Workout s, Context ctx) {
-    // TODO Auto-generated method stub
-
+    if (ctx == null) {
+      return;
+    }
+    if (ContextCompat.checkSelfPermission(ctx, Manifest.permission.VIBRATE)
+        != PackageManager.PERMISSION_GRANTED) {
+      return;
+    }
+    Vibrator vibrator = (Vibrator) ctx.getSystemService(Context.VIBRATOR_SERVICE);
+    if (vibrator != null && vibrator.hasVibrator()) {
+      vibrator.vibrate(VibrationEffect.createOneShot(150, VibrationEffect.DEFAULT_AMPLITUDE));
+    }
   }
 }

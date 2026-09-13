@@ -35,10 +35,12 @@ import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.KeyEvent;
@@ -69,6 +71,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,6 +91,7 @@ import org.runnerup.util.LiveMap;
 import org.runnerup.util.MapViewWrapper;
 import org.runnerup.util.TickListener;
 import org.runnerup.util.ViewUtil;
+import org.runnerup.workout.GpsWaitStep;
 import org.runnerup.workout.Intensity;
 import org.runnerup.workout.Scope;
 import org.runnerup.workout.Sport;
@@ -100,6 +104,14 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private final Handler handler = new Handler();
 
   private static final long HOLD_TO_STOP_MILLIS = 750L;
+
+  public static final String EXTRA_DEFERRED_START = "org.runnerup.deferred_start";
+
+  private boolean startDeferred;
+  private boolean runStarted;
+  private boolean sportWithoutGps;
+  private View waitBanner;
+  private MaterialButton waitEnableGps;
 
   private final ActivityResultLauncher<Intent> saveLauncher =
       registerForActivityResult(
@@ -203,6 +215,18 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
     }
     setContentView(R.layout.run);
+    sportWithoutGps =
+        Sport.isWithoutGps(
+            PreferenceManager.getDefaultSharedPreferences(this)
+                .getInt(getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING));
+
+    startDeferred = getIntent().getBooleanExtra(EXTRA_DEFERRED_START, false);
+    runStarted = !startDeferred;
+
+    waitBanner = findViewById(R.id.wait_banner);
+    waitEnableGps = findViewById(R.id.wait_enable_gps_button);
+    findViewById(R.id.cancel_wait_button).setOnClickListener(v -> onCancelWaitClick());
+    waitEnableGps.setOnClickListener(v -> onWaitEnableGpsClick());
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       runMapview = findViewById(R.id.run_mapview);
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -440,6 +464,14 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Location l = null;
 
   public void onTick() {
+    // Start the workout as soon as the tracker is connected (may be pre-fix
+    // under race-ready; the GpsWaitStep holds until a fix arrives).
+    if (startDeferred && mTracker != null && mTracker.getState() == TrackerState.CONNECTED) {
+      startDeferred = false;
+      runStarted = true;
+      mTracker.start();
+    }
+
     if (workout != null) {
       workout.onTick();
       updateView();
@@ -768,6 +800,48 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
   }
 
+  private void updateWaitBanner() {
+    boolean show = startDeferred || isWaitingForGps();
+    waitBanner.setVisibility(show ? View.VISIBLE : View.GONE);
+    waitEnableGps.setVisibility(startDeferred && !sportWithoutGps ? View.VISIBLE : View.GONE);
+  }
+
+  private boolean isWaitingForGps() {
+    return workout != null && workout.getCurrentStep() instanceof GpsWaitStep;
+  }
+
+  private void onCancelWaitClick() {
+    if (runStarted) {
+      abandonRun();
+    } else {
+      finish(); // never started; nothing to clean up
+    }
+  }
+
+  private void abandonRun() {
+    stopTimer();
+    if (workout != null) {
+      workout.onComplete(Scope.ACTIVITY, workout);
+    }
+    if (mTracker != null) {
+      mTracker.stopForeground(true);
+      mTracker.completeActivity(/* save= */ false, /* manualDistance= */ null);
+      mTracker = null;
+    }
+    Toast.makeText(this, org.runnerup.common.R.string.Run_discarded, Toast.LENGTH_SHORT).show();
+    finish();
+  }
+
+  private void onWaitEnableGpsClick() {
+    if (mTracker == null) return;
+    LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+      mTracker.connect();
+    } else {
+      startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+    }
+  }
+
   private final OnClickListener pauseButtonClick = v -> togglePause();
   private final OnClickListener nextLapButtonClick =
       v -> {
@@ -826,6 +900,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
   @SuppressLint("NotifyDataSetChanged")
   private void updateView() {
+    updateWaitBanner();
     boolean isPaused = workout != null && workout.isPaused();
     if (mTracker.getState() == TrackerState.STOPPED && !isPaused) {
       doStop();

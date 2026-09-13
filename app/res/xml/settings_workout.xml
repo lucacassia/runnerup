@@ -123,6 +123,29 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        android:key="@string/Race_ready"
+        android:title="@string/Race_ready"
+        app:iconSpaceReserved="false">
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="@string/pref_race_ready_start"
+            android:persistent="true"
+            android:summary="@string/Race_ready_start_summary"
+            android:title="@string/Race_ready_start"
+            app:iconSpaceReserved="false" />
+
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:dependency="@string/pref_race_ready_start"
+            android:key="@string/pref_gps_locked_cue"
+            android:persistent="true"
+            android:summary="@string/Gps_locked_cue_summary"
+            android:title="@string/Gps_locked_cue"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
         android:key="@string/Recovery_category"
         android:title="@string/Recovery_category"
         app:iconSpaceReserved="false">

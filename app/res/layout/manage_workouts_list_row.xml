@@ -65,5 +65,15 @@
             android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="?attr/colorOnSurface"
             app:drawableEndCompat="@drawable/ic_chevron_right_24dp" />
+
+        <ImageButton
+            android:id="@+id/workout_star_button"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/Favorite"
+            android:padding="12dp"
+            android:src="@drawable/ic_star_border"
+            android:visibility="gone" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

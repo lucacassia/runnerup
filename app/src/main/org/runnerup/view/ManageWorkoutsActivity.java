@@ -93,6 +93,8 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
   private WorkoutListAdapter adapter = null;
   private ItemTouchHelper itemTouchHelper = null;
 
+  private FavoritesStore favoritesStore = null;
+
   private boolean uploading = false;
   private SyncManager syncManager = null;
 
@@ -134,6 +136,11 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
     mDB = DBHelper.getReadableDatabase(this);
     syncManager = new SyncManager(this);
     syncManager.setConfigureLauncher(configureLauncher);
+    favoritesStore =
+        new FavoritesStore(
+            PreferenceManager.getDefaultSharedPreferences(this),
+            getString(R.string.pref_favorite_workouts),
+            getString(R.string.pref_last_workout));
     adapter = new WorkoutListAdapter(this);
     RecyclerView list = findViewById(R.id.workout_list);
     list.setLayoutManager(new LinearLayoutManager(this));
@@ -607,6 +614,32 @@ public class ManageWorkoutsActivity extends AppCompatActivity implements Constan
                 itemTouchHelper.startDrag(holder);
               }
               return false;
+            });
+        ImageButton star = holder.itemView.findViewById(R.id.workout_star_button);
+        star.setVisibility(View.VISIBLE);
+        boolean fav = favoritesStore.isFavorite(workout.workoutName());
+        star.setContentDescription(
+            getString(
+                fav
+                    ? org.runnerup.common.R.string.Remove_favorite
+                    : org.runnerup.common.R.string.Favorite));
+        star.setImageResource(fav ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
+        star.setOnClickListener(
+            v -> {
+              boolean isFav = favoritesStore.toggleFavorite(workout.workoutName());
+              star.setContentDescription(
+                  getString(
+                      isFav
+                          ? org.runnerup.common.R.string.Remove_favorite
+                          : org.runnerup.common.R.string.Favorite));
+              star.setImageResource(isFav ? R.drawable.ic_star_filled : R.drawable.ic_star_border);
+              Toast.makeText(
+                      ManageWorkoutsActivity.this,
+                      isFav
+                          ? org.runnerup.common.R.string.Added_to_favorites
+                          : org.runnerup.common.R.string.Removed_from_favorites,
+                      Toast.LENGTH_SHORT)
+                  .show();
             });
       } else {
         holder.dragHandle.setVisibility(View.GONE);
