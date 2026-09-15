@@ -43,10 +43,13 @@ public class BestEffortTest {
   @Test
   public void windowSpanningLargeGapRejected() {
     double[] dist = {0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000};
-    long[] elapsedMs = {0, 20000, 40000, 60000, 80000, 100000, 104000, 108000, 112000, 116000, 120000};
+    long[] elapsedMs = {
+      0, 20000, 40000, 60000, 80000, 100000, 104000, 108000, 112000, 116000, 120000
+    };
     long[] timeMs = {0, 20000, 40000, 60000, 80000, 100000, 104000, 108000, 228000, 232000, 236000};
     // any 5K window crossing the 120s wall gap (k7->k8) is rejected; best valid = k2->k7 = 68s
-    assertEquals(68_000L, BestEffort.bestEffort(new BestEffort.Points(dist, timeMs, elapsedMs), 5000.0));
+    assertEquals(
+        68_000L, BestEffort.bestEffort(new BestEffort.Points(dist, timeMs, elapsedMs), 5000.0));
   }
 
   @Test

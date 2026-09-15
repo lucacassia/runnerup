@@ -70,12 +70,14 @@ import java.util.concurrent.Executors;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.db.ActivityCleaner;
+import org.runnerup.db.BestEffort;
 import org.runnerup.db.DBHelper;
 import org.runnerup.db.RecordUtils;
 import org.runnerup.db.Statistics;
 import org.runnerup.db.Statistics.BucketPeriod;
 import org.runnerup.db.Statistics.Metric;
 import org.runnerup.db.entities.ActivityEntity;
+import org.runnerup.db.entities.LocationEntity;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SimpleCursorLoader;
 import org.runnerup.workout.Sport;
@@ -481,16 +483,12 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     for (int sport = DB.ACTIVITY.SPORT_RUNNING; sport <= DB.ACTIVITY.SPORT_MAX; sport++) {
       if (sport == DB.ACTIVITY.SPORT_RUNNING) {
         double longestDistance = queryLongestDistance(db, sport);
+        List<RunTrack> tracks = loadRunTracks(db, sport);
         for (int i = 0; i < RECORD_DISTANCES.length; i++) {
           if (RECORD_DISTANCES[i] > longestDistance) {
             break;
           }
-          RecordInfo record =
-              queryBestRecord(
-                  db,
-                  sport,
-                  DB.ACTIVITY.TIME + " asc",
-                  recordQueryArgs(sport, RECORD_DISTANCES[i]));
+          RecordInfo record = queryBestRunningRecord(db, sport, RECORD_DISTANCES[i], tracks);
           if (record != null) {
             record.recordLabelRes = RECORD_DISTANCE_STRINGS[i];
             record.ringColorRes = RECORD_DISTANCE_COLORS[i];
@@ -530,6 +528,65 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     }
   }
 
+  private static List<RunTrack> loadRunTracks(SQLiteDatabase db, int sport) {
+    List<RunTrack> tracks = new ArrayList<>();
+    String[] from = {DB.PRIMARY_KEY, DB.ACTIVITY.START_TIME};
+    String selection = DB.ACTIVITY.DELETED + " == 0 AND " + DB.ACTIVITY.SPORT + " = ?";
+    try (Cursor cursor =
+        db.query(
+            DB.ACTIVITY.TABLE,
+            from,
+            selection,
+            new String[] {Integer.toString(sport)},
+            null,
+            null,
+            null,
+            null)) {
+      while (cursor.moveToNext()) {
+        long id = cursor.getLong(0);
+        BestEffort.Points points = loadTrackPoints(db, id);
+        if (points != null) {
+          tracks.add(new RunTrack(id, cursor.getLong(1), points));
+        }
+      }
+    }
+    return tracks;
+  }
+
+  private static BestEffort.Points loadTrackPoints(SQLiteDatabase db, long activityId) {
+    List<Double> dist = new ArrayList<>();
+    List<Long> time = new ArrayList<>();
+    List<Long> elapsed = new ArrayList<>();
+    LocationEntity.LocationList<LocationEntity> list =
+        new LocationEntity.LocationList<>(db, activityId);
+    try {
+      for (LocationEntity point : list) {
+        Double d = point.getDistance();
+        Long t = point.getTime();
+        Long e = point.getElapsed();
+        if (d != null && t != null && e != null) {
+          dist.add(d);
+          time.add(t);
+          elapsed.add(e);
+        }
+      }
+    } finally {
+      list.close();
+    }
+    if (dist.size() < 2) {
+      return null;
+    }
+    double[] distArr = new double[dist.size()];
+    long[] timeArr = new long[time.size()];
+    long[] elapsedArr = new long[elapsed.size()];
+    for (int i = 0; i < dist.size(); i++) {
+      distArr[i] = dist.get(i);
+      timeArr[i] = time.get(i);
+      elapsedArr[i] = elapsed.get(i);
+    }
+    return new BestEffort.Points(distArr, timeArr, elapsedArr);
+  }
+
   private static RecordInfo queryLongestRecord(SQLiteDatabase db, int sport, boolean byDistance) {
     String selection = DB.ACTIVITY.DELETED + " == 0 AND " + DB.ACTIVITY.SPORT + " = ?";
     if (byDistance) {
@@ -565,46 +622,77 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     }
   }
 
-  private static String[] recordQueryArgs(int sport, double distance) {
-    return new String[] {
+  private static RecordInfo queryWholeRunBandRecord(SQLiteDatabase db, int sport, double distance) {
+    String selection =
+        DB.ACTIVITY.DELETED
+            + " == 0 AND "
+            + DB.ACTIVITY.SPORT
+            + " = ? AND "
+            + DB.ACTIVITY.DISTANCE
+            + " >= ? AND "
+            + DB.ACTIVITY.DISTANCE
+            + " <= ? AND "
+            + DB.ACTIVITY.TIME
+            + " IS NOT NULL AND "
+            + DB.ACTIVITY.START_TIME
+            + " IS NOT NULL";
+    String[] args = {
       Integer.toString(sport),
       Double.toString(RecordUtils.bandLower(distance)),
       Double.toString(RecordUtils.bandUpper(distance))
     };
-  }
-
-  private static RecordInfo queryBestRecord(
-      SQLiteDatabase db, int sport, String orderBy, String[] args) {
-    String selection = DB.ACTIVITY.DELETED + " == 0 AND " + DB.ACTIVITY.SPORT + " = ?";
-    if (args.length == 3) {
-      selection +=
-          " AND "
-              + DB.ACTIVITY.DISTANCE
-              + " >= ? AND "
-              + DB.ACTIVITY.DISTANCE
-              + " <= ? AND "
-              + DB.ACTIVITY.TIME
-              + " IS NOT NULL";
-    } else {
-      selection +=
-          " AND " + DB.ACTIVITY.DISTANCE + " IS NOT NULL AND " + DB.ACTIVITY.TIME + " IS NOT NULL";
-    }
     String[] from = {
       DB.PRIMARY_KEY, DB.ACTIVITY.TIME, DB.ACTIVITY.DISTANCE, DB.ACTIVITY.START_TIME
     };
     try (Cursor cursor =
-        db.query(DB.ACTIVITY.TABLE, from, selection, args, null, null, orderBy, "1")) {
+        db.query(
+            DB.ACTIVITY.TABLE, from, selection, args, null, null, DB.ACTIVITY.TIME + " asc", "1")) {
       if (!cursor.moveToFirst()) {
         return null;
       }
       RecordInfo info = new RecordInfo();
       info.activityId = cursor.getLong(0);
-      info.time = cursor.isNull(1) ? 0 : cursor.getLong(1);
-      info.distance = cursor.isNull(2) ? 0 : cursor.getDouble(2);
+      info.time = cursor.getLong(1);
+      info.distance = cursor.getDouble(2);
       info.startTime = cursor.getLong(3);
       info.sport = sport;
       return info;
     }
+  }
+
+  private static RecordInfo queryBestRunningRecord(
+      SQLiteDatabase db, int sport, double distance, List<RunTrack> tracks) {
+    long bestTimeMs = -1L;
+    long bestActivity = 0L;
+    long bestStart = 0L;
+    for (RunTrack track : tracks) {
+      BestEffort.Points points = track.points;
+      if (points.distanceM[points.distanceM.length - 1] < distance) {
+        continue;
+      }
+      long effortMs = BestEffort.bestEffort(points, distance);
+      if (effortMs >= 0 && (bestTimeMs < 0 || effortMs < bestTimeMs)) {
+        bestTimeMs = effortMs;
+        bestActivity = track.activityId;
+        bestStart = track.startTime;
+      }
+    }
+    RecordInfo wholeRun = queryWholeRunBandRecord(db, sport, distance);
+    if (wholeRun != null && (bestTimeMs < 0 || wholeRun.time * 1000L < bestTimeMs)) {
+      bestTimeMs = wholeRun.time * 1000L;
+      bestActivity = wholeRun.activityId;
+      bestStart = wholeRun.startTime;
+    }
+    if (bestTimeMs < 0) {
+      return null;
+    }
+    RecordInfo info = new RecordInfo();
+    info.activityId = bestActivity;
+    info.time = Math.round(bestTimeMs / 1000.0);
+    info.distance = distance;
+    info.startTime = bestStart;
+    info.sport = sport;
+    return info;
   }
 
   private void renderRecordBadges(List<RecordInfo> records) {
@@ -735,6 +823,18 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     int recordLabelRes;
     int ringColorRes;
     boolean medalShowsDistance;
+  }
+
+  private static final class RunTrack {
+    final long activityId;
+    final long startTime;
+    final BestEffort.Points points;
+
+    RunTrack(long activityId, long startTime, BestEffort.Points points) {
+      this.activityId = activityId;
+      this.startTime = startTime;
+      this.points = points;
+    }
   }
 
   private void refreshSportBadges() {
