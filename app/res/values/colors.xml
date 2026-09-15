@@ -43,6 +43,16 @@
     <color name="sportStationaryBike">#268bd2</color>
     <color name="historyBadgeAllSports">#586e75</color>
 
+    <color name="recordsRing1k">#784fcf</color>
+    <color name="recordsRing1mi">#3f7ec9</color>
+    <color name="recordsRing2mi">#2aa7a7</color>
+    <color name="recordsRing5k">#d68c27</color>
+    <color name="recordsRing5mi">#e07b39</color>
+    <color name="recordsRing10k">#c25454</color>
+    <color name="recordsRingHalf">#6a3bb0</color>
+    <color name="recordsRingFull">#22303f</color>
+    <color name="recordsRingLongest">#b08a4a</color>
+
     <color name="markerCurrent">#3b7dd8</color>
     <color name="markerCurrentStroke">#2968c3</color>
     <color name="markerStart">#3d9a57</color>

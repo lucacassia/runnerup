@@ -52,4 +52,14 @@
     <string name="delete_all_done">All activities deleted</string>
     <string name="delete_all_summary">Delete all activities and their laps, locations and upload history from the database</string>
     <string name="press_hold_to_stop">Press and hold to stop</string>
+    <string name="records_section_title">Personal records</string>
+    <string name="records_1k">1K</string>
+    <string name="records_1mi">1Mi</string>
+    <string name="records_2mi">2Mi</string>
+    <string name="records_5k">5K</string>
+    <string name="records_5mi">5Mi</string>
+    <string name="records_10k">10K</string>
+    <string name="records_half">Half Marathon</string>
+    <string name="records_full">Marathon</string>
+    <string name="records_longest">Longest</string>
 </resources>

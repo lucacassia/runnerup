@@ -648,6 +648,14 @@ public class Formatter implements OnSharedPreferenceChangeListener {
 
   /**
    * @param seconds_since_epoch
+   * @return date as a string
+   */
+  public String formatDate(long seconds_since_epoch) {
+    return dateFormat.format(seconds_since_epoch * 1000);
+  }
+
+  /**
+   * @param seconds_since_epoch
    * @return date and time as a string
    */
   public String formatDateTime(long seconds_since_epoch) {
