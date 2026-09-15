@@ -12,7 +12,6 @@ permissions:
   contents: read
 
 env:
-  ANDROID_API: 37.2
   ANDROID_BUILD_TOOLS: 37.0.0
   ADB_INSTALL_TIMEOUT: 5
 
@@ -22,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          git-lfs: true
+          lfs: true
 
       - name: Set up JDK
         uses: actions/setup-java@v5
@@ -52,16 +51,15 @@ jobs:
         run: git lfs pull
  
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
+        run: |
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+          echo "ANDROID_HOME=$ANDROID_HOME"
 
       - name: Install Android SDK components
         run: |
-          sdkmanager "tools"
+          sdkmanager "platform-tools"
           sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}"
-          sdkmanager "platforms;android-${ANDROID_API}"
-          sdkmanager "extras;android;m2repository"
-          sdkmanager "extras;google;m2repository"
-          sdkmanager "extras;google;google_play_services"
           
       - name: Prepare builddir
         run: |
@@ -110,7 +108,7 @@ jobs:
         run: ./gradlew spotlessCheck
 
       - name: Report Java code style violations
-        if: failure()
+        if: steps['Check Java code style'].outcome == 'failure'
         run: |
           echo "::error::Java style violations detected! Please run './gradlew spotlessApply' locally."
           # Fallback to general message if the specific diff location is hard to pinpoint
