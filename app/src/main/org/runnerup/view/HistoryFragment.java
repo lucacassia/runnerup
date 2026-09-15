@@ -17,12 +17,15 @@
 
 package org.runnerup.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,6 +37,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -58,13 +62,16 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.db.ActivityCleaner;
 import org.runnerup.db.DBHelper;
+import org.runnerup.db.RecordUtils;
 import org.runnerup.db.Statistics;
 import org.runnerup.db.Statistics.BucketPeriod;
 import org.runnerup.db.Statistics.Metric;
@@ -77,6 +84,31 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
 
   private static final int TYPE_HEADER = 0;
   private static final int TYPE_ROW = 1;
+
+  private static final double[] RECORD_DISTANCES = {
+    1000.0, 1609.344, 3218.688, 5000.0, 8046.72, 10000.0, 21097.5, 42195.0
+  };
+  private static final int[] RECORD_DISTANCE_STRINGS = {
+    org.runnerup.R.string.records_1k,
+    org.runnerup.R.string.records_1mi,
+    org.runnerup.R.string.records_2mi,
+    org.runnerup.R.string.records_5k,
+    org.runnerup.R.string.records_5mi,
+    org.runnerup.R.string.records_10k,
+    org.runnerup.R.string.records_half,
+    org.runnerup.R.string.records_full
+  };
+  private static final int[] RECORD_DISTANCE_COLORS = {
+    org.runnerup.R.color.recordsRing1k,
+    org.runnerup.R.color.recordsRing1mi,
+    org.runnerup.R.color.recordsRing2mi,
+    org.runnerup.R.color.recordsRing5k,
+    org.runnerup.R.color.recordsRing5mi,
+    org.runnerup.R.color.recordsRing10k,
+    org.runnerup.R.color.recordsRingHalf,
+    org.runnerup.R.color.recordsRingFull
+  };
+  private static final int RECORD_LONGEST_COLOR = org.runnerup.R.color.recordsRingLongest;
 
   private SQLiteDatabase mDB = null;
   private Formatter formatter = null;
@@ -106,6 +138,10 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private Integer currentSport = null; // null = all sports
   private final List<Chip> sportChips = new ArrayList<>();
   private final List<String> sportChipLabels = new ArrayList<>();
+
+  private View recordsSection;
+  private ViewGroup recordsGrid;
+  private final Set<Long> recordHolderActivityIds = new HashSet<>();
 
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
@@ -158,6 +194,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     statistics365Value = view.findViewById(R.id.statistics_365_value);
     statisticsChart.setLabelFormatter(this::formatChartValue);
 
+    recordsSection = view.findViewById(R.id.records_section);
+    recordsGrid = view.findViewById(R.id.records_grid);
+
     ChipGroup chipGroup = view.findViewById(R.id.history_sport_chips);
     SharedPreferences sportPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     int savedSport =
@@ -208,9 +247,11 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           if (currentTab == TAB_STATISTICS_INDEX) {
             loadStatistics();
           }
+          loadRecords();
           refreshSportBadges();
         });
     refreshSportBadges();
+    loadRecords();
     if (currentSport != null) {
       LoaderManager.getInstance(this).restartLoader(0, null, this);
     }
@@ -233,6 +274,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
             if (tab.getPosition() == TAB_STATISTICS_INDEX) {
               loadStatistics();
             }
+            loadRecords();
           }
         });
 
@@ -314,6 +356,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     if (currentTab == TAB_STATISTICS_INDEX) {
       loadStatistics();
     }
+    loadRecords();
   }
 
   @Override
@@ -383,6 +426,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     if (index == TAB_STATISTICS_INDEX) {
       loadStatistics();
     }
+    loadRecords();
   }
 
   private void loadStatistics() {
@@ -409,6 +453,288 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                     });
               });
         });
+  }
+
+  @SuppressLint("NotifyDataSetChanged")
+  private void loadRecords() {
+    if (mDB == null || recordsGrid == null) {
+      return;
+    }
+    statisticsExecutor.execute(
+        () -> {
+          List<RecordInfo> records = computeRecords(mDB);
+          mainHandler.post(
+              () -> {
+                if (recordsGrid == null) {
+                  return;
+                }
+                renderRecordBadges(records);
+                if (adapter != null) {
+                  adapter.notifyDataSetChanged();
+                }
+              });
+        });
+  }
+
+  private static List<RecordInfo> computeRecords(SQLiteDatabase db) {
+    List<RecordInfo> records = new ArrayList<>();
+    for (int sport = DB.ACTIVITY.SPORT_RUNNING; sport <= DB.ACTIVITY.SPORT_MAX; sport++) {
+      if (sport == DB.ACTIVITY.SPORT_RUNNING) {
+        double longestDistance = queryLongestDistance(db, sport);
+        for (int i = 0; i < RECORD_DISTANCES.length; i++) {
+          if (RECORD_DISTANCES[i] > longestDistance) {
+            break;
+          }
+          RecordInfo record =
+              queryBestRecord(
+                  db,
+                  sport,
+                  DB.ACTIVITY.TIME + " asc",
+                  recordQueryArgs(sport, RECORD_DISTANCES[i]));
+          if (record != null) {
+            record.recordLabelRes = RECORD_DISTANCE_STRINGS[i];
+            record.ringColorRes = RECORD_DISTANCE_COLORS[i];
+            records.add(record);
+          }
+        }
+      }
+      boolean byDistance = !Sport.isWithoutGps(sport);
+      RecordInfo longest = queryLongestRecord(db, sport, byDistance);
+      if (longest != null) {
+        longest.recordLabelRes = org.runnerup.R.string.records_longest;
+        longest.ringColorRes = RECORD_LONGEST_COLOR;
+        longest.medalShowsDistance = byDistance;
+        records.add(longest);
+      }
+    }
+    return records;
+  }
+
+  private static double queryLongestDistance(SQLiteDatabase db, int sport) {
+    String selection = DB.ACTIVITY.DELETED + " == 0 AND " + DB.ACTIVITY.SPORT + " = ?";
+    String[] args = {Integer.toString(sport)};
+    try (Cursor cursor =
+        db.query(
+            DB.ACTIVITY.TABLE,
+            new String[] {DB.ACTIVITY.DISTANCE},
+            selection,
+            args,
+            null,
+            null,
+            DB.ACTIVITY.DISTANCE + " desc",
+            "1")) {
+      if (!cursor.moveToFirst() || cursor.isNull(0)) {
+        return 0;
+      }
+      return cursor.getDouble(0);
+    }
+  }
+
+  private static RecordInfo queryLongestRecord(SQLiteDatabase db, int sport, boolean byDistance) {
+    String selection = DB.ACTIVITY.DELETED + " == 0 AND " + DB.ACTIVITY.SPORT + " = ?";
+    if (byDistance) {
+      selection +=
+          " AND " + DB.ACTIVITY.DISTANCE + " IS NOT NULL AND " + DB.ACTIVITY.TIME + " IS NOT NULL";
+    } else {
+      selection += " AND " + DB.ACTIVITY.TIME + " IS NOT NULL";
+    }
+    String orderBy = byDistance ? DB.ACTIVITY.DISTANCE + " desc" : DB.ACTIVITY.TIME + " desc";
+    String[] from = {
+      DB.PRIMARY_KEY, DB.ACTIVITY.TIME, DB.ACTIVITY.DISTANCE, DB.ACTIVITY.START_TIME
+    };
+    try (Cursor cursor =
+        db.query(
+            DB.ACTIVITY.TABLE,
+            from,
+            selection,
+            new String[] {Integer.toString(sport)},
+            null,
+            null,
+            orderBy,
+            "1")) {
+      if (!cursor.moveToFirst()) {
+        return null;
+      }
+      RecordInfo info = new RecordInfo();
+      info.activityId = cursor.getLong(0);
+      info.time = cursor.isNull(1) ? 0 : cursor.getLong(1);
+      info.distance = cursor.isNull(2) ? 0 : cursor.getDouble(2);
+      info.startTime = cursor.getLong(3);
+      info.sport = sport;
+      return info;
+    }
+  }
+
+  private static String[] recordQueryArgs(int sport, double distance) {
+    return new String[] {
+      Integer.toString(sport),
+      Double.toString(RecordUtils.bandLower(distance)),
+      Double.toString(RecordUtils.bandUpper(distance))
+    };
+  }
+
+  private static RecordInfo queryBestRecord(
+      SQLiteDatabase db, int sport, String orderBy, String[] args) {
+    String selection = DB.ACTIVITY.DELETED + " == 0 AND " + DB.ACTIVITY.SPORT + " = ?";
+    if (args.length == 3) {
+      selection +=
+          " AND "
+              + DB.ACTIVITY.DISTANCE
+              + " >= ? AND "
+              + DB.ACTIVITY.DISTANCE
+              + " <= ? AND "
+              + DB.ACTIVITY.TIME
+              + " IS NOT NULL";
+    } else {
+      selection +=
+          " AND " + DB.ACTIVITY.DISTANCE + " IS NOT NULL AND " + DB.ACTIVITY.TIME + " IS NOT NULL";
+    }
+    String[] from = {
+      DB.PRIMARY_KEY, DB.ACTIVITY.TIME, DB.ACTIVITY.DISTANCE, DB.ACTIVITY.START_TIME
+    };
+    try (Cursor cursor =
+        db.query(DB.ACTIVITY.TABLE, from, selection, args, null, null, orderBy, "1")) {
+      if (!cursor.moveToFirst()) {
+        return null;
+      }
+      RecordInfo info = new RecordInfo();
+      info.activityId = cursor.getLong(0);
+      info.time = cursor.isNull(1) ? 0 : cursor.getLong(1);
+      info.distance = cursor.isNull(2) ? 0 : cursor.getDouble(2);
+      info.startTime = cursor.getLong(3);
+      info.sport = sport;
+      return info;
+    }
+  }
+
+  private void renderRecordBadges(List<RecordInfo> records) {
+    recordsGrid.removeAllViews();
+    recordHolderActivityIds.clear();
+    int headerSport = -1;
+    List<RecordInfo> group = new ArrayList<>();
+    for (RecordInfo record : records) {
+      if (currentSport != null && record.sport != currentSport) {
+        continue;
+      }
+      if (currentSport == null && record.sport != headerSport) {
+        flushRecordGroup(group);
+        group.clear();
+        recordsGrid.addView(buildRecordSportHeader(record.sport));
+        headerSport = record.sport;
+      }
+      recordHolderActivityIds.add(record.activityId);
+      group.add(record);
+    }
+    flushRecordGroup(group);
+    recordsSection.setVisibility(recordHolderActivityIds.isEmpty() ? View.GONE : View.VISIBLE);
+  }
+
+  private void flushRecordGroup(List<RecordInfo> group) {
+    for (int i = 0; i < group.size(); i += 2) {
+      addBadgeRow(group, i);
+    }
+  }
+
+  private void addBadgeRow(List<RecordInfo> group, int start) {
+    LinearLayout row = new LinearLayout(requireContext());
+    row.setOrientation(LinearLayout.HORIZONTAL);
+    LinearLayout.LayoutParams rowLp =
+        new LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    rowLp.bottomMargin = dp(8);
+    recordsGrid.addView(row, rowLp);
+    for (int i = start; i < group.size() && i < start + 2; i++) {
+      View badge = buildBadgeCard(group.get(i), row);
+      LinearLayout.LayoutParams lp =
+          new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+      if (i % 2 == 0) {
+        lp.setMarginEnd(dp(4));
+      } else {
+        lp.setMarginStart(dp(4));
+      }
+      row.addView(badge, lp);
+    }
+  }
+
+  private View buildRecordSportHeader(int sport) {
+    View header =
+        LayoutInflater.from(requireContext())
+            .inflate(R.layout.history_section_header, recordsGrid, false);
+    TextView title = header.findViewById(R.id.history_section_title);
+    title.setText(Sport.textOf(getResources(), sport));
+    return header;
+  }
+
+  private View buildBadgeCard(RecordInfo record, ViewGroup parent) {
+    View card = LayoutInflater.from(requireContext()).inflate(R.layout.record_badge, parent, false);
+    TextView label = card.findViewById(R.id.record_badge_label);
+    TextView time = card.findViewById(R.id.record_badge_time);
+    TextView meta = card.findViewById(R.id.record_badge_meta);
+    View ribbon = card.findViewById(R.id.record_badge_ribbon);
+    int ringColor = ContextCompat.getColor(requireContext(), record.ringColorRes);
+
+    label.setText(record.recordLabelRes);
+    if (record.medalShowsDistance) {
+      time.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
+      time.setText(
+          formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(record.distance)));
+    } else {
+      time.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+      time.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, record.time));
+    }
+    time.setTextColor(ringColor);
+
+    StringBuilder metaText = new StringBuilder(formatter.formatDate(record.startTime));
+    if (record.medalShowsDistance && record.time > 0) {
+      metaText
+          .append(" · ")
+          .append(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, record.time));
+    } else if (!record.medalShowsDistance && record.time > 0 && record.distance > 0) {
+      metaText
+          .append(" · ")
+          .append(
+              formatter.formatVelocityByPreferredUnit(
+                  Formatter.Format.TXT_LONG, record.distance / record.time));
+    }
+    meta.setText(metaText);
+
+    GradientDrawable ring = new GradientDrawable();
+    ring.setShape(GradientDrawable.OVAL);
+    ring.setColor(Color.WHITE);
+    ring.setStroke(dp(4), ringColor);
+    time.setBackground(ring);
+
+    GradientDrawable ribbonDrawable =
+        new GradientDrawable(
+            GradientDrawable.Orientation.LEFT_RIGHT,
+            new int[] {ringColor, lighten(ringColor), ringColor});
+    ribbonDrawable.setCornerRadius(dp(3));
+    ribbon.setBackground(ribbonDrawable);
+
+    card.setOnClickListener(v -> openActivity(record.activityId));
+    return card;
+  }
+
+  private int dp(int value) {
+    return Math.round(getResources().getDisplayMetrics().density * value);
+  }
+
+  private static int lighten(int color) {
+    return Color.rgb(
+        (Color.red(color) + 255) / 2,
+        (Color.green(color) + 255) / 2,
+        (Color.blue(color) + 255) / 2);
+  }
+
+  private static final class RecordInfo {
+    long activityId;
+    long time;
+    double distance;
+    long startTime;
+    int sport;
+    int recordLabelRes;
+    int ringColorRes;
+    boolean medalShowsDistance;
   }
 
   private void refreshSportBadges() {
@@ -750,6 +1076,23 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
             formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / dur);
       }
       holder.paceText.setText(paceTextContents);
+
+      if (recordHolderActivityIds.contains(item.id)) {
+        Drawable trophy = AppCompatResources.getDrawable(context, R.drawable.ic_trophy_20dp);
+        if (trophy != null) {
+          trophy = trophy.mutate();
+          TypedValue trophyTint = new TypedValue();
+          context
+              .getTheme()
+              .resolveAttribute(com.google.android.material.R.attr.colorTertiary, trophyTint, true);
+          trophy.setTint(trophyTint.data);
+          holder.distanceText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+              trophy, null, holder.distanceText.getCompoundDrawablesRelative()[2], null);
+        }
+      } else {
+        holder.distanceText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+            null, null, holder.distanceText.getCompoundDrawablesRelative()[2], null);
+      }
     }
 
     @Override

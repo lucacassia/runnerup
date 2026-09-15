@@ -80,7 +80,9 @@ Progress tab (ScrollView)
   2Mi=3218.688m, 5K=5000m, 5Mi=8046.72m, 10K=10000m, half=21097.5m, full=42195m`.
 - **Other sports:** single record — for GPS sports order by distance desc, else by time desc, filter
   nulls, `LIMIT 1`.
-- Distance-band best-time query stays: `distance BETWEEN D AND D*1.05 ORDER BY time ASC LIMIT 1`.
+- Distance-band best-time query: `distance BETWEEN D*0.95 AND D*1.05 ORDER BY time ASC LIMIT 1` —
+  the ±5% tolerance (both directions) credits runs that measure just under the standard (e.g. a
+  4,999 m run still counts toward the 5K; a "1K" run finishing at 999.9 m still counts).
 
 ### New / changed files
 
