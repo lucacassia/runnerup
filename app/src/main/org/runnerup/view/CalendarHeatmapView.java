@@ -65,6 +65,11 @@ public class CalendarHeatmapView extends View {
             context,
             new GestureDetector.SimpleOnGestureListener() {
               @Override
+              public boolean onDown(MotionEvent e) {
+                return true;
+              }
+
+              @Override
               public boolean onSingleTapUp(MotionEvent e) {
                 handleTap((int) e.getX(), (int) e.getY());
                 return true;
