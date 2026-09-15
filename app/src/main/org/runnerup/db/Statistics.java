@@ -34,22 +34,29 @@ public final class Statistics {
     public final double distance;
     public final Double time;
     public final Double elevationGain;
+    public final int sport;
 
     public ActivityRow(long id, long startTime, double distance) {
-      this(id, startTime, distance, null, null);
+      this(id, startTime, distance, null, null, -1);
     }
 
     public ActivityRow(long id, long startTime, double distance, Double time) {
-      this(id, startTime, distance, time, null);
+      this(id, startTime, distance, time, null, -1);
     }
 
     public ActivityRow(
         long id, long startTime, double distance, Double time, Double elevationGain) {
+      this(id, startTime, distance, time, elevationGain, -1);
+    }
+
+    public ActivityRow(
+        long id, long startTime, double distance, Double time, Double elevationGain, int sport) {
       this.id = id;
       this.startTime = startTime;
       this.distance = distance;
       this.time = time;
       this.elevationGain = elevationGain;
+      this.sport = sport;
     }
   }
 
@@ -199,7 +206,8 @@ public final class Statistics {
               ACTIVITY.START_TIME,
               ACTIVITY.DISTANCE,
               ACTIVITY.TIME,
-              ACTIVITY.ELEVATION_GAIN
+              ACTIVITY.ELEVATION_GAIN,
+              ACTIVITY.SPORT
             },
             selection,
             args,
@@ -210,7 +218,9 @@ public final class Statistics {
         long id = cursor.getLong(0);
         Double time = cursor.isNull(3) ? null : cursor.getDouble(3);
         Double elevationGain = cursor.isNull(4) ? null : cursor.getDouble(4);
-        rows.add(new ActivityRow(id, cursor.getLong(1), cursor.getDouble(2), time, elevationGain));
+        rows.add(
+            new ActivityRow(
+                id, cursor.getLong(1), cursor.getDouble(2), time, elevationGain, cursor.getInt(5)));
       }
     }
     return rows;
@@ -312,7 +322,7 @@ public final class Statistics {
         continue;
       }
       double gain = computeElevationGainForActivity(db, row.id);
-      rows.set(i, new ActivityRow(row.id, row.startTime, row.distance, row.time, gain));
+      rows.set(i, new ActivityRow(row.id, row.startTime, row.distance, row.time, gain, row.sport));
       ContentValues cv = new ContentValues();
       cv.put(ACTIVITY.ELEVATION_GAIN, gain);
       db.update(ACTIVITY.TABLE, cv, DB.PRIMARY_KEY + " = ?", new String[] {Long.toString(row.id)});

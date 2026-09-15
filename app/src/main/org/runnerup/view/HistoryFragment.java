@@ -54,6 +54,7 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -521,6 +522,53 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     if (dayRows == null || dayRows.isEmpty()) {
       return;
     }
+    if (dayRows.size() == 1) {
+      openActivity(dayRows.get(0).id);
+      return;
+    }
+    showDaySheet(dayRows);
+  }
+
+  private void showDaySheet(List<Statistics.ActivityRow> dayRows) {
+    BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+    LinearLayout content = new LinearLayout(requireContext());
+    content.setOrientation(LinearLayout.VERTICAL);
+    int pad = dp(16);
+    content.setPadding(pad, dp(8), pad, dp(8));
+
+    TextView title = new TextView(requireContext());
+    title.setText(formatter.formatDate(dayRows.get(0).startTime));
+    title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+    title.setTextSize(16);
+    title.setPadding(0, 0, 0, dp(4));
+    content.addView(title);
+
+    for (Statistics.ActivityRow row : dayRows) {
+      TextView item = new TextView(requireContext());
+      item.setPadding(0, dp(6), 0, dp(6));
+      item.setTextSize(14);
+      Drawable icon =
+          AppCompatResources.getDrawable(requireContext(), Sport.drawableColored16Of(row.sport));
+      if (icon != null) {
+        item.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
+      }
+      String timeLabel =
+          row.time != null
+              ? formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(row.time))
+              : "";
+      item.setText(
+          formatter.getDistanceDisplay(row.distance)
+              + (timeLabel.isEmpty() ? "" : "  ·  " + timeLabel));
+      item.setOnClickListener(
+          v -> {
+            sheet.dismiss();
+            openActivity(row.id);
+          });
+      content.addView(item);
+    }
+
+    sheet.setContentView(content);
+    sheet.show();
   }
 
   @SuppressLint("NotifyDataSetChanged")

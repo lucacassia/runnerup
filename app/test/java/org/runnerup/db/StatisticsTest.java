@@ -279,6 +279,7 @@ public class StatisticsTest {
     when(cursor.getDouble(2)).thenReturn(1000.0);
     when(cursor.isNull(3)).thenReturn(true);
     when(cursor.isNull(4)).thenReturn(true);
+    when(cursor.getInt(5)).thenReturn(0);
     when(db.query(
             eq(DB.ACTIVITY.TABLE),
             any(String[].class),
@@ -291,6 +292,7 @@ public class StatisticsTest {
     List<Statistics.ActivityRow> rows = Statistics.queryActivities(db, at("2026-01-01"), 0);
     assertEquals(1, rows.size());
     assertEquals(1000.0, rows.get(0).distance, 0.0);
+    assertEquals(0, rows.get(0).sport);
     ArgumentCaptor<String> selection = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String[]> args = ArgumentCaptor.forClass(String[].class);
     verify(db)
