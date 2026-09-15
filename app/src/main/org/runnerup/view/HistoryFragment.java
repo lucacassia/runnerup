@@ -150,7 +150,10 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
           new ActivityResultContracts.StartActivityForResult(),
-          result -> LoaderManager.getInstance(this).restartLoader(0, null, this));
+          result -> {
+            recordsFingerprint = -1L;
+            LoaderManager.getInstance(this).restartLoader(0, null, this);
+          });
 
   public HistoryFragment() {
     super(R.layout.history);
