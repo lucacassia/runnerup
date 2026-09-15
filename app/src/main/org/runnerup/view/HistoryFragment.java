@@ -144,6 +144,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private View recordsSection;
   private ViewGroup recordsGrid;
   private final Set<Long> recordHolderActivityIds = new HashSet<>();
+  private long recordsFingerprint = -1L;
+  private List<RecordInfo> recordsCache = null;
 
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
@@ -464,7 +466,15 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     }
     statisticsExecutor.execute(
         () -> {
-          List<RecordInfo> records = computeRecords(mDB);
+          long fingerprint = computeRecordsFingerprint(mDB);
+          List<RecordInfo> records;
+          if (fingerprint == recordsFingerprint && recordsCache != null) {
+            records = recordsCache;
+          } else {
+            records = computeRecords(mDB);
+            recordsFingerprint = fingerprint;
+            recordsCache = records;
+          }
           mainHandler.post(
               () -> {
                 if (recordsGrid == null) {
@@ -506,6 +516,25 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       }
     }
     return records;
+  }
+
+  private static long computeRecordsFingerprint(SQLiteDatabase db) {
+    try (Cursor cursor =
+        db.query(
+            DB.ACTIVITY.TABLE,
+            new String[] {DB.PRIMARY_KEY},
+            DB.ACTIVITY.DELETED + " == 0",
+            null,
+            null,
+            null,
+            null,
+            null)) {
+      long maxId = 0L;
+      while (cursor.moveToNext()) {
+        maxId = Math.max(maxId, cursor.getLong(0));
+      }
+      return (cursor.getCount() << 32) | (maxId & 0xFFFFFFFFL);
+    }
   }
 
   private static double queryLongestDistance(SQLiteDatabase db, int sport) {
