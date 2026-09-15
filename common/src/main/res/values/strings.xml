@@ -444,4 +444,11 @@
     <string name="No_steps_yet_title">No steps yet</string>
     <string name="No_steps_yet_hint">Tap + to add your first step or interval repeat</string>
     <string name="Drag_to_reorder">Drag to reorder</string>
+    <string name="Race_ready">Race-ready</string>
+    <string name="Race_ready_start">Race-ready start</string>
+    <string name="Race_ready_start_summary">Start without pre-fix GPS gate; the run begins when GPS locks</string>
+    <string name="Gps_locked_cue">GPS-locked cue</string>
+    <string name="Gps_locked_cue_summary">Announce GPS lock when starting</string>
+    <string name="Gps_wait_subtitle">The run starts automatically once GPS locks</string>
+    <string name="Run_discarded">Run discarded</string>
 </resources>

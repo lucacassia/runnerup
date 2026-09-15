@@ -33,6 +33,75 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
     <com.google.android.material.card.MaterialCardView
+        android:id="@+id/wait_banner"
+        style="?attr/materialCardViewOutlinedStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
+        app:cardCornerRadius="@dimen/history_row_corner"
+        app:cardElevation="2dp">
+
+      <LinearLayout
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:gravity="center_vertical"
+          android:orientation="horizontal"
+          android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/wait_gps_indicator"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@string/Waiting_for_GPS"
+            android:src="@drawable/ic_gps_1" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+          <TextView
+              android:id="@+id/wait_gps_title"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:text="@string/Waiting_for_GPS"
+              android:textAppearance="?attr/textAppearanceTitleMedium"
+              android:textColor="?attr/colorOnSurface"
+              android:textStyle="bold" />
+
+          <TextView
+              android:id="@+id/wait_gps_subtitle"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:text="@string/Gps_wait_subtitle"
+              android:textAppearance="?attr/textAppearanceBodySmall"
+              android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/wait_enable_gps_button"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/Enable_GPS"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/cancel_wait_button"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/Cancel" />
+      </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/table_layout1"
         style="?attr/materialCardViewOutlinedStyle"
         android:layout_width="match_parent"

@@ -54,16 +54,20 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.tabs.TabLayout;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -147,6 +151,11 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private long recordsFingerprint = -1L;
   private List<RecordInfo> recordsCache = null;
 
+  private LocalDate shownMonth = null;
+  private Map<LocalDate, List<Statistics.ActivityRow>> calendarByDay = new HashMap<>();
+  private TextView calendarMonthLabel;
+  private CalendarHeatmapView calendarHeatmap;
+
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
           new ActivityResultContracts.StartActivityForResult(),
@@ -204,6 +213,13 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     recordsSection = view.findViewById(R.id.records_section);
     recordsGrid = view.findViewById(R.id.records_grid);
 
+    calendarMonthLabel = view.findViewById(R.id.calendar_month_label);
+    calendarHeatmap = view.findViewById(R.id.calendar_heatmap);
+    calendarHeatmap.setDayLabelFormatter(formatter::getDistanceDisplay);
+    calendarHeatmap.setOnDayTapListener(this::openDay);
+    view.findViewById(R.id.calendar_prev).setOnClickListener(v -> changeMonth(-1));
+    view.findViewById(R.id.calendar_next).setOnClickListener(v -> changeMonth(1));
+
     ChipGroup chipGroup = view.findViewById(R.id.history_sport_chips);
     SharedPreferences sportPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     int savedSport =
@@ -253,6 +269,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           LoaderManager.getInstance(this).restartLoader(0, null, this);
           if (currentTab == TAB_STATISTICS_INDEX) {
             loadStatistics();
+            loadCalendar();
           }
           loadRecords();
           refreshSportBadges();
@@ -280,6 +297,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           public void onTabReselected(TabLayout.Tab tab) {
             if (tab.getPosition() == TAB_STATISTICS_INDEX) {
               loadStatistics();
+              loadCalendar();
             }
             loadRecords();
           }
@@ -362,6 +380,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     LoaderManager.getInstance(this).restartLoader(0, null, this);
     if (currentTab == TAB_STATISTICS_INDEX) {
       loadStatistics();
+      loadCalendar();
     }
     loadRecords();
   }
@@ -432,6 +451,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         index == TAB_HISTORY_INDEX && adapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
     if (index == TAB_STATISTICS_INDEX) {
       loadStatistics();
+      loadCalendar();
     }
     loadRecords();
   }
@@ -460,6 +480,99 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                     });
               });
         });
+  }
+
+  private void loadCalendar() {
+    if (mDB == null || calendarHeatmap == null) {
+      return;
+    }
+    if (shownMonth == null) {
+      shownMonth = LocalDate.now(ZoneId.systemDefault()).withDayOfMonth(1);
+    }
+    statisticsExecutor.execute(
+        () -> {
+          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, 0L, currentSport);
+          Map<LocalDate, List<Statistics.ActivityRow>> byDay =
+              Statistics.groupActivitiesByDay(rows, ZoneId.systemDefault());
+          mainHandler.post(
+              () -> {
+                calendarByDay = byDay;
+                renderCalendar();
+              });
+        });
+  }
+
+  private void renderCalendar() {
+    if (shownMonth == null || calendarHeatmap == null) {
+      return;
+    }
+    calendarHeatmap.setData(Statistics.calendarDays(shownMonth, calendarByDay));
+    calendarMonthLabel.setText(
+        formatter.formatMonth(
+            Date.from(shownMonth.atStartOfDay(ZoneId.systemDefault()).toInstant())));
+  }
+
+  private void changeMonth(int delta) {
+    shownMonth = shownMonth.plusMonths(delta);
+    renderCalendar();
+  }
+
+  private void openDay(int dayOfMonth) {
+    List<Statistics.ActivityRow> dayRows = calendarByDay.get(shownMonth.withDayOfMonth(dayOfMonth));
+    if (dayRows == null || dayRows.isEmpty()) {
+      return;
+    }
+    if (dayRows.size() == 1) {
+      openActivity(dayRows.get(0).id);
+      return;
+    }
+    showDaySheet(dayRows);
+  }
+
+  private void showDaySheet(List<Statistics.ActivityRow> dayRows) {
+    BottomSheetDialog sheet = new BottomSheetDialog(requireContext());
+    LinearLayout content = new LinearLayout(requireContext());
+    content.setOrientation(LinearLayout.VERTICAL);
+    int pad = dp(16);
+    content.setPadding(pad, dp(8), pad, dp(8));
+
+    TextView title = new TextView(requireContext());
+    title.setText(formatter.formatDate(dayRows.get(0).startTime));
+    title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+    title.setTextSize(16);
+    title.setPadding(0, 0, 0, dp(4));
+    content.addView(title);
+
+    for (Statistics.ActivityRow row : dayRows) {
+      TextView item = new TextView(requireContext());
+      item.setPadding(0, dp(6), 0, dp(6));
+      item.setTextSize(14);
+      Drawable icon =
+          AppCompatResources.getDrawable(requireContext(), Sport.drawableColored16Of(row.sport));
+      if (icon != null) {
+        item.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
+      }
+      String timeLabel =
+          row.time != null
+              ? formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(row.time))
+              : "";
+      String distanceLabel =
+          formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(row.distance));
+      if (timeLabel.isEmpty()) {
+        item.setText(distanceLabel);
+      } else {
+        item.setText(getString(org.runnerup.R.string.calendar_run_item, distanceLabel, timeLabel));
+      }
+      item.setOnClickListener(
+          v -> {
+            sheet.dismiss();
+            openActivity(row.id);
+          });
+      content.addView(item);
+    }
+
+    sheet.setContentView(content);
+    sheet.show();
   }
 
   @SuppressLint("NotifyDataSetChanged")

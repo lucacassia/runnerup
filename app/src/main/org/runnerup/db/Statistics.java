@@ -7,7 +7,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.runnerup.common.util.Constants.DB;
 import org.runnerup.common.util.Constants.DB.ACTIVITY;
 
@@ -32,22 +34,29 @@ public final class Statistics {
     public final double distance;
     public final Double time;
     public final Double elevationGain;
+    public final int sport;
 
     public ActivityRow(long id, long startTime, double distance) {
-      this(id, startTime, distance, null, null);
+      this(id, startTime, distance, null, null, -1);
     }
 
     public ActivityRow(long id, long startTime, double distance, Double time) {
-      this(id, startTime, distance, time, null);
+      this(id, startTime, distance, time, null, -1);
     }
 
     public ActivityRow(
         long id, long startTime, double distance, Double time, Double elevationGain) {
+      this(id, startTime, distance, time, elevationGain, -1);
+    }
+
+    public ActivityRow(
+        long id, long startTime, double distance, Double time, Double elevationGain, int sport) {
       this.id = id;
       this.startTime = startTime;
       this.distance = distance;
       this.time = time;
       this.elevationGain = elevationGain;
+      this.sport = sport;
     }
   }
 
@@ -197,7 +206,8 @@ public final class Statistics {
               ACTIVITY.START_TIME,
               ACTIVITY.DISTANCE,
               ACTIVITY.TIME,
-              ACTIVITY.ELEVATION_GAIN
+              ACTIVITY.ELEVATION_GAIN,
+              ACTIVITY.SPORT
             },
             selection,
             args,
@@ -208,10 +218,80 @@ public final class Statistics {
         long id = cursor.getLong(0);
         Double time = cursor.isNull(3) ? null : cursor.getDouble(3);
         Double elevationGain = cursor.isNull(4) ? null : cursor.getDouble(4);
-        rows.add(new ActivityRow(id, cursor.getLong(1), cursor.getDouble(2), time, elevationGain));
+        rows.add(
+            new ActivityRow(
+                id, cursor.getLong(1), cursor.getDouble(2), time, elevationGain, cursor.getInt(5)));
       }
     }
     return rows;
+  }
+
+  public static final int CALENDAR_COLUMNS = 7;
+  public static final int CALENDAR_ROWS = 6;
+
+  public static final class CalendarDay {
+    public static final CalendarDay BLANK = new CalendarDay(0, 0, new long[0]);
+
+    public final int day;
+    public final double distance;
+    public final long[] activityIds;
+
+    public CalendarDay(int day, double distance, long[] activityIds) {
+      this.day = day;
+      this.distance = distance;
+      this.activityIds = activityIds;
+    }
+  }
+
+  public static Map<LocalDate, List<ActivityRow>> groupActivitiesByDay(
+      List<ActivityRow> rows, ZoneId zone) {
+    Map<LocalDate, List<ActivityRow>> byDay = new HashMap<>();
+    for (ActivityRow row : rows) {
+      LocalDate date = Instant.ofEpochSecond(row.startTime).atZone(zone).toLocalDate();
+      List<ActivityRow> dayRows = byDay.get(date);
+      if (dayRows == null) {
+        dayRows = new ArrayList<>();
+        byDay.put(date, dayRows);
+      }
+      dayRows.add(row);
+    }
+    return byDay;
+  }
+
+  public static CalendarDay[] calendarDays(
+      LocalDate month, Map<LocalDate, List<ActivityRow>> byDay) {
+    CalendarDay[] cells = new CalendarDay[CALENDAR_COLUMNS * CALENDAR_ROWS];
+    LocalDate first = month.withDayOfMonth(1);
+    int leading = first.getDayOfWeek().getValue() - 1;
+    int daysInMonth = month.lengthOfMonth();
+    for (int i = 0; i < cells.length; i++) {
+      int dayOfMonth = i - leading + 1;
+      if (dayOfMonth < 1 || dayOfMonth > daysInMonth) {
+        cells[i] = CalendarDay.BLANK;
+        continue;
+      }
+      List<ActivityRow> dayRows = byDay.get(month.withDayOfMonth(dayOfMonth));
+      if (dayRows == null || dayRows.isEmpty()) {
+        cells[i] = new CalendarDay(dayOfMonth, 0, new long[0]);
+        continue;
+      }
+      double distance = 0;
+      long[] ids = new long[dayRows.size()];
+      for (int j = 0; j < dayRows.size(); j++) {
+        distance += dayRows.get(j).distance;
+        ids[j] = dayRows.get(j).id;
+      }
+      cells[i] = new CalendarDay(dayOfMonth, distance, ids);
+    }
+    return cells;
+  }
+
+  public static int distanceBucket(double distanceMeters, double monthMaxMeters, int steps) {
+    if (distanceMeters <= 0 || monthMaxMeters <= 0 || steps <= 0) {
+      return 0;
+    }
+    int bucket = (int) Math.ceil(steps * distanceMeters / monthMaxMeters);
+    return Math.max(1, Math.min(steps, bucket));
   }
 
   public static int[] sportCounts(SQLiteDatabase db) {
@@ -242,7 +322,7 @@ public final class Statistics {
         continue;
       }
       double gain = computeElevationGainForActivity(db, row.id);
-      rows.set(i, new ActivityRow(row.id, row.startTime, row.distance, row.time, gain));
+      rows.set(i, new ActivityRow(row.id, row.startTime, row.distance, row.time, gain, row.sport));
       ContentValues cv = new ContentValues();
       cv.put(ACTIVITY.ELEVATION_GAIN, gain);
       db.update(ACTIVITY.TABLE, cv, DB.PRIMARY_KEY + " = ?", new String[] {Long.toString(row.id)});

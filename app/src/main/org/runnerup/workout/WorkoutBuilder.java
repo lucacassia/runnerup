@@ -37,6 +37,7 @@ import org.runnerup.workout.feedback.AudioCountdownFeedback;
 import org.runnerup.workout.feedback.AudioFeedback;
 import org.runnerup.workout.feedback.CoachFeedback;
 import org.runnerup.workout.feedback.HRMStateChangeFeedback;
+import org.runnerup.workout.feedback.VibrationFeedback;
 
 public class WorkoutBuilder {
 
@@ -96,6 +97,35 @@ public class WorkoutBuilder {
     }
 
     return w;
+  }
+
+  /**
+   * Prepend the race-ready countdown (a PauseStep) and the GPS wait gate to a workout. No-ops when
+   * race-ready is off, the workout is a non-GPS sport, or there is nothing to gate.
+   */
+  static void injectRaceReadyGates(Resources res, SharedPreferences prefs, Workout w) {
+    if (!RaceReady.enabled(res, prefs)) {
+      return;
+    }
+    if (!RaceReady.gating(w)) {
+      return;
+    }
+    int seconds = RaceReady.countdownSeconds(res, prefs);
+    int index = 0;
+    if (seconds > 0) {
+      w.steps.add(index++, Step.createRestStep(Dimension.TIME, seconds, false));
+    }
+    GpsWaitStep gate = new GpsWaitStep();
+    EventTrigger ev = new EventTrigger();
+    ev.event = Event.COMPLETED;
+    ev.scope = Scope.STEP;
+    ev.maxCounter = 1;
+    ev.triggerAction.add(new VibrationFeedback());
+    if (RaceReady.gpsLockedCueEnabled(res, prefs)) {
+      ev.triggerAction.add(new AudioFeedback(org.runnerup.R.string.cue_gps_locked));
+    }
+    gate.triggers.add(ev);
+    w.steps.add(index, gate);
   }
 
   private static void addAutoPauseTrigger(Resources res, Step step, SharedPreferences prefs) {
@@ -180,6 +210,8 @@ public class WorkoutBuilder {
     for (int i = 0; i < stepArr.length; i++) {
       Step step = stepArr[i];
       Step next = i + 1 == stepArr.length ? null : stepArr[i + 1];
+
+      if (step instanceof GpsWaitStep) continue;
 
       if (step.getIntensity() == Intensity.REPEAT) {
         addAudioCuesToWorkout(res, ((RepeatStep) step).steps, audioPrefs, prefs);
@@ -479,6 +511,7 @@ public class WorkoutBuilder {
    * @param w
    */
   public static void prepareWorkout(Resources res, SharedPreferences prefs, Workout w) {
+    injectRaceReadyGates(res, prefs, w);
     List<StepListEntry> steps = w.getStepList();
     boolean basic = w.getWorkoutType() == Constants.WORKOUT_TYPE.BASIC;
 
@@ -492,6 +525,7 @@ public class WorkoutBuilder {
       double val = SafeParse.parseDouble(vals, 0.0);
       Log.d("WorkoutBuilder", "setAutolap(" + val + ")");
       for (StepListEntry s : steps) {
+        if (s.step() instanceof GpsWaitStep) continue;
         if (basic
             || s.step().getIntensity() == Intensity.ACTIVE
             ||
@@ -504,6 +538,7 @@ public class WorkoutBuilder {
 
     // Autopause
     for (StepListEntry s : steps) {
+      if (s.step() instanceof GpsWaitStep) continue;
       if (basic) {
         addAutoPauseTrigger(res, s.step(), prefs);
         continue;

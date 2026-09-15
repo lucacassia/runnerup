@@ -76,4 +76,5 @@
     <string name="cue_lap_completed">lap completed</string>
     <string name="cue_warmup_started">warmup started</string>
     <string name="cue_cooldown_started">cooldown started</string>
+    <string name="cue_gps_locked">GPS locked</string>
 </resources>

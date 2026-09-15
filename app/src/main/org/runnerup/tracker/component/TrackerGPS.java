@@ -35,16 +35,18 @@ import org.runnerup.R;
 import org.runnerup.tracker.GpsStatus;
 import org.runnerup.tracker.Tracker;
 import org.runnerup.util.TickListener;
+import org.runnerup.workout.RaceReady;
 
 public class TrackerGPS extends DefaultTrackerComponent implements TickListener {
 
   private int onEndCounter = 0;
   private boolean mWithoutGps = false;
+  private boolean mRaceReady = false;
   private int frequency_ms = 0;
   private Location mLastLocation;
   private final Tracker tracker;
 
-  private static final String NAME = "GPS";
+  public static final String NAME = "GPS";
   private GpsStatus mGpsStatus;
   private Callback mConnectCallback;
   private LocationManager locationManager;
@@ -162,6 +164,7 @@ public class TrackerGPS extends DefaultTrackerComponent implements TickListener 
     try {
       var lm = locationManager;
       SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+      mRaceReady = RaceReady.enabled(context.getResources(), preferences);
       frequency_ms = parseAndFixInteger(preferences, R.string.pref_pollInterval, "1000", context);
       mLastLocation = getLastKnownLocation(lm, context);
       if (!mWithoutGps) {
@@ -184,7 +187,20 @@ public class TrackerGPS extends DefaultTrackerComponent implements TickListener 
 
   @Override
   public boolean isConnected() {
-    return (mWithoutGps) || (mGpsStatus != null) && mGpsStatus.isFixed();
+    if (mWithoutGps) {
+      return true;
+    }
+    if (mGpsStatus == null) {
+      return false;
+    }
+    return mGpsStatus.isFixed() || (mRaceReady && mGpsStatus.isStarted());
+  }
+
+  public boolean isFixed() {
+    if (mWithoutGps) {
+      return true;
+    }
+    return mGpsStatus != null && mGpsStatus.isFixed();
   }
 
   private void stopGps() {
@@ -258,8 +274,11 @@ public class TrackerGPS extends DefaultTrackerComponent implements TickListener 
       if (mGpsStatus == null) {
         return;
       }
-
-      if (!mGpsStatus.isFixed()) {
+      if (mRaceReady) {
+        if (!mGpsStatus.isStarted()) {
+          return;
+        }
+      } else if (!mGpsStatus.isFixed()) {
         return;
       }
     }
@@ -270,7 +289,7 @@ public class TrackerGPS extends DefaultTrackerComponent implements TickListener 
 
     Callback tmp = mConnectCallback;
     mConnectCallback = null;
-    if (mGpsStatus != null) {
+    if (mGpsStatus != null && !mRaceReady) {
       mGpsStatus.stop(this);
       // note: Don't reset mGpsStatus, it's used for isConnected()
     }

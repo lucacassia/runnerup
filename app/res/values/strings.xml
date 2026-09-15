@@ -53,6 +53,10 @@
     <string name="delete_all_summary">Delete all activities and their laps, locations and upload history from the database</string>
     <string name="press_hold_to_stop">Press and hold to stop</string>
     <string name="records_section_title">Personal records</string>
+    <string name="calendar_section_title">Calendar</string>
+    <string name="calendar_prev">Previous month</string>
+    <string name="calendar_next">Next month</string>
+    <string name="calendar_run_item">%1$s · %2$s</string>
     <string name="records_1k">1K</string>
     <string name="records_1mi">1Mi</string>
     <string name="records_2mi">2Mi</string>

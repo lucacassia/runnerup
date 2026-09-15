@@ -426,6 +426,7 @@ public class Tracker extends android.app.Service implements LocationListener, Co
 
   /** Refresh the ongoing notification from the workout */
   public void displayNotificationState() {
+    if (activityOngoingState == null) return;
     notificationStateManager.displayNotificationState(activityOngoingState);
   }
 
@@ -746,6 +747,14 @@ public class Tracker extends android.app.Service implements LocationListener, Co
 
   public TrackerState getState() {
     return state.get();
+  }
+
+  /**
+   * @return true when the connecting GPS component reports a fix
+   */
+  public boolean isGpsFixed() {
+    TrackerComponent tc = components.getComponent(TrackerGPS.NAME);
+    return tc instanceof TrackerGPS && ((TrackerGPS) tc).isFixed();
   }
 
   public void registerTrackerStateListener(ValueModel.ChangeListener<TrackerState> listener) {

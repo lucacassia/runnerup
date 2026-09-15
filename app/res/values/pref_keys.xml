@@ -157,4 +157,7 @@
     <string name="pref_about">pref_about</string>
 
     <string name="pref_parkrun_barcode">pref_parkrun_barcode</string>
+
+    <string name="pref_race_ready_start">pref_race_ready_start</string>
+    <string name="pref_gps_locked_cue">pref_gps_locked_cue</string>
 </resources>

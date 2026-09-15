@@ -1,5 +1,6 @@
 package org.runnerup.db;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -17,13 +18,17 @@ import android.database.sqlite.SQLiteDatabase;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.runnerup.common.util.Constants.DB;
 import org.runnerup.db.Statistics.ActivityRow;
 import org.runnerup.db.Statistics.BucketPeriod;
+import org.runnerup.db.Statistics.CalendarDay;
 import org.runnerup.db.Statistics.Metric;
 
 public class StatisticsTest {
@@ -274,6 +279,7 @@ public class StatisticsTest {
     when(cursor.getDouble(2)).thenReturn(1000.0);
     when(cursor.isNull(3)).thenReturn(true);
     when(cursor.isNull(4)).thenReturn(true);
+    when(cursor.getInt(5)).thenReturn(0);
     when(db.query(
             eq(DB.ACTIVITY.TABLE),
             any(String[].class),
@@ -286,6 +292,7 @@ public class StatisticsTest {
     List<Statistics.ActivityRow> rows = Statistics.queryActivities(db, at("2026-01-01"), 0);
     assertEquals(1, rows.size());
     assertEquals(1000.0, rows.get(0).distance, 0.0);
+    assertEquals(0, rows.get(0).sport);
     ArgumentCaptor<String> selection = ArgumentCaptor.forClass(String.class);
     ArgumentCaptor<String[]> args = ArgumentCaptor.forClass(String[].class);
     verify(db)
@@ -388,5 +395,57 @@ public class StatisticsTest {
     assertEquals(3, counts[0]);
     assertEquals(5, counts[4]);
     assertEquals(0, counts[1]);
+  }
+
+  @Test
+  public void groupActivitiesByDayGroupsLocalDates() {
+    List<ActivityRow> rows = new ArrayList<>();
+    rows.add(new ActivityRow(1, at("2026-06-01"), 1000.0));
+    rows.add(new ActivityRow(2, at("2026-06-01"), 2000.0));
+    rows.add(new ActivityRow(3, at("2026-06-02"), 500.0));
+    Map<LocalDate, List<ActivityRow>> byDay = Statistics.groupActivitiesByDay(rows, UTC);
+    assertEquals(2, byDay.size());
+    assertEquals(2, byDay.get(LocalDate.parse("2026-06-01")).size());
+    assertEquals(1, byDay.get(LocalDate.parse("2026-06-02")).size());
+  }
+
+  @Test
+  public void calendarDaysLaysOutMonth() {
+    LocalDate month = LocalDate.of(2026, 7, 1); // 1 July 2026 is a Wednesday
+    CalendarDay[] cells = Statistics.calendarDays(month, new HashMap<>());
+    assertEquals(7 * 6, cells.length);
+    int leading = month.getDayOfWeek().getValue() - 1;
+    assertEquals(0, cells[0].day);
+    assertEquals(0, cells[leading - 1].day);
+    assertEquals(1, cells[leading].day);
+    assertEquals(month.lengthOfMonth(), cells[leading + month.lengthOfMonth() - 1].day);
+    assertEquals(0, cells[leading + month.lengthOfMonth()].day);
+  }
+
+  @Test
+  public void calendarDaysSumDistanceAndIds() {
+    LocalDate month = LocalDate.of(2026, 6, 1);
+    int leading = month.getDayOfWeek().getValue() - 1;
+    Map<LocalDate, List<ActivityRow>> byDay = new HashMap<>();
+    byDay.put(
+        LocalDate.parse("2026-06-10"),
+        Arrays.asList(
+            new ActivityRow(1, at("2026-06-10"), 1000.0),
+            new ActivityRow(2, at("2026-06-10"), 3000.0)));
+    CalendarDay[] cells = Statistics.calendarDays(month, byDay);
+    CalendarDay cell = cells[leading + 9];
+    assertEquals(10, cell.day);
+    assertEquals(4000.0, cell.distance, 1e-9);
+    assertArrayEquals(new long[] {1, 2}, cell.activityIds);
+  }
+
+  @Test
+  public void distanceBucketScalesAndClamps() {
+    assertEquals(0, Statistics.distanceBucket(0, 10, 4));
+    assertEquals(0, Statistics.distanceBucket(5, 0, 4));
+    assertEquals(1, Statistics.distanceBucket(1, 10, 4));
+    assertEquals(2, Statistics.distanceBucket(5, 10, 4));
+    assertEquals(4, Statistics.distanceBucket(10, 10, 4));
+    assertEquals(4, Statistics.distanceBucket(50, 10, 4));
   }
 }

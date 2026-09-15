@@ -86,6 +86,7 @@ import org.runnerup.util.TickListener;
 import org.runnerup.widget.MaterialTitleSpinner;
 import org.runnerup.widget.NumberPicker;
 import org.runnerup.widget.SpinnerInterface.OnSetValueListener;
+import org.runnerup.workout.RaceReady;
 import org.runnerup.workout.RepeatStep;
 import org.runnerup.workout.Sport;
 import org.runnerup.workout.Step;
@@ -137,6 +138,8 @@ public class StartFragment extends Fragment implements TickListener {
   boolean sportWithoutGps = false;
   boolean batteryLevelMessageShown = false;
 
+  private SharedPreferences appPrefs = null;
+
   MaterialTitleSpinner sportSpinner = null;
   SportAdapter sportAdapter = null;
   boolean sportInitialized = false;
@@ -187,6 +190,7 @@ public class StartFragment extends Fragment implements TickListener {
     Context context = requireContext();
     mDB = DBHelper.getWritableDatabase(context);
     formatter = new Formatter(context);
+    appPrefs = PreferenceManager.getDefaultSharedPreferences(context);
 
     bindGpsTracker();
     mGpsStatus = new org.runnerup.tracker.GpsStatus(context);
@@ -222,6 +226,7 @@ public class StartFragment extends Fragment implements TickListener {
         prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
     sportSpinner.setValue(initialSport);
     sportInitialized = true;
+    sportWithoutGps = Sport.isWithoutGps(initialSport);
     updateSportFieldIcon(initialSport);
 
     startButton = view.findViewById(R.id.start_button);
@@ -643,6 +648,9 @@ public class StartFragment extends Fragment implements TickListener {
     SharedPreferences audioPref =
         WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_advanced_audio));
     Workout w = advancedWorkout;
+    if (w == null && RaceReady.enabled(getResources(), pref)) {
+      w = RaceReady.defaultWorkout(getResources(), pref);
+    }
     if (w != null) {
       WorkoutBuilder.prepareWorkout(getResources(), pref, w);
       WorkoutBuilder.addAudioCuesToWorkout(getResources(), w, audioPref, pref);
@@ -658,15 +666,38 @@ public class StartFragment extends Fragment implements TickListener {
 
     // This will start the advancedWorkoutSpinner!
     mTracker.setWorkout(prepareWorkout());
-    mTracker.start();
+
+    boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
+    boolean startNow =
+        RaceReady.connected(
+            sportWithoutGps, raceReady, mTracker.getState() == TrackerState.CONNECTED);
+
+    Intent intent = new Intent(requireContext(), RunActivity.class);
+    if (!startNow) {
+      intent.putExtra(RunActivity.EXTRA_DEFERRED_START, true);
+    } else {
+      mTracker.start();
+    }
 
     runActivityPending = true;
-    Intent intent = new Intent(requireContext(), RunActivity.class);
     runLauncher.launch(intent);
   }
 
   private final OnClickListener startButtonClick =
       v -> {
+        if (mTracker == null) return;
+        boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
+        if (raceReady && !sportWithoutGps) {
+          if (mGpsStatus == null || !mGpsStatus.isStarted()) {
+            if (checkPermissions(true)) {
+              updateView();
+              return;
+            }
+            startGps();
+          }
+          startWorkout();
+          return;
+        }
         if (mTracker.getState() == TrackerState.CONNECTED) {
           startWorkout();
           return;
@@ -896,32 +927,26 @@ public class StartFragment extends Fragment implements TickListener {
   }
 
   private void updateStartButtonView() {
+    boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
     do {
-      if (!mGpsStatus.isStarted()) {
+      if (mTracker == null || !mIsBound) break;
+
+      if (raceReady) {
+        TrackerState st = mTracker.getState();
+        if (st == TrackerState.CONNECTING || st == TrackerState.CONNECTED) {
+          startButton.setVisibility(View.VISIBLE);
+          return;
+        }
         break;
       }
 
+      if (!mGpsStatus.isStarted()) break;
       if (!sportWithoutGps) {
-        if (!mGpsStatus.isLogging()) {
-          break;
-        }
-
-        if (!mGpsStatus.isFixed()) {
-          break;
-        }
+        if (!mGpsStatus.isLogging()) break;
+        if (!mGpsStatus.isFixed()) break;
       }
-
-      if (mTracker == null || !mIsBound) {
-        break;
-      }
-
-      if (mTracker.getState() != TrackerState.CONNECTED) {
-        break;
-      }
-
-      if (advancedWorkout == null) {
-        break;
-      }
+      if (mTracker.getState() != TrackerState.CONNECTED) break;
+      if (advancedWorkout == null) break;
 
       startButton.setVisibility(View.VISIBLE);
       return;
