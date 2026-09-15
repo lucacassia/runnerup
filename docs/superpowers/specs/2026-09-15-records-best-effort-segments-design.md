@@ -25,9 +25,13 @@ of what the 10K's total time was. This is Strava's "best effort" model.
    - When a run qualifies both ways, the faster candidate wins.
 2. **Moving time:** segment time uses the run's moving-time clock (`elapsed`), which already
    excludes paused wall time — consistent with every pace shown in the app.
-3. **Segments may not span a data gap:** a candidate window is rejected if it spans an inter-point
-   wall-clock gap larger than `GAP_MS = 60_000`. This prevents a pause in the middle of a run from
-   producing an artificially fast record.
+3. **Segments may not span a pause:** a candidate window is rejected if it spans an inter-point
+   pause (wall-clock minus elapsed) larger than `GAP_MS = 60_000`. This prevents a real pause
+   from producing an artificially fast record, while allowing slow-but-continuous sampling
+   (where wall-clock delta equals elapsed delta) to contribute. Note: the plan's implementation
+   text ("wall-clock gap") is a simplification; the excess-over-elapsed form is what the tests
+   require and what the `LocationEntity.LocationList` semantics (pause edges have elapsed delta = 0)
+   make functionally equivalent on real data.
 4. **Everything else stays:** truncation (`D <= longest` run), the "Longest" badge (single longest
    run), Longest-for-other-sports, badge anatomy/ring colors, sport-chip filtering, badge tap →
    `DetailActivity`, History-row trophies, empty-filter hides the section.
@@ -56,8 +60,8 @@ testable like `RecordUtils`).
   2. The window start lies between points `s` and `s+1`; interpolate its timestamp linearly to sit
      at exactly `cumDist[i] − D`.
   3. Window time = `elapsed[i] − interpolatedStart`.
-  4. Reject the window if any consecutive-point **wall-clock** (`time`) gap inside it exceeds
-     `GAP_MS` (drop the window and restart the pointer across such gaps).
+   4. Reject the window if any consecutive-point **pause** (wall-clock minus elapsed time)
+      gap inside it exceeds `GAP_MS` (drop the window and restart the pointer across such gaps).
   5. Keep the minimum window time.
 - Output: the best effort `{windowStartMs, windowEndMs, timeMs}` or `null` when the run never
   reaches `D`.
