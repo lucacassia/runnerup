@@ -7,7 +7,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.runnerup.common.util.Constants.DB;
 import org.runnerup.common.util.Constants.DB.ACTIVITY;
 
@@ -212,6 +214,74 @@ public final class Statistics {
       }
     }
     return rows;
+  }
+
+  public static final int CALENDAR_COLUMNS = 7;
+  public static final int CALENDAR_ROWS = 6;
+
+  public static final class CalendarDay {
+    public static final CalendarDay BLANK = new CalendarDay(0, 0, new long[0]);
+
+    public final int day;
+    public final double distance;
+    public final long[] activityIds;
+
+    public CalendarDay(int day, double distance, long[] activityIds) {
+      this.day = day;
+      this.distance = distance;
+      this.activityIds = activityIds;
+    }
+  }
+
+  public static Map<LocalDate, List<ActivityRow>> groupActivitiesByDay(
+      List<ActivityRow> rows, ZoneId zone) {
+    Map<LocalDate, List<ActivityRow>> byDay = new HashMap<>();
+    for (ActivityRow row : rows) {
+      LocalDate date = Instant.ofEpochSecond(row.startTime).atZone(zone).toLocalDate();
+      List<ActivityRow> dayRows = byDay.get(date);
+      if (dayRows == null) {
+        dayRows = new ArrayList<>();
+        byDay.put(date, dayRows);
+      }
+      dayRows.add(row);
+    }
+    return byDay;
+  }
+
+  public static CalendarDay[] calendarDays(
+      LocalDate month, Map<LocalDate, List<ActivityRow>> byDay) {
+    CalendarDay[] cells = new CalendarDay[CALENDAR_COLUMNS * CALENDAR_ROWS];
+    LocalDate first = month.withDayOfMonth(1);
+    int leading = first.getDayOfWeek().getValue() - 1;
+    int daysInMonth = month.lengthOfMonth();
+    for (int i = 0; i < cells.length; i++) {
+      int dayOfMonth = i - leading + 1;
+      if (dayOfMonth < 1 || dayOfMonth > daysInMonth) {
+        cells[i] = CalendarDay.BLANK;
+        continue;
+      }
+      List<ActivityRow> dayRows = byDay.get(month.withDayOfMonth(dayOfMonth));
+      if (dayRows == null || dayRows.isEmpty()) {
+        cells[i] = new CalendarDay(dayOfMonth, 0, new long[0]);
+        continue;
+      }
+      double distance = 0;
+      long[] ids = new long[dayRows.size()];
+      for (int j = 0; j < dayRows.size(); j++) {
+        distance += dayRows.get(j).distance;
+        ids[j] = dayRows.get(j).id;
+      }
+      cells[i] = new CalendarDay(dayOfMonth, distance, ids);
+    }
+    return cells;
+  }
+
+  public static int distanceBucket(double distanceMeters, double monthMaxMeters, int steps) {
+    if (distanceMeters <= 0 || monthMaxMeters <= 0 || steps <= 0) {
+      return 0;
+    }
+    int bucket = (int) Math.ceil(steps * distanceMeters / monthMaxMeters);
+    return Math.max(1, Math.min(steps, bucket));
   }
 
   public static int[] sportCounts(SQLiteDatabase db) {
