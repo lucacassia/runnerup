@@ -58,12 +58,15 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.tabs.TabLayout;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -147,6 +150,11 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private long recordsFingerprint = -1L;
   private List<RecordInfo> recordsCache = null;
 
+  private LocalDate shownMonth = null;
+  private Map<LocalDate, List<Statistics.ActivityRow>> calendarByDay = new HashMap<>();
+  private TextView calendarMonthLabel;
+  private CalendarHeatmapView calendarHeatmap;
+
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
           new ActivityResultContracts.StartActivityForResult(),
@@ -204,6 +212,13 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     recordsSection = view.findViewById(R.id.records_section);
     recordsGrid = view.findViewById(R.id.records_grid);
 
+    calendarMonthLabel = view.findViewById(R.id.calendar_month_label);
+    calendarHeatmap = view.findViewById(R.id.calendar_heatmap);
+    calendarHeatmap.setDayLabelFormatter(formatter::getDistanceDisplay);
+    calendarHeatmap.setOnDayTapListener(this::openDay);
+    view.findViewById(R.id.calendar_prev).setOnClickListener(v -> changeMonth(-1));
+    view.findViewById(R.id.calendar_next).setOnClickListener(v -> changeMonth(1));
+
     ChipGroup chipGroup = view.findViewById(R.id.history_sport_chips);
     SharedPreferences sportPrefs = PreferenceManager.getDefaultSharedPreferences(context);
     int savedSport =
@@ -253,6 +268,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           LoaderManager.getInstance(this).restartLoader(0, null, this);
           if (currentTab == TAB_STATISTICS_INDEX) {
             loadStatistics();
+            loadCalendar();
           }
           loadRecords();
           refreshSportBadges();
@@ -280,6 +296,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           public void onTabReselected(TabLayout.Tab tab) {
             if (tab.getPosition() == TAB_STATISTICS_INDEX) {
               loadStatistics();
+              loadCalendar();
             }
             loadRecords();
           }
@@ -362,6 +379,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     LoaderManager.getInstance(this).restartLoader(0, null, this);
     if (currentTab == TAB_STATISTICS_INDEX) {
       loadStatistics();
+      loadCalendar();
     }
     loadRecords();
   }
@@ -432,6 +450,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         index == TAB_HISTORY_INDEX && adapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
     if (index == TAB_STATISTICS_INDEX) {
       loadStatistics();
+      loadCalendar();
     }
     loadRecords();
   }
@@ -460,6 +479,48 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                     });
               });
         });
+  }
+
+  private void loadCalendar() {
+    if (mDB == null || calendarHeatmap == null) {
+      return;
+    }
+    if (shownMonth == null) {
+      shownMonth = LocalDate.now(ZoneId.systemDefault()).withDayOfMonth(1);
+    }
+    statisticsExecutor.execute(
+        () -> {
+          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, 0L, currentSport);
+          Map<LocalDate, List<Statistics.ActivityRow>> byDay =
+              Statistics.groupActivitiesByDay(rows, ZoneId.systemDefault());
+          mainHandler.post(
+              () -> {
+                calendarByDay = byDay;
+                renderCalendar();
+              });
+        });
+  }
+
+  private void renderCalendar() {
+    if (shownMonth == null || calendarHeatmap == null) {
+      return;
+    }
+    calendarHeatmap.setData(Statistics.calendarDays(shownMonth, calendarByDay));
+    calendarMonthLabel.setText(
+        formatter.formatMonth(
+            Date.from(shownMonth.atStartOfDay(ZoneId.systemDefault()).toInstant())));
+  }
+
+  private void changeMonth(int delta) {
+    shownMonth = shownMonth.plusMonths(delta);
+    renderCalendar();
+  }
+
+  private void openDay(int dayOfMonth) {
+    List<Statistics.ActivityRow> dayRows = calendarByDay.get(shownMonth.withDayOfMonth(dayOfMonth));
+    if (dayRows == null || dayRows.isEmpty()) {
+      return;
+    }
   }
 
   @SuppressLint("NotifyDataSetChanged")
