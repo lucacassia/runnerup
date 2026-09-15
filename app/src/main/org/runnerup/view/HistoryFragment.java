@@ -498,7 +498,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         double longestDistance = queryLongestDistance(db, sport);
         List<RunTrack> tracks = loadRunTracks(db, sport);
         for (int i = 0; i < RECORD_DISTANCES.length; i++) {
-          if (RECORD_DISTANCES[i] > longestDistance) {
+          if (longestDistance < RecordUtils.bandLower(RECORD_DISTANCES[i])) {
             break;
           }
           RecordInfo record = queryBestRunningRecord(db, sport, RECORD_DISTANCES[i], tracks);
@@ -536,7 +536,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
       while (cursor.moveToNext()) {
         maxId = Math.max(maxId, cursor.getLong(0));
       }
-      return (cursor.getCount() << 32) | (maxId & 0xFFFFFFFFL);
+      return ((long) cursor.getCount() << 32) | (maxId & 0xFFFFFFFFL);
     }
   }
 
