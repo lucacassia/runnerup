@@ -63,8 +63,6 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,14 +138,14 @@ public class StartFragment extends Fragment implements TickListener {
   boolean sportWithoutGps = false;
   boolean batteryLevelMessageShown = false;
 
-  private FavoritesStore favoritesStore;
-  private String advancedWorkoutName = "";
-  private ChipGroup favoriteChips;
-  private SharedPreferences appPrefs;
+  private SharedPreferences appPrefs = null;
 
   MaterialTitleSpinner sportSpinner = null;
   SportAdapter sportAdapter = null;
   boolean sportInitialized = false;
+
+  MaterialTitleSpinner advancedWorkoutSpinner = null;
+  WorkoutListAdapter advancedWorkoutListAdapter = null;
   Workout advancedWorkout = null;
   RecyclerView advancedStepList = null;
   WorkoutPlanAdapter advancedWorkoutStepsAdapter = null;
@@ -168,10 +166,13 @@ public class StartFragment extends Fragment implements TickListener {
         if (key.equals(getString(R.string.pref_advanced_workout))) {
           String newName = sharedPrefs.getString(key, "");
           if (!newName.isEmpty()) {
-            advancedWorkoutName = newName;
             loadAdvanced(newName);
-            populateFavoriteChips();
-            updateView();
+            if (advancedWorkoutSpinner != null) {
+              advancedWorkoutSpinner.setValue(newName);
+            }
+            if (advancedWorkoutListAdapter != null) {
+              advancedWorkoutListAdapter.reload();
+            }
           }
         }
       };
@@ -259,14 +260,12 @@ public class StartFragment extends Fragment implements TickListener {
     advancedAudioSpinner.setOnSetValueListener(
         new OnConfigureAudioListener(advancedAudioListAdapter));
 
-    favoritesStore =
-        new FavoritesStore(
-            appPrefs,
-            getString(R.string.pref_favorite_workouts),
-            getString(R.string.pref_last_workout));
-    favoriteChips = view.findViewById(R.id.favorite_chips);
-    populateFavoriteChips();
-
+    advancedWorkoutSpinner = view.findViewById(R.id.advanced_workout_spinner);
+    advancedWorkoutListAdapter = new WorkoutListAdapter(inflater);
+    advancedWorkoutListAdapter.reload();
+    advancedWorkoutSpinner.setAdapter(advancedWorkoutListAdapter);
+    advancedWorkoutSpinner.setOnSetValueListener(
+        new OnConfigureWorkoutsListener(advancedWorkoutListAdapter));
     advancedStepList = view.findViewById(R.id.advanced_step_list);
     advancedStepList.setLayoutManager(new LinearLayoutManager(context));
     advancedWorkoutStepsAdapter = new WorkoutPlanAdapter(this::editRepeatCount, onWorkoutChanged);
@@ -382,6 +381,32 @@ public class StartFragment extends Fragment implements TickListener {
     }
   }
 
+  private class OnConfigureWorkoutsListener implements OnSetValueListener {
+    final WorkoutListAdapter adapter;
+
+    OnConfigureWorkoutsListener(WorkoutListAdapter adapter) {
+      this.adapter = adapter;
+    }
+
+    @Override
+    public String preSetValue(String newValue) throws IllegalArgumentException {
+      if (newValue != null
+          && newValue.contentEquals((String) adapter.getItem(adapter.getCount() - 1))) {
+        Intent i = new Intent(requireContext(), ManageWorkoutsActivity.class);
+        startActivity(i);
+        throw new IllegalArgumentException();
+      }
+      loadAdvanced(newValue);
+      return newValue;
+    }
+
+    @Override
+    public int preSetValue(int newValueId) throws IllegalArgumentException {
+      loadAdvanced(null);
+      return newValueId;
+    }
+  }
+
   @Override
   public void onStart() {
     super.onStart();
@@ -392,15 +417,16 @@ public class StartFragment extends Fragment implements TickListener {
   public void onResume() {
     super.onResume();
     advancedAudioListAdapter.reload();
+    advancedWorkoutListAdapter.reload();
 
+    // Ensure spinner reflects current preference after returning from CreateAdvancedWorkout
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
     String currentWorkoutName = prefs.getString(getString(R.string.pref_advanced_workout), "");
-    if (!currentWorkoutName.isEmpty()) {
-      advancedWorkoutName = currentWorkoutName;
+    if (!currentWorkoutName.isEmpty() && advancedWorkoutSpinner != null) {
+      advancedWorkoutSpinner.setValue(currentWorkoutName);
     }
 
     loadAdvanced(null);
-    populateFavoriteChips();
     if (!mIsBound || mTracker == null) {
       bindGpsTracker();
     } else {
@@ -634,12 +660,11 @@ public class StartFragment extends Fragment implements TickListener {
 
   private void startWorkout() {
     mGpsStatus.stop(StartFragment.this);
+
+    // unregister receivers
     unregisterStartEventListener();
 
-    if (!advancedWorkoutName.isEmpty()) {
-      favoritesStore.setLastUsed(advancedWorkoutName);
-    }
-
+    // This will start the advancedWorkoutSpinner!
     mTracker.setWorkout(prepareWorkout());
 
     boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
@@ -926,6 +951,7 @@ public class StartFragment extends Fragment implements TickListener {
       startButton.setVisibility(View.VISIBLE);
       return;
     } while (false);
+
     startButton.setVisibility(View.GONE);
   }
 
@@ -1246,43 +1272,6 @@ public class StartFragment extends Fragment implements TickListener {
     updateView();
   }
 
-  private final ActivityResultLauncher<Intent> manageWorkoutsLauncher =
-      registerForActivityResult(
-          new ActivityResultContracts.StartActivityForResult(),
-          result -> {
-            loadAdvanced(null);
-            populateFavoriteChips();
-            updateView();
-          });
-
-  private void populateFavoriteChips() {
-    if (favoriteChips == null) return;
-    favoriteChips.removeAllViews();
-    Context ctx = requireContext();
-    for (String name : favoritesStore.getPins()) {
-      if (!WorkoutSerializer.getFile(ctx, name).exists()) continue;
-      Chip chip = new Chip(ctx);
-      chip.setText(
-          favoritesStore.getLastUsed() != null && name.contentEquals(favoritesStore.getLastUsed())
-              ? getString(org.runnerup.common.R.string.Last_used_prefix) + name
-              : name);
-      chip.setOnClickListener(v -> selectWorkout(name));
-      favoriteChips.addView(chip);
-    }
-    Chip choose = new Chip(ctx);
-    choose.setText(org.runnerup.common.R.string.Choose_workout);
-    choose.setOnClickListener(
-        v -> manageWorkoutsLauncher.launch(new Intent(ctx, ManageWorkoutsActivity.class)));
-    favoriteChips.addView(choose);
-  }
-
-  private void selectWorkout(String name) {
-    advancedWorkoutName = name;
-    loadAdvanced(name);
-    appPrefs.edit().putString(getString(R.string.pref_advanced_workout), name).apply();
-    updateView();
-  }
-
   @SuppressLint("NotifyDataSetChanged")
   private void loadAdvanced(String name) {
     Context ctx = requireActivity().getApplicationContext();
@@ -1515,18 +1504,19 @@ public class StartFragment extends Fragment implements TickListener {
 
   private final Runnable onWorkoutChanged =
       () -> {
-        String name = advancedWorkoutName;
-        if (name == null || name.isEmpty() || advancedWorkout == null) return;
-        Context ctx = requireActivity().getApplicationContext();
-        try {
-          WorkoutSerializer.writeFile(ctx, name, advancedWorkout);
-        } catch (Exception ex) {
-          new MaterialAlertDialogBuilder(requireContext())
-              .setTitle(org.runnerup.common.R.string.Failed_to_load_workout)
-              .setMessage(ex.toString())
-              .setPositiveButton(
-                  org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
-              .show();
+        String name = advancedWorkoutSpinner.getValue().toString();
+        if (advancedWorkout != null) {
+          Context ctx = requireActivity().getApplicationContext();
+          try {
+            WorkoutSerializer.writeFile(ctx, name, advancedWorkout);
+          } catch (Exception ex) {
+            new MaterialAlertDialogBuilder(requireContext())
+                .setTitle(org.runnerup.common.R.string.Failed_to_load_workout)
+                .setMessage(ex.toString())
+                .setPositiveButton(
+                    org.runnerup.common.R.string.OK, (dialog, which) -> dialog.dismiss())
+                .show();
+          }
         }
       };
 

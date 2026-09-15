@@ -160,6 +160,4 @@
 
     <string name="pref_race_ready_start">pref_race_ready_start</string>
     <string name="pref_gps_locked_cue">pref_gps_locked_cue</string>
-    <string name="pref_favorite_workouts">pref_favorite_workouts</string>
-    <string name="pref_last_workout">pref_last_workout</string>
 </resources>

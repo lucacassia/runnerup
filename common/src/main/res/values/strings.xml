@@ -451,10 +451,4 @@
     <string name="Gps_locked_cue_summary">Announce GPS lock when starting</string>
     <string name="Gps_wait_subtitle">The run starts automatically once GPS locks</string>
     <string name="Run_discarded">Run discarded</string>
-    <string name="Added_to_favorites">Added to favorites</string>
-    <string name="Removed_from_favorites">Removed from favorites</string>
-    <string name="Choose_workout">Choose workout\u2026</string>
-    <string name="Favorite">Favorite</string>
-    <string name="Remove_favorite">Remove favorite</string>
-    <string name="Last_used_prefix">\u21bb </string>
 </resources>

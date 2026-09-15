@@ -61,7 +61,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   private boolean dontAskAgain = false;
   private boolean workoutEditMode = false;
   private byte[] originalWorkoutSnapshot;
-  private FavoritesStore favoritesStore;
   private final Runnable onWorkoutChanged =
       () -> {
         String advWorkoutName = currentWorkoutName;
@@ -118,11 +117,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     String advWorkoutName = intent.getStringExtra(ManageWorkoutsActivity.WORKOUT_NAME);
     workoutEditMode = intent.getBooleanExtra(ManageWorkoutsActivity.WORKOUT_EDIT_MODE, false);
     currentWorkoutName = advWorkoutName;
-    favoritesStore =
-        new FavoritesStore(
-            PreferenceManager.getDefaultSharedPreferences(getApplicationContext()),
-            getString(R.string.pref_favorite_workouts),
-            getString(R.string.pref_last_workout));
 
     dontAskAgain = false;
 
@@ -676,7 +670,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                     File f = WorkoutSerializer.getFile(getApplicationContext(), name);
                     //noinspection ResultOfMethodCallIgnored
                     f.delete();
-                    favoritesStore.cleanupDeleted(name);
                     finish();
                   })
               .setNegativeButton(
@@ -727,7 +720,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                   File f = WorkoutSerializer.getFile(getApplicationContext(), name);
                   //noinspection ResultOfMethodCallIgnored
                   f.delete();
-                  favoritesStore.cleanupDeleted(name);
                   try {
                     WorkoutOrder.remove(WorkoutOrder.orderFile(getApplicationContext()), name);
                   } catch (IOException ignored) {
@@ -803,7 +795,6 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
                           newWorkoutName);
                     } catch (IOException ignored) {
                     }
-                    favoritesStore.rename(oldWorkoutName, newWorkoutName);
                     SharedPreferences prefs =
                         PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
                     String key = getString(R.string.pref_advanced_workout);
