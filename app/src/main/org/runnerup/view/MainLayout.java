@@ -344,7 +344,7 @@ public class MainLayout extends AppCompatActivity {
 
         if (!isFile) {
           // The request is hierarchical, source is still on a directory level
-          File dstDir = new File(dstBase);
+          File dstDir = new File(dst);
           //noinspection ResultOfMethodCallIgnored
           dstDir.mkdir();
           if (!dstDir.isDirectory()) {
@@ -377,14 +377,13 @@ public class MainLayout extends AppCompatActivity {
             continue;
           }
 
-          pref.edit().putBoolean(key, true).apply();
-
           Log.d(getClass().getName(), "Copying: " + dst);
           InputStream input = null;
           try {
             input = mgr.open(src);
             FileUtil.copy(input, dst);
             handleHooks(add);
+            pref.edit().putBoolean(key, true).apply(); // Store successfull copy
           } catch (IOException e) {
             e.printStackTrace();
           } finally {

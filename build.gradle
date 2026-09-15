@@ -4,12 +4,12 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:9.3.1'
+        classpath 'com.android.tools.build:gradle:9.4.0'
     }
 }
 
 plugins {
-    id "com.diffplug.spotless" version "8.6.0"
+    id "com.diffplug.spotless" version "8.10.2"
 }
 
 repositories {
@@ -20,8 +20,8 @@ project.ext {
     //Common settings for most builds
     //Note that Android Studio does not know about the 'ext' module and will warn
     buildToolsVersion = '37.0.0' // also .github/workflows/actions.yml
-    compileSdk = 36.1 // also .github/workflows/actions.yml
-    targetSdk = 36.1
+compileSdk = 37.2 // also .github/workflows/actions.yml
+    targetSdk = 37.2
     minSdk = 28
 
     appcompat_version = "1.8.0"
@@ -110,13 +110,28 @@ project.ext {
     }
 }
 
-// Special setup for antPlusLib, not allowed to copy the .aar and create mavenLocal
-// Raises warning:
-// AGPBI: {"kind":"warning","text":"Using flatDir should be avoided because it doesn't support any meta-data formats.","sources":[{}]}
 allprojects {
     repositories {
+        google()
+        mavenCentral()
         if (rootProject.ext.antPlusLibName) {
-            flatDir { dirs rootProject.ext.antPlusLibPath }
+            ivy {
+                url = uri(rootProject.ext.antPlusLibPath)
+                patternLayout {
+                    artifact '[artifact].[ext]'
+                }
+                metadataSources {
+                    artifact()
+                }
+            }
+        }
+    }
+    tasks.withType(JavaCompile).tap {
+        configureEach {
+            // if (project.name != 'wear') {
+            //    options.compilerArgs << "-Xlint:deprecation";
+            // }
+            options.compilerArgs << "-Xlint:unchecked"
         }
     }
 }
@@ -132,12 +147,5 @@ spotless {
         ktfmt().googleStyle()
         target '**/*.kt'
         targetExclude '**/build/**'
-    }
-}
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
     }
 }

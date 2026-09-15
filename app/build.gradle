@@ -144,7 +144,8 @@ android {
 
 repositories {
     google()
-    mavenCentral() //MapBox GraphView
+    mavenCentral()
+    maven { url = 'https://jitpack.io' }
     if (rootProject.ext.mapboxEnabled) {
         maven {
             url = 'https://api.mapbox.com/downloads/v2/releases/maven'
@@ -180,7 +181,7 @@ dependencies {
         latestImplementation "com.google.android.gms:play-services-wearable:${rootProject.ext.googlePlayServicesWearableVersion}"
     }
 
-    implementation "com.squareup.okhttp3:okhttp:5.4.0"
+    implementation "com.squareup.okhttp3:okhttp:5.5.0"
     implementation "androidx.camera:camera-core:${rootProject.ext.camerax_version}"
     implementation "androidx.camera:camera-camera2:${rootProject.ext.camerax_version}"
     implementation "androidx.camera:camera-lifecycle:${rootProject.ext.camerax_version}"
@@ -199,15 +200,6 @@ dependencies {
     testImplementation "junit:junit:${rootProject.ext.junitVersion}"
     testImplementation "org.mockito:mockito-core:${rootProject.ext.mockitoVersion}"
     testImplementation "org.json:json:20260814"
-}
-
-allprojects {
-    tasks.withType(JavaCompile).tap {
-        configureEach {
-            // options.compilerArgs << "-Xlint:deprecation";
-            options.compilerArgs << "-Xlint:unchecked"
-        }
-    }
 }
 
 def props = new Properties()
