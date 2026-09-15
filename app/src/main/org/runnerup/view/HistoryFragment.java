@@ -556,9 +556,15 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           row.time != null
               ? formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(row.time))
               : "";
-      item.setText(
-          formatter.getDistanceDisplay(row.distance)
-              + (timeLabel.isEmpty() ? "" : "  ·  " + timeLabel));
+      if (timeLabel.isEmpty()) {
+        item.setText(formatter.getDistanceDisplay(row.distance));
+      } else {
+        item.setText(
+            getString(
+                org.runnerup.R.string.calendar_run_item,
+                formatter.getDistanceDisplay(row.distance),
+                timeLabel));
+      }
       item.setOnClickListener(
           v -> {
             sheet.dismiss();

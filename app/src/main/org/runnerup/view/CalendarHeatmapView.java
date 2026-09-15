@@ -11,6 +11,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import androidx.core.graphics.ColorUtils;
 import com.google.android.material.R;
+import java.util.Locale;
 import org.runnerup.db.Statistics;
 
 public class CalendarHeatmapView extends View {
@@ -41,7 +42,7 @@ public class CalendarHeatmapView extends View {
   private final GestureDetector gestureDetector;
 
   private OnDayTapListener onDayTapListener;
-  private DayLabelFormatter dayLabelFormatter = value -> String.format("%.1f", value);
+  private DayLabelFormatter dayLabelFormatter = value -> String.format(Locale.ROOT, "%.1f", value);
   private Statistics.CalendarDay[] cells = new Statistics.CalendarDay[0];
   private double monthMax = 0;
   private int fillColor = 0xFFD68C27;
