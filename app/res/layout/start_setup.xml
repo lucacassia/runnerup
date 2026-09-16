@@ -6,7 +6,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurfaceContainerLow"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:ignore="Overdraw">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/setup_toolbar"
@@ -195,7 +196,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            tools:ignore="UseCompoundDrawables">
 
             <ImageView
                 android:id="@+id/setup_gps_indicator"

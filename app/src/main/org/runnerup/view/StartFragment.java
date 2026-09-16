@@ -609,7 +609,7 @@ public class StartFragment extends Fragment implements TickListener {
     // unregister receivers
     unregisterStartEventListener();
 
-    // This will start the advancedWorkoutSpinner!
+    // This will set the workout on the tracker
     mTracker.setWorkout(prepareWorkout());
 
     boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
