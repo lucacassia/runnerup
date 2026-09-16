@@ -78,6 +78,18 @@ public class MainLayout extends AppCompatActivity {
   private static final String STATE_PAGE = "state_page";
 
   private ViewPager2 pager;
+  private boolean startFlowActive = false;
+
+  public void setStartFlowActive(boolean active) {
+    startFlowActive = active;
+    applyStartFlowConstraints();
+  }
+
+  private void applyStartFlowConstraints() {
+    pager.setUserInputEnabled(!startFlowActive || pager.getCurrentItem() != 0);
+    findViewById(R.id.bottom_navigation)
+        .setVisibility(startFlowActive && pager.getCurrentItem() == 0 ? View.GONE : View.VISIBLE);
+  }
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -186,6 +198,7 @@ public class MainLayout extends AppCompatActivity {
                 position == 1
                     ? R.id.tab_history
                     : position == 2 ? R.id.tab_settings : R.id.tab_start);
+            applyStartFlowConstraints();
           }
         });
 

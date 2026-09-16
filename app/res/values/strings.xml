@@ -66,4 +66,12 @@
     <string name="records_half">Half Marathon</string>
     <string name="records_full">Marathon</string>
     <string name="records_longest">Longest</string>
+    <string name="Setup_run">Setup Run</string>
+    <string name="Setup_section_activity">Activity</string>
+    <string name="Setup_section_guidance">Guidance</string>
+    <string name="Audio_cues">Audio cues</string>
+    <string name="None">None</string>
+    <string name="Start_run">Start Run</string>
+    <string name="Setup_steps_hint">Tap a step to edit — optional</string>
+    <string name="Setup_steps_hint_record">Tap Start to set up your run</string>
 </resources>
