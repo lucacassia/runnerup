@@ -48,7 +48,9 @@ import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.TextView;
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
@@ -62,8 +64,10 @@ import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -83,9 +87,7 @@ import org.runnerup.tracker.component.TrackerWear;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SafeParse;
 import org.runnerup.util.TickListener;
-import org.runnerup.widget.MaterialTitleSpinner;
 import org.runnerup.widget.NumberPicker;
-import org.runnerup.widget.SpinnerInterface.OnSetValueListener;
 import org.runnerup.workout.RaceReady;
 import org.runnerup.workout.RepeatStep;
 import org.runnerup.workout.Sport;
@@ -104,6 +106,18 @@ public class StartFragment extends Fragment implements TickListener {
     GOOD
   }
 
+  private enum Page {
+    RECORD,
+    SETUP,
+    PICKER
+  }
+
+  private enum PickerKind {
+    SPORT,
+    AUDIO,
+    WORKOUT
+  }
+
   static final String TAB_ADVANCED = "advanced";
 
   private boolean statusDetailsShown = false;
@@ -116,7 +130,26 @@ public class StartFragment extends Fragment implements TickListener {
   private Tracker mTracker = null;
   private org.runnerup.tracker.GpsStatus mGpsStatus = null;
 
+  private final ArrayDeque<Page> pageStack = new ArrayDeque<>();
+  private View recordRoot = null;
+  private View setupRoot = null;
+  private View pickerRoot = null;
   private View startButton = null;
+
+  private PickerKind pickerKind = PickerKind.SPORT;
+  private String[] pickerItems = new String[0];
+  private int pickerSelected = 0;
+
+  private MaterialButton startRunButton = null;
+  private TextView setupSportValue = null;
+  private TextView setupAudioValue = null;
+  private TextView setupWorkoutValue = null;
+  private TextView setupStepsHint = null;
+  private View setupGpsChip = null;
+  private ImageView setupGpsIndicator = null;
+  private TextView setupGpsMessage = null;
+
+  private String selectedWorkoutName = "";
 
   private ImageView expandIcon = null;
   private TextView noDevicesConnected = null;
@@ -140,12 +173,6 @@ public class StartFragment extends Fragment implements TickListener {
 
   private SharedPreferences appPrefs = null;
 
-  MaterialTitleSpinner sportSpinner = null;
-  SportAdapter sportAdapter = null;
-  boolean sportInitialized = false;
-
-  MaterialTitleSpinner advancedWorkoutSpinner = null;
-  WorkoutListAdapter advancedWorkoutListAdapter = null;
   Workout advancedWorkout = null;
   RecyclerView advancedStepList = null;
   WorkoutPlanAdapter advancedWorkoutStepsAdapter = null;
@@ -165,15 +192,8 @@ public class StartFragment extends Fragment implements TickListener {
         assert key != null;
         if (key.equals(getString(R.string.pref_advanced_workout))) {
           String newName = sharedPrefs.getString(key, "");
-          if (!newName.isEmpty()) {
-            loadAdvanced(newName);
-            if (advancedWorkoutSpinner != null) {
-              advancedWorkoutSpinner.setValue(newName);
-            }
-            if (advancedWorkoutListAdapter != null) {
-              advancedWorkoutListAdapter.reload();
-            }
-          }
+          loadAdvanced(newName);
+          updateView();
         }
       };
 
@@ -197,37 +217,13 @@ public class StartFragment extends Fragment implements TickListener {
 
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
-    sportSpinner = view.findViewById(R.id.sport_spinner);
-    sportAdapter = new SportAdapter(context);
-    sportSpinner.setAdapter(sportAdapter);
-    sportSpinner.setOnSetValueListener(
-        new OnSetValueListener() {
-          @Override
-          public String preSetValue(String newValue) {
-            return newValue;
-          }
+    recordRoot = view.findViewById(R.id.record_root);
+    setupRoot = view.findViewById(R.id.setup_root);
+    pickerRoot = view.findViewById(R.id.picker_root);
 
-          @Override
-          public int preSetValue(int newValueId) {
-            if (!sportInitialized) {
-              return newValueId;
-            }
-            SharedPreferences.Editor e =
-                PreferenceManager.getDefaultSharedPreferences(requireContext()).edit();
-            e.putInt(getResources().getString(R.string.pref_sport), newValueId);
-            e.apply();
-            setGpsNotRequired(Sport.isWithoutGps(newValueId));
-            updateSportFieldIcon(newValueId);
-            updateView();
-            return newValueId;
-          }
-        });
     int initialSport =
         prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
-    sportSpinner.setValue(initialSport);
-    sportInitialized = true;
     sportWithoutGps = Sport.isWithoutGps(initialSport);
-    updateSportFieldIcon(initialSport);
 
     startButton = view.findViewById(R.id.start_button);
     startButton.setOnClickListener(startButtonClick);
@@ -255,24 +251,62 @@ public class StartFragment extends Fragment implements TickListener {
     LayoutInflater inflater = getLayoutInflater();
     advancedAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
     advancedAudioListAdapter.reload();
-    MaterialTitleSpinner advancedAudioSpinner = view.findViewById(R.id.advanced_audio_cue_spinner);
-    advancedAudioSpinner.setAdapter(advancedAudioListAdapter);
-    advancedAudioSpinner.setOnSetValueListener(
-        new OnConfigureAudioListener(advancedAudioListAdapter));
 
-    advancedWorkoutSpinner = view.findViewById(R.id.advanced_workout_spinner);
-    advancedWorkoutListAdapter = new WorkoutListAdapter(inflater);
-    advancedWorkoutListAdapter.reload();
-    advancedWorkoutSpinner.setAdapter(advancedWorkoutListAdapter);
-    advancedWorkoutSpinner.setOnSetValueListener(
-        new OnConfigureWorkoutsListener(advancedWorkoutListAdapter));
     advancedStepList = view.findViewById(R.id.advanced_step_list);
     advancedStepList.setLayoutManager(new LinearLayoutManager(context));
     advancedWorkoutStepsAdapter = new WorkoutPlanAdapter(this::editRepeatCount, onWorkoutChanged);
     advancedStepList.setAdapter(advancedWorkoutStepsAdapter);
 
+    setupSportValue = view.findViewById(R.id.setup_sport_value);
+    setupAudioValue = view.findViewById(R.id.setup_audio_value);
+    setupWorkoutValue = view.findViewById(R.id.setup_workout_value);
+    setupStepsHint = view.findViewById(R.id.setup_steps_hint);
+    setupGpsChip = view.findViewById(R.id.setup_gps_chip);
+    setupGpsIndicator = view.findViewById(R.id.setup_gps_indicator);
+    setupGpsMessage = view.findViewById(R.id.setup_gps_message);
+    startRunButton = view.findViewById(R.id.start_run_button);
+    startRunButton.setOnClickListener(startRunClick);
+
+    view.findViewById(R.id.setup_sport_row).setOnClickListener(v -> openPicker(PickerKind.SPORT));
+    view.findViewById(R.id.setup_audio_row).setOnClickListener(v -> openPicker(PickerKind.AUDIO));
+    view.findViewById(R.id.setup_workout_row)
+        .setOnClickListener(v -> openPicker(PickerKind.WORKOUT));
+
+    setupSportValue.setOnClickListener(v -> openPicker(PickerKind.SPORT));
+    updateSetupSportIcon(initialSport);
+
+    ((MaterialToolbar) view.findViewById(R.id.setup_toolbar))
+        .setNavigationOnClickListener(
+            v -> {
+              if (!pageStack.isEmpty()) {
+                popPage();
+              }
+            });
+    ((MaterialToolbar) view.findViewById(R.id.picker_toolbar))
+        .setNavigationOnClickListener(
+            v -> {
+              if (!pageStack.isEmpty()) {
+                popPage();
+              }
+            });
+
     mWearNotifier = new TrackerWear.WearNotifier(requireActivity().getApplicationContext());
     mWearNotifier.onViewCreated();
+
+    requireActivity()
+        .getOnBackPressedDispatcher()
+        .addCallback(
+            getViewLifecycleOwner(),
+            new OnBackPressedCallback(true) {
+              @Override
+              public void handleOnBackPressed() {
+                if (!pageStack.isEmpty()) {
+                  popPage();
+                } else {
+                  setEnabled(false);
+                }
+              }
+            });
   }
 
   private void setGpsNotRequired(boolean val) {
@@ -300,111 +334,13 @@ public class StartFragment extends Fragment implements TickListener {
     }
   }
 
-  private void updateSportFieldIcon(int sport) {
-    Drawable icon =
-        AppCompatResources.getDrawable(requireContext(), Sport.drawableColored16Of(sport));
-    if (icon == null) {
-      return;
-    }
-    icon.setTint(ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
-    sportSpinner.setFieldDrawable(icon);
-  }
-
-  private static class SportAdapter extends BaseAdapter {
-    private final Context context;
-    private final String[] sports;
-
-    SportAdapter(Context context) {
-      this.context = context;
-      this.sports = Sport.getStringArray(context.getResources());
-    }
-
-    @Override
-    public int getCount() {
-      return sports.length;
-    }
-
-    @Override
-    public Object getItem(int position) {
-      return sports[position];
-    }
-
-    @Override
-    public long getItemId(int position) {
-      return position;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-      TextView row =
-          convertView != null
-              ? (TextView) convertView
-              : (TextView)
-                  LayoutInflater.from(parent.getContext())
-                      .inflate(R.layout.sport_picker_row, parent, false);
-      Drawable icon = AppCompatResources.getDrawable(context, Sport.drawableColored16Of(position));
-      if (icon != null) {
-        icon.setTint(ContextCompat.getColor(context, Sport.colorOf(position)));
-      }
-      row.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null);
-      row.setText(sports[position]);
-      return row;
-    }
-
-    @Override
-    public View getDropDownView(int position, View convertView, ViewGroup parent) {
-      return getView(position, convertView, parent);
-    }
-  }
-
-  private class OnConfigureAudioListener implements OnSetValueListener {
-    final AudioSchemeListAdapter adapter;
-
-    OnConfigureAudioListener(AudioSchemeListAdapter adapter) {
-      this.adapter = adapter;
-    }
-
-    @Override
-    public String preSetValue(String newValue) throws IllegalArgumentException {
-      if (newValue != null
-          && newValue.contentEquals((String) adapter.getItem(adapter.getCount() - 1))) {
-        Intent i = new Intent(requireContext(), AudioCueSettingsActivity.class);
-        startActivity(i);
-        throw new IllegalArgumentException();
-      }
-      return newValue;
-    }
-
-    @Override
-    public int preSetValue(int newValueId) throws IllegalArgumentException {
-      return newValueId;
-    }
-  }
-
-  private class OnConfigureWorkoutsListener implements OnSetValueListener {
-    final WorkoutListAdapter adapter;
-
-    OnConfigureWorkoutsListener(WorkoutListAdapter adapter) {
-      this.adapter = adapter;
-    }
-
-    @Override
-    public String preSetValue(String newValue) throws IllegalArgumentException {
-      if (newValue != null
-          && newValue.contentEquals((String) adapter.getItem(adapter.getCount() - 1))) {
-        Intent i = new Intent(requireContext(), ManageWorkoutsActivity.class);
-        startActivity(i);
-        throw new IllegalArgumentException();
-      }
-      loadAdvanced(newValue);
-      return newValue;
-    }
-
-    @Override
-    public int preSetValue(int newValueId) throws IllegalArgumentException {
-      loadAdvanced(null);
-      return newValueId;
-    }
+  private void updateSetupSportIcon(int sport) {
+    if (setupSportValue == null) return;
+    ImageView icon = setupSportValue.getRootView().findViewById(R.id.setup_sport_icon);
+    if (icon == null) return;
+    Drawable d = AppCompatResources.getDrawable(requireContext(), Sport.drawableColored16Of(sport));
+    if (d != null) d.setTint(ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
+    icon.setImageDrawable(d);
   }
 
   @Override
@@ -417,14 +353,6 @@ public class StartFragment extends Fragment implements TickListener {
   public void onResume() {
     super.onResume();
     advancedAudioListAdapter.reload();
-    advancedWorkoutListAdapter.reload();
-
-    // Ensure spinner reflects current preference after returning from CreateAdvancedWorkout
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-    String currentWorkoutName = prefs.getString(getString(R.string.pref_advanced_workout), "");
-    if (!currentWorkoutName.isEmpty() && advancedWorkoutSpinner != null) {
-      advancedWorkoutSpinner.setValue(currentWorkoutName);
-    }
 
     loadAdvanced(null);
     if (!mIsBound || mTracker == null) {
@@ -433,6 +361,9 @@ public class StartFragment extends Fragment implements TickListener {
       onGpsTrackerBound();
     }
     this.updateView();
+    if (!pageStack.isEmpty() && pageStack.peek() == Page.PICKER) {
+      refreshPicker();
+    }
     PreferenceManager.getDefaultSharedPreferences(requireContext())
         .registerOnSharedPreferenceChangeListener(prefChangeListener);
     mWearNotifier.onResume();
@@ -482,18 +413,34 @@ public class StartFragment extends Fragment implements TickListener {
           requireActivity()
               .runOnUiThread(
                   () -> {
-                    if (mTracker == null || startButton.getVisibility() != View.VISIBLE) {
+                    if (mTracker == null || !pageStack.isEmpty()) {
                       return;
                     }
-
-                    if (mTracker.getState() == TrackerState.INIT /* this will start gps */
-                        || mTracker.getState() == TrackerState.INITIALIZED /* ...start a workout*/
-                        || mTracker.getState() == TrackerState.CONNECTED) {
-                      startButton.performClick();
-                    }
+                    handleExternalStartRequest();
                   });
         }
       };
+
+  private void handleExternalStartRequest() {
+    boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
+    TrackerState st = mTracker.getState();
+    if (raceReady && !sportWithoutGps) {
+      if (mGpsStatus == null || !mGpsStatus.isStarted()) {
+        if (checkPermissions(true)) {
+          updateView();
+          return;
+        }
+        startGps();
+      }
+      startWorkout();
+      return;
+    }
+    if (st == TrackerState.CONNECTED) {
+      startWorkout();
+      return;
+    }
+    updateView();
+  }
 
   private void registerStartEventListener() {
     IntentFilter intentFilter = new IntentFilter();
@@ -648,13 +595,11 @@ public class StartFragment extends Fragment implements TickListener {
     SharedPreferences audioPref =
         WorkoutBuilder.getAudioCuePreferences(ctx, pref, getString(R.string.pref_advanced_audio));
     Workout w = advancedWorkout;
-    if (w == null && RaceReady.enabled(getResources(), pref)) {
-      w = RaceReady.defaultWorkout(getResources(), pref);
+    if (w == null) {
+      w = WorkoutBuilder.createDefaultWorkout(getResources(), pref, null);
     }
-    if (w != null) {
-      WorkoutBuilder.prepareWorkout(getResources(), pref, w);
-      WorkoutBuilder.addAudioCuesToWorkout(getResources(), w, audioPref, pref);
-    }
+    WorkoutBuilder.prepareWorkout(getResources(), pref, w);
+    WorkoutBuilder.addAudioCuesToWorkout(getResources(), w, audioPref, pref);
     return w;
   }
 
@@ -695,6 +640,22 @@ public class StartFragment extends Fragment implements TickListener {
             }
             startGps();
           }
+        }
+        pushPage(Page.SETUP);
+      };
+
+  private final OnClickListener startRunClick =
+      v -> {
+        if (mTracker == null) return;
+        boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
+        if (raceReady && !sportWithoutGps) {
+          if (mGpsStatus == null || !mGpsStatus.isStarted()) {
+            if (checkPermissions(true)) {
+              updateView();
+              return;
+            }
+            startGps();
+          }
           startWorkout();
           return;
         }
@@ -704,6 +665,52 @@ public class StartFragment extends Fragment implements TickListener {
         }
         updateView();
       };
+
+  private int currentSportId() {
+    return appPrefs.getInt(
+        getString(R.string.pref_sport),
+        org.runnerup.common.util.Constants.DB.ACTIVITY.SPORT_RUNNING);
+  }
+
+  private void pushPage(Page page) {
+    pageStack.push(page);
+    showPage(page);
+  }
+
+  private void popPage() {
+    if (pageStack.isEmpty()) return;
+    pageStack.pop();
+    showPage(pageStack.isEmpty() ? Page.RECORD : pageStack.peek());
+  }
+
+  private void goRecord() {
+    pageStack.clear();
+    showPage(Page.RECORD);
+  }
+
+  private void showPage(Page page) {
+    boolean record = page == Page.RECORD;
+    animateRoot(recordRoot, record);
+    animateRoot(setupRoot, page == Page.SETUP);
+    animateRoot(pickerRoot, page == Page.PICKER);
+    requireView().findViewById(R.id.status_layout).setVisibility(record ? View.VISIBLE : View.GONE);
+    if (getActivity() instanceof MainLayout mainLayout) {
+      mainLayout.setStartFlowActive(!record);
+    }
+    updateView();
+  }
+
+  private void animateRoot(View root, boolean show) {
+    if (root == null) return;
+    if (show) {
+      root.setVisibility(View.VISIBLE);
+      root.setAlpha(0f);
+      root.animate().alpha(1f).setDuration(180).start();
+    } else {
+      root.animate().cancel();
+      root.setVisibility(View.GONE);
+    }
+  }
 
   private final OnClickListener gpsEnableClick =
       v -> {
@@ -915,7 +922,10 @@ public class StartFragment extends Fragment implements TickListener {
   public void updateView() {
     updateStartGpsButtonView();
     updateStartButtonView();
+    updateSetupValues();
+    updateStartRunButtonView();
     updateGPSView();
+    updateSetupGpsChip();
     boolean hrPresent = updateHRView();
     boolean wearPresent = updateWearOSView();
 
@@ -927,32 +937,260 @@ public class StartFragment extends Fragment implements TickListener {
   }
 
   private void updateStartButtonView() {
-    boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
-    do {
-      if (mTracker == null || !mIsBound) break;
+    startButton.setVisibility(View.VISIBLE);
+  }
 
-      if (raceReady) {
-        TrackerState st = mTracker.getState();
-        if (st == TrackerState.CONNECTING || st == TrackerState.CONNECTED) {
-          startButton.setVisibility(View.VISIBLE);
+  private void updateSetupValues() {
+    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
+    int sportId = prefs.getInt(getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
+    if (setupSportValue != null) {
+      setupSportValue.setText(Sport.getStringArray(requireContext().getResources())[sportId]);
+    }
+    if (setupAudioValue != null) {
+      String audio = prefs.getString(getString(R.string.pref_advanced_audio), null);
+      setupAudioValue.setText(
+          audio == null ? requireContext().getString(org.runnerup.common.R.string.Default) : audio);
+    }
+    if (setupWorkoutValue != null) {
+      setupWorkoutValue.setText(
+          selectedWorkoutName == null || selectedWorkoutName.isEmpty()
+              ? requireContext().getString(R.string.None)
+              : selectedWorkoutName);
+    }
+    int hasSteps = advancedWorkout == null ? View.GONE : View.VISIBLE;
+    if (setupStepsHint != null) setupStepsHint.setVisibility(hasSteps);
+    if (advancedStepList != null) advancedStepList.setVisibility(hasSteps);
+  }
+
+  private void updateStartRunButtonView() {
+    if (mTracker == null || !mIsBound) {
+      if (startRunButton != null) startRunButton.setEnabled(false);
+      return;
+    }
+    if (startRunButton == null) return;
+    boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
+    if (raceReady || sportWithoutGps) {
+      startRunButton.setEnabled(true);
+      return;
+    }
+    boolean ready =
+        mGpsStatus.isStarted()
+            && mGpsStatus.isLogging()
+            && mGpsStatus.isFixed()
+            && mTracker.getState() == TrackerState.CONNECTED;
+    startRunButton.setEnabled(ready);
+  }
+
+  private void updateSetupGpsChip() {
+    if (setupGpsChip == null) return;
+    if (sportWithoutGps) {
+      setupGpsChip.setVisibility(View.GONE);
+      return;
+    }
+    setupGpsChip.setVisibility(View.VISIBLE);
+    if (!mGpsStatus.isEnabled() || !mGpsStatus.isStarted() || !mGpsStatus.isLogging()) {
+      setupGpsIndicator.setImageResource(R.drawable.ic_gps_0);
+      setupGpsMessage.setText(org.runnerup.common.R.string.GPS_indicator_off);
+      return;
+    }
+    var gpsLevel = getGpsLevel(getGpsAccuracy(), mGpsStatus.getSatellitesFixed());
+    switch (gpsLevel) {
+      case NOT_FIXED:
+        setupGpsIndicator.setImageResource(R.drawable.ic_gps_0);
+        setupGpsMessage.setText(org.runnerup.common.R.string.Waiting_for_GPS);
+        break;
+      case POOR:
+        setupGpsIndicator.setImageResource(R.drawable.ic_gps_1);
+        setupGpsMessage.setText(org.runnerup.common.R.string.GPS_level_poor);
+        break;
+      case ACCEPTABLE:
+        setupGpsIndicator.setImageResource(R.drawable.ic_gps_2);
+        setupGpsMessage.setText(org.runnerup.common.R.string.GPS_level_acceptable);
+        break;
+      case GOOD:
+        setupGpsIndicator.setImageResource(R.drawable.ic_gps_3);
+        setupGpsMessage.setText(org.runnerup.common.R.string.GPS_level_good);
+        break;
+    }
+  }
+
+  private void openPicker(PickerKind kind) {
+    pickerKind = kind;
+    getPickerItems();
+    if (pickerItems.length == 0) return;
+    String title;
+    switch (kind) {
+      case SPORT:
+        title = requireContext().getString(org.runnerup.common.R.string.Sport);
+        break;
+      case AUDIO:
+        title = requireContext().getString(R.string.Audio_cues);
+        break;
+      default:
+        title = requireContext().getString(org.runnerup.common.R.string.Workout);
+        break;
+    }
+    TextView titleView = pickerRoot.findViewById(R.id.picker_title);
+    titleView.setText(title);
+    bindPickerList();
+    pushPage(Page.PICKER);
+  }
+
+  private void refreshPicker() {
+    if (pickerRoot == null || pickerRoot.getVisibility() != View.VISIBLE) return;
+    getPickerItems();
+    bindPickerList();
+  }
+
+  private void bindPickerList() {
+    ListView list = pickerRoot.findViewById(R.id.picker_list);
+    PickerListAdapter adapter = new PickerListAdapter(pickerItems, pickerSelected);
+    list.setOnItemClickListener((parent, view, position, id) -> onPickerItemClick(position));
+    list.setAdapter(adapter);
+  }
+
+  private void getPickerItems() {
+    switch (pickerKind) {
+      case SPORT:
+        {
+          String[] sports = Sport.getStringArray(requireContext().getResources());
+          pickerItems = sports;
+          pickerSelected = currentSportId();
+          break;
+        }
+      case AUDIO:
+        {
+          List<String> items = new ArrayList<>();
+          items.add(requireContext().getString(org.runnerup.common.R.string.Default));
+          advancedAudioListAdapter.reload();
+          for (int i = 1; i < advancedAudioListAdapter.getCount() - 1; i++) {
+            items.add((String) advancedAudioListAdapter.getItem(i));
+          }
+          items.add(
+              String.format(
+                  requireContext().getString(org.runnerup.common.R.string.dialog_ellipsis),
+                  requireContext().getString(org.runnerup.common.R.string.Manage_audio_cues)));
+          pickerItems = items.toArray(new String[0]);
+          String current = appPrefs.getString(getString(R.string.pref_advanced_audio), null);
+          pickerSelected =
+              current == null ? 0 : (items.contains(current) ? items.indexOf(current) : 0);
+          break;
+        }
+      default:
+        {
+          List<String> items = new ArrayList<>();
+          items.add(requireContext().getString(R.string.None));
+          String[] workouts = WorkoutListAdapter.load(requireContext());
+          if (workouts != null) {
+            for (String w : workouts) {
+              items.add(w.substring(0, w.length() - ".json".length()));
+            }
+          }
+          items.add(
+              String.format(
+                  requireContext().getString(org.runnerup.common.R.string.dialog_ellipsis),
+                  requireContext().getString(org.runnerup.common.R.string.Manage_workouts)));
+          pickerItems = items.toArray(new String[0]);
+          pickerSelected =
+              selectedWorkoutName == null || selectedWorkoutName.isEmpty()
+                  ? 0
+                  : (items.contains(selectedWorkoutName) ? items.indexOf(selectedWorkoutName) : 0);
+          break;
+        }
+    }
+  }
+
+  private void onPickerItemClick(int position) {
+    if (position < 0 || position >= pickerItems.length) return;
+    switch (pickerKind) {
+      case SPORT:
+        applySportChoice(position);
+        break;
+      case AUDIO:
+        if (position == pickerItems.length - 1) {
+          startActivity(new Intent(requireContext(), AudioCueSettingsActivity.class));
           return;
         }
+        applyAudioChoice(position);
         break;
-      }
+      default:
+        if (position == pickerItems.length - 1) {
+          startActivity(new Intent(requireContext(), ManageWorkoutsActivity.class));
+          return;
+        }
+        applyWorkoutChoice(position);
+        break;
+    }
+    popPage();
+  }
 
-      if (!mGpsStatus.isStarted()) break;
-      if (!sportWithoutGps) {
-        if (!mGpsStatus.isLogging()) break;
-        if (!mGpsStatus.isFixed()) break;
-      }
-      if (mTracker.getState() != TrackerState.CONNECTED) break;
-      if (advancedWorkout == null) break;
+  private void applySportChoice(int position) {
+    appPrefs.edit().putInt(getString(R.string.pref_sport), position).apply();
+    setGpsNotRequired(Sport.isWithoutGps(position));
+    updateSetupSportIcon(position);
+    updateView();
+  }
 
-      startButton.setVisibility(View.VISIBLE);
+  private void applyAudioChoice(int position) {
+    String name = pickerItems[position];
+    if (name.contentEquals(requireContext().getString(org.runnerup.common.R.string.Default))) {
+      appPrefs.edit().remove(getString(R.string.pref_advanced_audio)).apply();
+    } else {
+      appPrefs.edit().putString(getString(R.string.pref_advanced_audio), name).apply();
+    }
+    updateView();
+  }
+
+  private void applyWorkoutChoice(int position) {
+    String name = pickerItems[position];
+    if (name.contentEquals(requireContext().getString(R.string.None))) {
+      appPrefs.edit().remove(getString(R.string.pref_advanced_workout)).apply();
+      loadAdvanced("");
       return;
-    } while (false);
+    }
+    appPrefs.edit().putString(getString(R.string.pref_advanced_workout), name).apply();
+    loadAdvanced(name);
+  }
 
-    startButton.setVisibility(View.GONE);
+  private class PickerListAdapter extends BaseAdapter {
+    private final String[] items;
+    private final int selected;
+
+    PickerListAdapter(String[] items, int selected) {
+      this.items = items;
+      this.selected = selected;
+    }
+
+    @Override
+    public int getCount() {
+      return items.length;
+    }
+
+    @Override
+    public Object getItem(int position) {
+      return items[position];
+    }
+
+    @Override
+    public long getItemId(int position) {
+      return position;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+      if (convertView == null) {
+        convertView =
+            LayoutInflater.from(parent.getContext()).inflate(R.layout.picker_item, parent, false);
+      }
+      TextView text = (TextView) convertView;
+      text.setText(items[position]);
+      Drawable check = null;
+      if (position == selected) {
+        check = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_check);
+      }
+      text.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, check, null);
+      return text;
+    }
   }
 
   private void updateStartGpsButtonView() {
@@ -1207,6 +1445,7 @@ public class StartFragment extends Fragment implements TickListener {
                     "data.getStringExtra(\"obj\") => " + data.getStringExtra("obj"));
             }
             runActivityPending = false;
+            goRecord();
             if (!mIsBound || mTracker == null) {
               bindGpsTracker();
             } else {
@@ -1276,14 +1515,19 @@ public class StartFragment extends Fragment implements TickListener {
   private void loadAdvanced(String name) {
     Context ctx = requireActivity().getApplicationContext();
     if (name == null) {
-      SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(ctx);
-      name = pref.getString(getResources().getString(R.string.pref_advanced_workout), "");
+      name = appPrefs.getString(getString(R.string.pref_advanced_workout), "");
     }
+    selectedWorkoutName = name;
     advancedWorkout = null;
-    if ("".contentEquals(name)) return;
+    if (name.isEmpty()) {
+      advancedWorkoutStepsAdapter.clear();
+      updateView();
+      return;
+    }
     try {
       advancedWorkout = WorkoutSerializer.readFile(ctx, name);
       advancedWorkoutStepsAdapter.setWorkout(advancedWorkout);
+      updateView();
     } catch (Exception ex) {
       ex.printStackTrace();
       new MaterialAlertDialogBuilder(requireActivity())
@@ -1340,6 +1584,13 @@ public class StartFragment extends Fragment implements TickListener {
       this.workout = workout;
       items.clear();
       items.addAll(workout.entriesAtLevel(null));
+      notifyDataSetChanged();
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    void clear() {
+      workout = null;
+      items.clear();
       notifyDataSetChanged();
     }
 
@@ -1504,11 +1755,10 @@ public class StartFragment extends Fragment implements TickListener {
 
   private final Runnable onWorkoutChanged =
       () -> {
-        String name = advancedWorkoutSpinner.getValue().toString();
-        if (advancedWorkout != null) {
+        if (advancedWorkout != null && !selectedWorkoutName.isEmpty()) {
           Context ctx = requireActivity().getApplicationContext();
           try {
-            WorkoutSerializer.writeFile(ctx, name, advancedWorkout);
+            WorkoutSerializer.writeFile(ctx, selectedWorkoutName, advancedWorkout);
           } catch (Exception ex) {
             new MaterialAlertDialogBuilder(requireContext())
                 .setTitle(org.runnerup.common.R.string.Failed_to_load_workout)
