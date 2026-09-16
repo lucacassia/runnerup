@@ -30,13 +30,48 @@
         app:title="@string/Record" />
 
     <FrameLayout
-        android:id="@+id/tab_content"
+        android:id="@+id/content_root"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/status_layout"
         android:layout_below="@id/start_toolbar">
 
-        <include layout="@layout/start_advanced" />
+        <FrameLayout
+            android:id="@+id/record_root"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:id="@+id/record_hint"
+                style="@style/StatusText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/Setup_steps_hint_record" />
+
+            <include
+                layout="@layout/start_fab"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="@dimen/activity_margin"
+                android:layout_marginEnd="@dimen/activity_margin"
+                android:layout_marginBottom="16dp" />
+        </FrameLayout>
+
+        <include
+            android:id="@+id/setup_root"
+            layout="@layout/start_setup"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/picker_root"
+            layout="@layout/start_picker"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
     </FrameLayout>
 
     <RelativeLayout
@@ -169,14 +204,5 @@
             tools:ignore="RelativeOverlap" />
 
     </RelativeLayout>
-
-    <include
-        layout="@layout/start_fab"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_above="@id/status_layout"
-        android:layout_marginStart="@dimen/activity_margin"
-        android:layout_marginEnd="@dimen/activity_margin"
-        android:layout_marginBottom="16dp" />
 
 </RelativeLayout>
