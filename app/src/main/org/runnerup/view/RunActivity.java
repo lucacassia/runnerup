@@ -65,6 +65,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -90,7 +91,6 @@ import org.runnerup.util.HRZones;
 import org.runnerup.util.LiveMap;
 import org.runnerup.util.MapViewWrapper;
 import org.runnerup.util.TickListener;
-import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.GpsWaitStep;
 import org.runnerup.workout.Intensity;
 import org.runnerup.workout.RaceReady;
@@ -242,6 +242,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       }
     }
     View rootView = findViewById(R.id.start_view);
+    View runOverlay = findViewById(R.id.run_overlay);
     ViewCompat.setOnApplyWindowInsetsListener(
         rootView,
         new OnApplyWindowInsetsListener() {
@@ -250,7 +251,12 @@ public class RunActivity extends AppCompatActivity implements TickListener {
           public WindowInsetsCompat onApplyWindowInsets(
               @NonNull View v, @NonNull WindowInsetsCompat windowInsets) {
             Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
+            v.setPadding(insets.left, 0, insets.right, insets.bottom);
+            runOverlay.setPadding(0, insets.top, 0, 0);
+            if (runMapview != null && runMapview.getVisibility() == View.VISIBLE) {
+              WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView())
+                  .setAppearanceLightStatusBars(true);
+            }
             return WindowInsetsCompat.CONSUMED;
           }
         });
@@ -346,7 +352,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
                 }
               }
             });
-    ViewUtil.Insets(findViewById(R.id.start_view), true);
 
     showOnLockScreen(showOnLockScreen);
     if (keepScreenOn) {
