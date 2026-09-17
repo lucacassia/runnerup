@@ -74,4 +74,5 @@
     <string name="Start_run">Start Run</string>
     <string name="Setup_steps_hint">Tap a step to edit — optional</string>
     <string name="Setup_steps_hint_record">Tap Start to set up your run</string>
+    <string name="GPS_signal_info">GPS signal info</string>
 </resources>
