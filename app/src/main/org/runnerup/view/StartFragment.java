@@ -386,13 +386,14 @@ public class StartFragment extends Fragment implements TickListener {
     if (getAutoStartGps()) {
       // If autoStartGps, then stop it during pause
       stopGps();
-    } else {
-      if (mTracker != null
-          && ((mTracker.getState() == TrackerState.INITIALIZED)
-              || (mTracker.getState() == TrackerState.INITIALIZING))) {
-        Log.i(getClass().getName(), "mTracker.reset()");
-        mTracker.reset();
-      }
+    } else if (!runActivityPending
+        && mTracker != null
+        && (mTracker.getState() == TrackerState.INITIALIZED
+            || mTracker.getState() == TrackerState.INITIALIZING)) {
+      // While handing off to RunActivity (deferred start), reset() would clear the
+      // workout the run was built from, stranding the run screen without a workout.
+      Log.i(getClass().getName(), "mTracker.reset()");
+      mTracker.reset();
     }
     mWearNotifier.onPause();
   }
