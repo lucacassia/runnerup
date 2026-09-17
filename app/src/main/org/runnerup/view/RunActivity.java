@@ -93,10 +93,12 @@ import org.runnerup.util.TickListener;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.GpsWaitStep;
 import org.runnerup.workout.Intensity;
+import org.runnerup.workout.RaceReady;
 import org.runnerup.workout.Scope;
 import org.runnerup.workout.Sport;
 import org.runnerup.workout.Step;
 import org.runnerup.workout.Workout;
+import org.runnerup.workout.WorkoutBuilder;
 
 public class RunActivity extends AppCompatActivity implements TickListener {
   private Workout workout = null;
@@ -471,6 +473,17 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       if (st == TrackerState.CONNECTED) {
         startDeferred = false;
         runStarted = true;
+        // The wait-gate strip decided at Start-tap time may have been skipped while the
+        // tracker was still connecting (its GpsStatus had no fix yet). If GPS is fixed
+        // now that we are connected, drop the race-ready gate so the run starts without
+        // a pause/"GPS off" flash or a spurious "GPS locked" cue.
+        if (workout != null
+            && !sportWithoutGps
+            && RaceReady.enabled(
+                getResources(), PreferenceManager.getDefaultSharedPreferences(this))
+            && mTracker.isGpsFixed()) {
+          WorkoutBuilder.removeGpsWaitGates(workout);
+        }
         mTracker.start();
       } else if (st == TrackerState.STARTED || st == TrackerState.PAUSED) {
         // The deferred-start intent was re-delivered to a recreated activity but the
@@ -811,7 +824,12 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private void updateWaitBanner() {
     boolean show = startDeferred || isWaitingForGps();
     waitBanner.setVisibility(show ? View.VISIBLE : View.GONE);
-    waitEnableGps.setVisibility(startDeferred && !sportWithoutGps ? View.VISIBLE : View.GONE);
+    // The Enable button is only meaningful when the GPS provider is actually off;
+    // while merely connecting (or initializing), GPS is fine and there is nothing to enable.
+    LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    boolean gpsEnabled = lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+    waitEnableGps.setVisibility(
+        startDeferred && !sportWithoutGps && !gpsEnabled ? View.VISIBLE : View.GONE);
   }
 
   private boolean isWaitingForGps() {

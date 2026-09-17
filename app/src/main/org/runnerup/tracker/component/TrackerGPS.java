@@ -174,6 +174,12 @@ public class TrackerGPS extends DefaultTrackerComponent implements TickListener 
         mGpsStatus = new GpsStatus(context);
         mGpsStatus.start(this);
         mConnectCallback = callback;
+        // race-ready: a started listener counts as connected; resolve immediately
+        // rather than waiting for the first location/status event to tick.
+        if (mRaceReady && lm.isProviderEnabled(GPS_PROVIDER)) {
+          mConnectCallback = null;
+          return ResultCode.RESULT_OK;
+        }
         return ResultCode.RESULT_PENDING;
       } else {
         gpsLessLocationProvider.start(onEndCounter);
