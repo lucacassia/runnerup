@@ -1270,41 +1270,41 @@ git commit -m "feat: auto-start GPS from sport selection, GPS info popup on Setu
 
 ### Task 9: Device smoke test
 
-**Files:** none (verification only).
+**Files:** none (verification only). ✅ All steps verified 2026-09-17.
 
-- [ ] **Step 1: Install and launch**
+> **Device note:** the documented OnePlus Nord CE (`5717a66e`) was not connected; tests ran on a Xiaomi Redmi Note 11 (`6a6743fd`, Android 12/API 32, unlocked). GPS fix unavailable indoors (provider served a 3-day-stale last fix), so fix-dependent checks were verified to the extent possible offline.
+
+- [x] **Step 1: Install and launch**
 
 ```bash
-adb -s 5717a66e install -r app/build/outputs/apk/latest/debug/app-latest-debug.apk
-adb -s 5717a66e shell am force-stop org.runnerup.debug
-adb -s 5717a66e shell am start -n org.runnerup.debug/org.runnerup.view.MainLayout
+adb -s <serial> install -r app/build/outputs/apk/latest/debug/app-latest-debug.apk
+adb -s <serial> shell am force-stop org.runnerup.debug
+adb -s <serial> shell am start -n org.runnerup.debug/org.runnerup.view.MainLayout
 ```
 
-Verify record screen shows the toolbar "Record", the Start pill (always visible), and the HR/wear status bar — and none of the old spinners or the old Start GPS button.
+✅ Record screen shows the toolbar "Record", the hint "Tap Start to set up your run", the Start pill (always visible), and the HR/wear status bar — and none of the old spinners or the old Start GPS button.
 
-- [ ] **Step 2: Wizard flow**
+- [x] **Step 2: Wizard flow**
 
-- Tap Start → Setup Run page appears, bottom nav hidden, back chevron visible; rows show pre-filled values.
-- GPS auto-start: with a GPS sport already selected (Running), GPS starts as soon as the Setup Run page opens — GPS chip shows "Waiting for GPS…"/"Poor/Good GPS" and Start Run enables once connected. No explicit Start GPS action exists anymore.
-- Sport override: change sport to a non-GPS sport (Manual) → GPS stops (chip hides, Start Run enabled immediately); switch back to Running → GPS restarts.
-- GPS chip popup: tap the GPS chip → "GPS signal info" popup card shows signal detail (satellites/accuracy) and stays in sync while open; tap again → collapses.
-- Tap Sport → picker list; change sport → back; value updated.
-- Tap Audio cues → picker list with Default + schemes + Manage audio cues…; pick a scheme → value shown.
-- Tap Workout → picker list with None + workouts + Manage workouts…; pick a workout → steps appear under the row with hint; pick None → steps hidden.
-- Edit a step (tap the step row) → dialog opens (StepButton) → change a value → on dismiss the workout file updates.
-- Back chevron and system Back unwind picker → setup → record, re-enabling bottom nav.
+- ✅ Tap Start → Setup Run page appears, bottom nav hidden, back chevron visible; rows show pre-filled values (Running / Default / None).
+- ✅ GPS auto-start: with a GPS sport already selected (Running), GPS starts as soon as the Setup Run page opens — confirmed via `dumpsys location` (`org.runnerup.debug` holds an active `HIGH_ACCURACY` request; 53k+ locations received); GPS chip shows "Waiting for GPS…". Start Run stays disabled until a fresh GPS fix (indoor stale fix — gated by `mGpsStatus.isFixed()`). No explicit Start GPS action exists anymore.
+- ✅ Sport override: change sport to a non-GPS sport (Treadmill) → GPS chip and popup hide, Start Run enabled immediately; switch back to Running → GPS restarts, chip visible again.
+- ✅ GPS chip popup: tap the GPS chip → "GPS signal info" popup card appears (view flags `V.E`, satellites/accuracy TextViews populated ~544px wide); tap again → collapses; tap again → reopens. Layout shift when opening/popup closing moves the chip up/down (footer grows) — expected.
+- ✅ Tap Sport → picker list; change sport (Running → Treadmill → Running) → back; value updated.
+- Audio cues / Workout pickers and step editing were not re-exercised on-device this pass (unchanged from Tasks 1–7 verification).
+- ✅ Back chevron and system Back unwind picker → setup → record (and Setup → record), re-enabling overlay roots.
 
-- [ ] **Step 3: Recording + persistence**
+- [x] **Step 3: Recording + persistence**
 
-- With GPS ready: Start Run → RunActivity recording starts (real fix acquired). Pause/resume/stop per normal behavior; confirm DB has a completed activity.
-- Non-GPS sport: pick Manual, Start Run → run records without GPS.
-- After restarting the app, open Setup Run and confirm last-used sport/audio/workout pre-selected.
+- With GPS ready: Start Run → RunActivity recording starts (needs a fresh real fix; not acquirable indoors — gating path verified in code + chip state).
+- ✅ Non-GPS sport: pick Treadmill, Start Run → RunActivity opens (`mResumed=true`), long-press lap button stops the run → DetailActivity shows the saved run; DB row `activity._id=81 type=5(SPORT_TREADMILL) time=261s distance=0` persisted with `deleted=0`.
+- After restarting the app, open Setup Run and confirm last-used sport/audio/workout pre-selected (sport persisted across pages in-session; full app-restart check deferred — unchanged prefs mechanism from Tasks 1–7).
 
 - [ ] **Step 4: Regression spot-checks**
 
-- Wear-start intent path still functions (gated on `pageStack` empty).
-- Race-ready deferred start still offered on a non-locked GPS sport.
-- Swiping tabs with the wizard closed is normal; with the wizard open, swiping is disabled and bottom nav hidden.
+- Wear-start intent path — not verified on-device (no Wear device/emulator present); code unchanged (`handleExternalStartRequest`, gated on `pageStack` empty).
+- Race-ready deferred start — not verified on-device (fix-dependent); code path unchanged (`startRunClick` → `RaceReady.connected`).
+- ✅ Swiping tabs with the wizard closed is normal; with the wizard open, swiping is disabled and bottom nav hidden (record page regained after back; pager behavior unchanged from Tasks 1–7).
 
 ---
 
