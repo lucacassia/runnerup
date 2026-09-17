@@ -128,6 +128,7 @@ public class StartFragment extends Fragment implements TickListener {
   private org.runnerup.tracker.GpsStatus mGpsStatus = null;
 
   private final ArrayDeque<Page> pageStack = new ArrayDeque<>();
+  private OnBackPressedCallback onBackPressed = null;
   private View recordRoot = null;
   private View setupRoot = null;
   private View pickerRoot = null;
@@ -287,20 +288,20 @@ public class StartFragment extends Fragment implements TickListener {
     mWearNotifier = new TrackerWear.WearNotifier(requireActivity().getApplicationContext());
     mWearNotifier.onViewCreated();
 
+    onBackPressed =
+        new OnBackPressedCallback(!pageStack.isEmpty()) {
+          @Override
+          public void handleOnBackPressed() {
+            if (!pageStack.isEmpty()) {
+              popPage();
+            } else {
+              setEnabled(false);
+            }
+          }
+        };
     requireActivity()
         .getOnBackPressedDispatcher()
-        .addCallback(
-            getViewLifecycleOwner(),
-            new OnBackPressedCallback(true) {
-              @Override
-              public void handleOnBackPressed() {
-                if (!pageStack.isEmpty()) {
-                  popPage();
-                } else {
-                  setEnabled(false);
-                }
-              }
-            });
+        .addCallback(getViewLifecycleOwner(), onBackPressed);
   }
 
   private void setGpsNotRequired(boolean val) {
@@ -681,17 +682,26 @@ public class StartFragment extends Fragment implements TickListener {
 
   private void pushPage(Page page) {
     pageStack.push(page);
+    if (onBackPressed != null) {
+      onBackPressed.setEnabled(true);
+    }
     showPage(page);
   }
 
   private void popPage() {
     if (pageStack.isEmpty()) return;
     pageStack.pop();
+    if (onBackPressed != null) {
+      onBackPressed.setEnabled(!pageStack.isEmpty());
+    }
     showPage(pageStack.isEmpty() ? Page.RECORD : pageStack.peek());
   }
 
   private void goRecord() {
     pageStack.clear();
+    if (onBackPressed != null) {
+      onBackPressed.setEnabled(false);
+    }
     showPage(Page.RECORD);
   }
 
