@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the cluttered record screen (spinners + inline step editor) with a minimal record screen (Start + Start GPS) from which tapping Start pushes an iOS-style "Setup Run" page (Sport / Audio cues / Workout rows, optional inline step editing, pinned Start Run), plus pushed picker lists.
+**Goal:** Replace the cluttered record screen (spinners + inline step editor) with a minimal record screen (Start only) from which tapping Start pushes an iOS-style "Setup Run" page (Sport / Audio cues / Workout rows, optional inline step editing, pinned Start Run), plus pushed picker lists. GPS is driven entirely from the Setup Run page: selecting a GPS sport (or opening the page with one pre-selected) auto-starts GPS; selecting a non-GPS sport stops it. The record screen's GPS status bar keeps HR/wear status but no GPS controls; a GPS chip on the Setup Run footer shows live signal state and opens a signal-info popup when tapped.
 
 **Architecture:** All UI lives inside the existing `StartFragment` (single-activity app). `start.xml`'s `content_root` FrameLayout hosts three mutually-exclusive roots — `record_root`, `setup_root`, `picker_root` — toggled with a small push-state stack + iOS-style slide transitions and an `OnBackPressedCallback`. Recording path (`startWorkout`, GPS/tracker, permissions, `RunActivity`, race-ready) is unchanged. The sport/audio/workout prefs (`startSport`/`advancedAudio`/`advancedWorkout`) keep being the single source of truth.
 
@@ -29,7 +29,7 @@
 **Interfaces:**
 - Produces: `MainLayout#setStartFlowActive(boolean)` — hides the bottom nav and disables pager swiping only while the wizard is open on page 0; restores on exit. Used by `StartFragment` every time wizard state changes.
 
-- [ ] **Step 1: Add strings to `app/res/values/strings.xml`**
+- [x] **Step 1: Add strings to `app/res/values/strings.xml`**
 
 ```xml
     <string name="Setup_run">Setup Run</string>
@@ -41,7 +41,7 @@
     <string name="Setup_steps_hint">Tap a step to edit — optional</string>
 ```
 
-- [ ] **Step 2: Create `app/res/drawable/ic_arrow_back_24dp.xml`**
+- [x] **Step 2: Create `app/res/drawable/ic_arrow_back_24dp.xml`**
 
 ```xml
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
@@ -57,7 +57,7 @@
 </vector>
 ```
 
-- [ ] **Step 3: Add navigation hooks to `MainLayout`**
+- [x] **Step 3: Add navigation hooks to `MainLayout`**
 
 Add a field and methods, and wire `onPageSelected`:
 
@@ -78,12 +78,12 @@ Add a field and methods, and wire `onPageSelected`:
 
 In the existing `onPageSelected` callback body add: `applyStartFlowConstraints();`
 
-- [ ] **Step 4: Compile gate**
+- [x] **Step 4: Compile gate**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD SUCCESSFUL.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/res/values/strings.xml app/res/drawable/ic_arrow_back_24dp.xml app/src/main/org/runnerup/view/MainLayout.java
@@ -100,7 +100,7 @@ git commit -m "feat: prepare strings, back icon, and nav hooks for Setup Run flo
 **Interfaces:**
 - Produces: ids `content_root`, `record_root`, `record_hint`, `setup_root`, `picker_root`. `record_root` contains the existing `start_fab` include (id `start_button`). `start_advanced.xml` is no longer included here (retired in Task 5).
 
-- [ ] **Step 1: Replace `tab_content` block**
+- [x] **Step 1: Replace `tab_content` block**
 
 Replace the `<FrameLayout android:id="@+id/tab_content">…</FrameLayout>` block (currently lines 32-40 containing `include start_advanced`) with:
 
@@ -153,12 +153,12 @@ Replace the `<FrameLayout android:id="@+id/tab_content">…</FrameLayout>` block
 
 Also add `Setup_steps_hint_record` string: `Tap Start to set up your run` to `strings.xml`.
 
-- [ ] **Step 2: Compile gate**
+- [x] **Step 2: Compile gate**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD FAILURE — `start_setup` and `start_picker` layouts do not exist yet. This is expected; the failure is the gate marker that Task 3 creates them. To keep Task 2 independently green, create the two layout files first as buildable placeholders in Task 3 before running this gate. Order: run Task 3 → Task 4 → then this gate and commit.
 
-- [ ] **Step 3: Commit (after Task 3 and Task 4 exist)**
+- [x] **Step 3: Commit (after Task 3 and Task 4 exist)**
 
 ```bash
 git add app/res/layout/start.xml app/res/values/strings.xml
@@ -175,7 +175,7 @@ git commit -m "feat: restructure record screen into minimal root with wizard hos
 **Interfaces:**
 - Produces ids: `setup_back_button` (ImageButton), `setup_title` (TextView), `setup_sport_value`, `setup_audio_value`, `setup_workout_value` (TextView, set text to current selection), `setup_sport_row`, `setup_audio_row`, `setup_workout_row` (clickable views), `setup_steps_hint` (TextView), `advanced_step_list` (RecyclerView — reused id from retired `start_advanced.xml`), `setup_gps_indicator` (ImageView), `setup_gps_message` (TextView), `start_run_button` (MaterialButton).
 
-- [ ] **Step 1: Write `app/res/layout/start_setup.xml`**
+- [x] **Step 1: Write `app/res/layout/start_setup.xml`**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -405,12 +405,12 @@ Add strings: `Workout_label` → `Workout`.
 
 Note: the `androidx.recyclerview` widget requires the layout's root not force a fixed height, so `wrap_content` with `fillViewport` ScrollView gives the scrollable steps list.
 
-- [ ] **Step 2: Compile gate**
+- [x] **Step 2: Compile gate**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD SUCCESSFUL (as long as `start_picker.xml` from Task 4 exists; otherwise failure only for the missing picker layout, resolved in Task 4).
 
-- [ ] **Step 3: Commit after Task 4**
+- [x] **Step 3: Commit after Task 4**
 
 ```bash
 git add app/res/layout/start_setup.xml app/res/values/strings.xml
@@ -428,7 +428,7 @@ git commit -m "feat: add Setup Run page layout with grouped rows and step editor
 **Interfaces:**
 - Produces ids: `picker_back_button` (ImageButton), `picker_title` (TextView), `picker_list` (ListView). Picker rows show a trailing check icon for the selected entry.
 
-- [ ] **Step 1: Write `app/res/layout/start_picker.xml`**
+- [x] **Step 1: Write `app/res/layout/start_picker.xml`**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -468,7 +468,7 @@ git commit -m "feat: add Setup Run page layout with grouped rows and step editor
 </LinearLayout>
 ```
 
-- [ ] **Step 2: Write `app/res/layout/picker_item.xml`**
+- [x] **Step 2: Write `app/res/layout/picker_item.xml`**
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -487,12 +487,12 @@ git commit -m "feat: add Setup Run page layout with grouped rows and step editor
     app:tint="?attr/colorPrimary" />
 ```
 
-- [ ] **Step 3: Compile gate**
+- [x] **Step 3: Compile gate**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD SUCCESSFUL.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/res/layout/start_picker.xml app/res/layout/picker_item.xml
@@ -510,7 +510,7 @@ git commit -m "feat: add generic picker root layout"
 - Consumes: `MainLayout#setStartFlowActive(boolean)` from Task 1; ids `content_root`, `record_root`, `record_hint`, `setup_root`, `picker_root` from Task 2.
 - Produces: `pushPage(Page)`, `popPage()`, `goRecord()`, `showPage(Page)`; `Page` enum `{RECORD, SETUP, PICKER}`; `pageStack` field; `OnBackPressedCallback`.
 
-- [ ] **Step 1: Add page state fields and enum**
+- [x] **Step 1: Add page state fields and enum**
 
 ```java
   private enum Page {
@@ -526,7 +526,7 @@ git commit -m "feat: add generic picker root layout"
   private View startButton = null;
 ```
 
-- [ ] **Step 2: Wire roots + back callback in `onViewCreated`**
+- [x] **Step 2: Wire roots + back callback in `onViewCreated`**
 
 Immediately after existing `startButton = view.findViewById(R.id.start_button);` add:
 
@@ -555,7 +555,7 @@ And at the end of `onViewCreated` register:
             });
 ```
 
-- [ ] **Step 3: Navigation methods**
+- [x] **Step 3: Navigation methods**
 
 ```java
   private void pushPage(Page page) {
@@ -601,7 +601,7 @@ And at the end of `onViewCreated` register:
 
 Add the `android.util.ArrayDeque` import (or `java.util.ArrayDeque`).
 
-- [ ] **Step 4: `startButtonClick` opens the wizard (GPS auto-start preserved)**
+- [x] **Step 4: `startButtonClick` opens the wizard (GPS auto-start preserved)**
 
 Replace the current `startButtonClick` body with:
 
@@ -623,7 +623,7 @@ Replace the current `startButtonClick` body with:
       };
 ```
 
-- [ ] **Step 5: Broadcast receiver starts directly (Wear), skipping the wizard**
+- [x] **Step 5: Broadcast receiver starts directly (Wear), skipping the wizard**
 
 Replace `startEventBroadcastReceiver.onReceive` body:
 
@@ -661,7 +661,7 @@ Add:
   }
 ```
 
-- [ ] **Step 6: Reset wizard after a run; FAB always visible**
+- [x] **Step 6: Reset wizard after a run; FAB always visible**
 
 In `runLauncher` callback, before `runActivityPending = false;`, add `goRecord();`.
 
@@ -675,12 +675,12 @@ Replace `updateStartButtonView()` body:
 
 Remove now-unused strings/imports the compiler flags only after everything compiles (deferred to Task 7 cleanup).
 
-- [ ] **Step 7: Compile gate**
+- [x] **Step 7: Compile gate**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD SUCCESSFUL (unused `advancedWorkoutSpinner`/`SportAdapter` fields are still referenced by onViewCreated wiring — cleaned in Task 7).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/src/main/org/runnerup/view/StartFragment.java
@@ -698,7 +698,7 @@ git commit -m "feat: add wizard page stack, transitions, and back handling to st
 - Consumes: ids from Task 3; `startButtonClick` from Task 5.
 - Produces: `updateSetupValues()`, `updateStartRunButtonView()`, `updateSetupGpsChip()`; fields `setupSportValue`, `setupAudioValue`, `setupWorkoutValue`, `setupStepsHint`, `setupGpsIndicator`, `setupGpsMessage`, `setupGpsChip`, `startRunButton`.
 
-- [ ] **Step 1: Add fields**
+- [x] **Step 1: Add fields**
 
 ```java
   private TextView setupSportValue = null;
@@ -711,7 +711,7 @@ git commit -m "feat: add wizard page stack, transitions, and back handling to st
   private MaterialButton startRunButton = null;
 ```
 
-- [ ] **Step 2: Wire the setup page in `onViewCreated`**
+- [x] **Step 2: Wire the setup page in `onViewCreated`**
 
 ```java
     setupSportValue = view.findViewById(R.id.setup_sport_value);
@@ -745,7 +745,7 @@ git commit -m "feat: add wizard page stack, transitions, and back handling to st
   }
 ```
 
-- [ ] **Step 3: `startRunClick` (same gating body as old FAB click)**
+- [x] **Step 3: `startRunClick` (same gating body as old FAB click)**
 
 ```java
   private final OnClickListener startRunClick =
@@ -771,7 +771,7 @@ git commit -m "feat: add wizard page stack, transitions, and back handling to st
       };
 ```
 
-- [ ] **Step 4: `updateSetupValues` + gating + chip**
+- [x] **Step 4: `updateSetupValues` + gating + chip**
 
 ```java
   private void updateSetupValues() {
@@ -851,7 +851,7 @@ git commit -m "feat: add wizard page stack, transitions, and back handling to st
   }
 ```
 
-- [ ] **Step 5: Call from `updateView()`**
+- [x] **Step 5: Call from `updateView()`**
 
 ```java
   public void updateView() {
@@ -871,7 +871,7 @@ git commit -m "feat: add wizard page stack, transitions, and back handling to st
   }
 ```
 
-- [ ] **Step 6: Compile gate**
+- [x] **Step 6: Compile gate**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD FAILURE only because `openPicker`/`PickerKind`/`selectedWorkoutName` are undefined — created in Task 7. To keep this commit green, either implement together with Task 7, or temporarily provide stub `openPicker`/enum/field. Recommended: commit together with Task 7.
@@ -888,7 +888,7 @@ Expected: BUILD FAILURE only because `openPicker`/`PickerKind`/`selectedWorkoutN
 - Consumes: `openPicker(PickerKind)`, `PickerKind`, `selectedWorkoutName` from Task 6.
 - Produces: `selectedWorkoutName` field, `PickerKind` enum, `openPicker`, `applySportChoice`, `applyAudioChoice`, `applyWorkoutChoice`, `getPickerItems`, `PickerListAdapter`, `loadAdvanced` refactor, `prepareWorkout` default-basic fallback, `onWorkoutChanged` name source, `prefChangeListener` adaptation, removal of `advancedWorkoutSpinner`/`SportAdapter`/`sportSpinner`/`advancedAudioSpinner` wiring.
 
-- [ ] **Step 1: Add `selectedWorkoutName` field and `PickerKind` enum**
+- [x] **Step 1: Add `selectedWorkoutName` field and `PickerKind` enum**
 
 ```java
   private String selectedWorkoutName = "";
@@ -906,7 +906,7 @@ Expected: BUILD FAILURE only because `openPicker`/`PickerKind`/`selectedWorkoutN
   private int pickerSelected = 0;
 ```
 
-- [ ] **Step 2: Picker entry + list adapter**
+- [x] **Step 2: Picker entry + list adapter**
 
 ```java
   private void openPicker(PickerKind kind) {
@@ -1041,7 +1041,7 @@ Expected: BUILD FAILURE only because `openPicker`/`PickerKind`/`selectedWorkoutN
   }
 ```
 
-- [ ] **Step 3: `PickerListAdapter` inner class**
+- [x] **Step 3: `PickerListAdapter` inner class**
 
 ```java
   private class PickerListAdapter extends BaseAdapter {
@@ -1092,7 +1092,7 @@ Expected: BUILD FAILURE only because `openPicker`/`PickerKind`/`selectedWorkoutN
 
 Check the actual ic_check resource location (app `R` vs common `R`) — use whichever `R` resolves: `org.runnerup.R.drawable.ic_check` is in app (it's in `app/res/drawable/ic_check.xml`), so use `org.runnerup.R.drawable.ic_check`.
 
-- [ ] **Step 4: `updateSetupSportIcon` helper**
+- [x] **Step 4: `updateSetupSportIcon` helper**
 
 ```java
   private void updateSetupSportIcon(int sport) {
@@ -1105,7 +1105,7 @@ Check the actual ic_check resource location (app `R` vs common `R`) — use whic
   }
 ```
 
-- [ ] **Step 5: Refactor `loadAdvanced` to track name + clear steps**
+- [x] **Step 5: Refactor `loadAdvanced` to track name + clear steps**
 
 ```java
   @SuppressLint("NotifyDataSetChanged")
@@ -1147,7 +1147,7 @@ Add `clear()` to `WorkoutPlanAdapter`:
     }
 ```
 
-- [ ] **Step 6: `prepareWorkout` supports GPS-only runs**
+- [x] **Step 6: `prepareWorkout` supports GPS-only runs**
 
 ```java
   private Workout prepareWorkout() {
@@ -1167,7 +1167,7 @@ Add `clear()` to `WorkoutPlanAdapter`:
 
 (Remove the old `RaceReady.defaultWorkout` branch — the generic builder covers it.)
 
-- [ ] **Step 7: `onWorkoutChanged` uses `selectedWorkoutName`**
+- [x] **Step 7: `onWorkoutChanged` uses `selectedWorkoutName`**
 
 ```java
   private final Runnable onWorkoutChanged =
@@ -1188,7 +1188,7 @@ Add `clear()` to `WorkoutPlanAdapter`:
       };
 ```
 
-- [ ] **Step 8: Adapt `prefChangeListener` (spinner → row/values)**
+- [x] **Step 8: Adapt `prefChangeListener` (spinner → row/values)**
 
 ```java
   private final SharedPreferences.OnSharedPreferenceChangeListener prefChangeListener =
@@ -1202,7 +1202,7 @@ Add `clear()` to `WorkoutPlanAdapter`:
       };
 ```
 
-- [ ] **Step 9: Strip old spinner wiring from `onViewCreated`**
+- [x] **Step 9: Strip old spinner wiring from `onViewCreated`**
 
 Remove: `sportSpinner`/`setOnSetValueListener` block (keep `sportWithoutGps` init + `updateView`), the `advancedAudioSpinner` block, the `advancedWorkoutSpinner`/`OnConfigureWorkoutsListener` block. Keep creating `advancedAudioListAdapter` (used by the picker), `advancedWorkoutListAdapter` field, `advancedStepList` layout manager + `advancedWorkoutStepsAdapter` (used by setup page). Keep `updateSportFieldIcon(initialSport)` removed and replaced by keeping `sportWithoutGps` init:
 
@@ -1214,12 +1214,12 @@ Remove: `sportSpinner`/`setOnSetValueListener` block (keep `sportWithoutGps` ini
 
 Remove `OnConfigureAudioListener` and `OnConfigureWorkoutsListener` inner classes. Remove `sportSpinner`/`sportAdapter`/`sportInitialized`/`advancedWorkoutSpinner`/`advancedWorkoutListAdapter`/`advancedAudioListAdapter`-spinner field declarations that are no longer referenced (keep `advancedAudioListAdapter` as it feeds the audio picker). Update the `sportSpinner` field references and `setGpsNotRequired` (no spinner update needed).
 
-- [ ] **Step 10: Compile + fix unused warnings**
+- [x] **Step 10: Compile + fix unused warnings**
 
 Run: `./gradlew :app:assembleLatestDebug`
 Expected: BUILD SUCCESSFUL; then run `./gradlew spotlessApply` and recompile so formatting is stable.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add app/src/main/org/runnerup/view/StartFragment.java
@@ -1239,31 +1239,31 @@ git commit --amend --no-edit # (or include in the same commit before pushing)
 
 **Files:** none (verification only).
 
-- [ ] **Step 1: Unit tests**
+- [x] **Step 1: Unit tests**
 
 Run: `./gradlew test`
-Expected: PASS (no new baseline failures).
+Expected: PASS (no new baseline failures). ✅ Ran — PASS.
 
-- [ ] **Step 2: Lint**
+- [x] **Step 2: Lint**
 
 Run: `./gradlew :app:lintLatestDebug`
-Expected: only the 28 pre-existing baseline items (table in `app/lint-baseline.xml`); no new issues. If a new issue appears, fix it; do not edit the baseline.
+Expected: only the 28 pre-existing baseline items (table in `app/lint-baseline.xml`); no new issues. If a new issue appears, fix it; do not edit the baseline. ✅ Ran — 29 baseline items (baseline had one more than planned); no new issues.
 
-- [ ] **Step 3: Formatting**
+- [x] **Step 3: Formatting**
 
 Run: `./gradlew spotlessApply` then `./gradlew spotlessCheck`
-Expected: PASS.
+Expected: PASS. ✅ Ran — PASS.
 
-- [ ] **Step 4: Assemble**
+- [x] **Step 4: Assemble**
 
 Run: `./gradlew :app:assembleLatestDebug`
-Expected: BUILD SUCCESSFUL; APK at `app/build/outputs/apk/latest/debug/app-latest-debug.apk`.
+Expected: BUILD SUCCESSFUL; APK at `app/build/outputs/apk/latest/debug/app-latest-debug.apk`. ✅ Ran — BUILD SUCCESSFUL.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
-git add -A
-git commit -m "style: apply spotless formatting for Setup Run flow"
+git add app/res/layout/start.xml app/res/layout/start_setup.xml app/res/values/strings.xml app/src/main/org/runnerup/view/StartFragment.java
+git commit -m "feat: auto-start GPS from sport selection, GPS info popup on Setup Run"
 ```
 
 ---
@@ -1280,21 +1280,24 @@ adb -s 5717a66e shell am force-stop org.runnerup.debug
 adb -s 5717a66e shell am start -n org.runnerup.debug/org.runnerup.view.MainLayout
 ```
 
-Verify record screen shows the toolbar "Record", the Start pill (always visible), and the GPS status bar — and none of the old spinners.
+Verify record screen shows the toolbar "Record", the Start pill (always visible), and the HR/wear status bar — and none of the old spinners or the old Start GPS button.
 
 - [ ] **Step 2: Wizard flow**
 
 - Tap Start → Setup Run page appears, bottom nav hidden, back chevron visible; rows show pre-filled values.
+- GPS auto-start: with a GPS sport already selected (Running), GPS starts as soon as the Setup Run page opens — GPS chip shows "Waiting for GPS…"/"Poor/Good GPS" and Start Run enables once connected. No explicit Start GPS action exists anymore.
+- Sport override: change sport to a non-GPS sport (Manual) → GPS stops (chip hides, Start Run enabled immediately); switch back to Running → GPS restarts.
+- GPS chip popup: tap the GPS chip → "GPS signal info" popup card shows signal detail (satellites/accuracy) and stays in sync while open; tap again → collapses.
 - Tap Sport → picker list; change sport → back; value updated.
 - Tap Audio cues → picker list with Default + schemes + Manage audio cues…; pick a scheme → value shown.
 - Tap Workout → picker list with None + workouts + Manage workouts…; pick a workout → steps appear under the row with hint; pick None → steps hidden.
 - Edit a step (tap the step row) → dialog opens (StepButton) → change a value → on dismiss the workout file updates.
 - Back chevron and system Back unwind picker → setup → record, re-enabling bottom nav.
-- Verify GPS chip text on the setup footer switches between "Waiting for GPS…"/"Poor/Good GPS"; tapping Start GPS on the record screen then Start → wizard → Start Run enabled once connected.
 
 - [ ] **Step 3: Recording + persistence**
 
 - With GPS ready: Start Run → RunActivity recording starts (real fix acquired). Pause/resume/stop per normal behavior; confirm DB has a completed activity.
+- Non-GPS sport: pick Manual, Start Run → run records without GPS.
 - After restarting the app, open Setup Run and confirm last-used sport/audio/workout pre-selected.
 
 - [ ] **Step 4: Regression spot-checks**
@@ -1302,3 +1305,24 @@ Verify record screen shows the toolbar "Record", the Start pill (always visible)
 - Wear-start intent path still functions (gated on `pageStack` empty).
 - Race-ready deferred start still offered on a non-locked GPS sport.
 - Swiping tabs with the wizard closed is normal; with the wizard open, swiping is disabled and bottom nav hidden.
+
+---
+
+### Task 10: GPS auto-start + GPS info popup
+
+Follow-up to the original flow: remove the record screen's Start GPS control entirely and move GPS start/stop to sport selection on the Setup Run page. GPS auto-starts when a GPS-requiring sport is selected (including when the page opens with one already selected) and stops when a non-GPS sport is selected. The Setup Run footer's GPS chip (reusing the existing level logic) toggles a "GPS signal info" popup card showing signal level plus satellites/accuracy detail.
+
+**Files:**
+- Modify: `app/res/layout/start.xml` — remove GPS views (`gps_indicator`, `gps_message`, `gps_detail_*`, `expand_icon`, `gps_enable_button`) and the `status_frame` wrapper; keep HR/wear/`device_status`.
+- Modify: `app/res/layout/start_setup.xml` — chip becomes clickable/focusable; add `setup_gps_popup` MaterialCardView (header `@string/GPS_signal_info`, `setup_gps_popup_indicator`, `_popup_message`, `_popup_satellites`).
+- Modify: `app/res/values/strings.xml` — add `GPS_signal_info`.
+- Modify: `app/src/main/org/runnerup/view/StartFragment.java` — remove record-root GPS fields/UI/`statusDetailsShown`, `toggleStatusDetails`, `updateGPSView`, `updateStartGpsButtonView`, `gpsEnableClick`; add sport-driven `autoStartGpsForSport()` (start on GPS sport, stop on non-GPS sport, keeps tracker CONNECTED for non-GPS runs), wire chip → `toggleSetupGpsPopup()`/`populateGpsPopup()`, and retry auto-start from the permission-launcher result so a freshly granted permission takes effect.
+
+- [x] **Step 1: Strip record-root GPS UI from `StartFragment`/`start.xml`**
+- [x] **Step 2: Add GPS chip popup card to `start_setup.xml` + `GPS_signal_info` string**
+- [x] **Step 3: Sport-driven auto start/stop (`autoStartGpsForSport`, reworked `setGpsNotRequired`)**
+- [x] **Step 4: Popup wiring (chip click, live sync while open)**
+- [x] **Step 5: Permission-grant retry for auto-start**
+- [x] **Step 6: Gates** — `test`, `:app:lintLatestDebug` (no new baseline items), `spotlessApply`+`spotlessCheck`, `:app:assembleLatestDebug` all PASS.
+- [ ] **Step 7: Device smoke test** (covered by Task 9 above)
+- [x] **Step 8: Commit** — see Task 8 Step 5.
