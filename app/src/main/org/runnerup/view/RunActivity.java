@@ -466,10 +466,18 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   public void onTick() {
     // Start the workout as soon as the tracker is connected (may be pre-fix
     // under race-ready; the GpsWaitStep holds until a fix arrives).
-    if (startDeferred && mTracker != null && mTracker.getState() == TrackerState.CONNECTED) {
-      startDeferred = false;
-      runStarted = true;
-      mTracker.start();
+    if (startDeferred && mTracker != null) {
+      TrackerState st = mTracker.getState();
+      if (st == TrackerState.CONNECTED) {
+        startDeferred = false;
+        runStarted = true;
+        mTracker.start();
+      } else if (st == TrackerState.STARTED || st == TrackerState.PAUSED) {
+        // The deferred-start intent was re-delivered to a recreated activity but the
+        // run is already live; reconcile so the wait banner and Cancel behave correctly.
+        startDeferred = false;
+        runStarted = true;
+      }
     }
 
     if (workout != null) {
@@ -836,10 +844,26 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (mTracker == null) return;
     LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     if (lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-      mTracker.connect();
+      switch (mTracker.getState()) {
+        case INIT:
+        case INITIALIZING:
+        case INITIALIZED:
+        case CLEANUP:
+        case CONNECTING:
+        case CONNECTED:
+          mTracker.connect();
+          break;
+        case STARTED:
+        case PAUSED:
+        case STOPPED:
+        case ERROR:
+          // Already recording (e.g. recreated activity) or connect failed; nothing to reconnect.
+          break;
+      }
     } else {
       startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
     }
+    updateView();
   }
 
   private final OnClickListener pauseButtonClick = v -> togglePause();

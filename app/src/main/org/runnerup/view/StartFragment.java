@@ -617,8 +617,15 @@ public class StartFragment extends Fragment implements TickListener {
     // unregister receivers
     unregisterStartEventListener();
 
+    Workout w = prepareWorkout();
+    // If GPS was already locked by the time the run starts (auto-started from the Setup
+    // page), the race-ready gate has nothing to wait for: drop it so the run starts
+    // immediately, without a pause/"Waiting for GPS" flash or a spurious lock cue.
+    if (RaceReady.enabled(getResources(), appPrefs) && !sportWithoutGps && mTracker.isGpsFixed()) {
+      WorkoutBuilder.removeGpsWaitGates(w);
+    }
     // This will set the workout on the tracker
-    mTracker.setWorkout(prepareWorkout());
+    mTracker.setWorkout(w);
 
     boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
     boolean startNow =

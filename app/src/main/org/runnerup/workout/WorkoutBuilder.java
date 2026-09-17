@@ -24,6 +24,7 @@ import android.text.format.DateUtils;
 import android.util.Log;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
@@ -126,6 +127,19 @@ public class WorkoutBuilder {
     }
     gate.triggers.add(ev);
     w.steps.add(index, gate);
+  }
+
+  /**
+   * Drop the race-ready GPS wait gate from a workout. Used when GPS is already locked before the
+   * run starts (e.g. auto-started from the Setup page), so the run begins immediately without the
+   * pause/"Waiting for GPS" flash or a spurious lock cue.
+   */
+  public static void removeGpsWaitGates(Workout w) {
+    for (Iterator<Step> it = w.steps.iterator(); it.hasNext(); ) {
+      if (it.next() instanceof GpsWaitStep) {
+        it.remove();
+      }
+    }
   }
 
   private static void addAutoPauseTrigger(Resources res, Step step, SharedPreferences prefs) {

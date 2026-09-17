@@ -144,4 +144,24 @@ public class WorkoutBuilderGatesTest {
       assertFalse(t instanceof AutoPauseTrigger);
     }
   }
+
+  @Test
+  public void removeGpsWaitGatesDropsOnlyTheGate() {
+    store.put("pref_countdown_active", true);
+    store.put("pref_countdown_time", "5");
+    Workout w = workout();
+    WorkoutBuilder.injectRaceReadyGates(res, prefs, w);
+    assertEquals(3, w.steps.size());
+    WorkoutBuilder.removeGpsWaitGates(w);
+    assertEquals(2, w.steps.size());
+    assertFalse(w.steps.get(0) instanceof GpsWaitStep);
+    assertFalse(w.steps.get(1) instanceof GpsWaitStep);
+  }
+
+  @Test
+  public void removeGpsWaitGatesIsNoopWithoutGate() {
+    Workout w = workout();
+    WorkoutBuilder.removeGpsWaitGates(w);
+    assertEquals(1, w.steps.size());
+  }
 }
