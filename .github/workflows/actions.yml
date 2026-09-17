@@ -12,6 +12,7 @@ permissions:
   contents: read
 
 env:
+  ANDROID_API: 37.2
   ANDROID_BUILD_TOOLS: 37.0.0
   ADB_INSTALL_TIMEOUT: 5
 
@@ -49,18 +50,23 @@ jobs:
 
       - name: Git LFS Pull
         run: git lfs pull
- 
+
       - name: Setup Android SDK
         run: |
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-          echo "ANDROID_HOME=$ANDROID_HOME"
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
 
       - name: Install Android SDK components
         run: |
-          sdkmanager "platform-tools"
-          sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}"
-          
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-${{ env.ANDROID_API }}"
+          sdkmanager "build-tools;${{ env.ANDROID_BUILD_TOOLS }}"
+          sdkmanager "extras;android;m2repository"
+          sdkmanager "extras;google;m2repository"
+          sdkmanager "extras;google;google_play_services"
+
       - name: Prepare builddir
         run: |
           # secrets are only available for collabrators, other will build with OsmDroid (but a few more options than F-Droid still)
