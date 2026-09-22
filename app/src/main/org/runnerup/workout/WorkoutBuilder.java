@@ -603,15 +603,14 @@ public class WorkoutBuilder {
 
           Step s = Step.createRestStep(Dimension.TIME, val, convertRestToRecovery);
           if (stepArr[i].parent() == null) {
-            w.steps.add(i + 1, s);
-            Log.d("WorkoutBuilder", "Added step at index: " + (i + 1));
+            int index = w.steps.indexOf(step) + 1;
+            w.steps.add(index, s);
+            Log.d("WorkoutBuilder", "Added step at index: " + index);
           } else {
             RepeatStep rs = (RepeatStep) stepArr[i].parent();
-            int idx = rs.steps.indexOf(step);
+            int idx = rs.steps.indexOf(step) + 1;
             rs.steps.add(idx, s);
-            Log.d(
-                "WorkoutBuilder",
-                "Added step at index: " + (i + 1) + " repeat index: " + (idx + 1));
+            Log.d("WorkoutBuilder", "Added step at index: " + (i + 1) + " repeat index: " + idx);
           }
         }
       }

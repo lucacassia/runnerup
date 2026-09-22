@@ -23,6 +23,10 @@ package org.runnerup.workout;
  */
 public class GpsWaitStep extends Step {
 
+  public GpsWaitStep() {
+    intensity = Intensity.RESTING;
+  }
+
   @Override
   public void onInit(Workout s) {
     super.onInit(s);
