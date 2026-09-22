@@ -1,0 +1,104 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+env:
+  ANDROID_API: 37.2
+  ANDROID_BUILD_TOOLS: 37.0.0
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          lfs: true
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Cache Gradle Build Cache
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches/build-cache-*
+          key: ${{ runner.os }}-gradle-build-cache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-build-cache-
+
+      - name: Setup Android SDK
+        run: |
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
+
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses
+          sdkmanager "platforms;android-${{ env.ANDROID_API }}"
+          sdkmanager "build-tools;${{ env.ANDROID_BUILD_TOOLS }}"
+
+      - name: Prepare F-Droid free build
+        run: |
+          chmod +x gradlew
+          rm -rf wear ANT-Android-SDKs
+          sed -i -e '/play-services/d' -e '/com.mapbox.maps/d' -e '/api.mapbox.com/d' app/build.gradle
+          sed -i -e '/wearable/d' common/build.gradle
+          sed -i -e '/:wear/d' settings.gradle
+
+      - name: Guard against missing signing secrets
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 == '' || secrets.ANDROID_KEYSTORE_PASSWORD == '' || secrets.ANDROID_KEY_ALIAS == '' || secrets.ANDROID_KEY_PASSWORD == '' }}
+        run: |
+          echo "::error::Missing ANDROID_KEYSTORE_* secrets; refusing to publish an unsigned nightly."
+          exit 1
+
+      - name: Compute nightly version
+        id: version
+        run: |
+          echo "version_code=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+          echo "version_suffix=-nightly-$(date +%Y%m%d)-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          echo "apk_name=runnerup-free-nightly-$(date +%Y%m%d)-$(git rev-parse --short HEAD).apk" >> "$GITHUB_OUTPUT"
+          echo "release_title=RunnerUp Nightly $(date +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Build free release APK
+        run: >-
+          ./gradlew clean :app:assembleLatestRelease
+          -Porg.runnerup.free
+          -PnightlyVersionCode=${{ steps.version.outputs.version_code }}
+          -PnightlyVersionSuffix=${{ steps.version.outputs.version_suffix }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Publish rolling nightly release
+        run: |
+          cp app/build/outputs/apk/latest/release/app-latest-release.apk "${{ steps.version.outputs.apk_name }}"
+          gh release delete nightly --yes --cleanup-tag || true
+          gh release create nightly \
+            --title "${{ steps.version.outputs.release_title }}" \
+            --notes "Nightly build of the F-Droid (free) flavor from master.
+
+            - Commit: ${{ github.sha }}
+            - Package: org.runnerup.free (minSdk 28)
+            - Build: \$(date -u)
+
+            Install on any Android 9+ phone; enable \"Unknown sources\" for the browser/downloader. To replace a previous nightly or the official F-Droid build, uninstall it first." \
+            --prerelease \
+            "${{ steps.version.outputs.apk_name }}"

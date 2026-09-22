@@ -211,7 +211,8 @@ if (rootProject.file("release.properties").exists()) {
     android.signingConfigs.release.storePassword props.keyStorePassword
     android.signingConfigs.release.keyAlias props.keyAlias
     android.signingConfigs.release.keyPassword props.keyAliasPassword
-} else {
+} else if (System.getenv("ANDROID_KEYSTORE_BASE64") == null
+        || System.getenv("ANDROID_KEYSTORE_BASE64").isEmpty()) {
     project.logger.info('INFO: Set the values storeFile, storePassword, keyAlias, and keyPassword in release.properties to sign the release.')
     android.buildTypes.release.signingConfig = null
 }
