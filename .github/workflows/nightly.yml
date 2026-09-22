@@ -94,6 +94,8 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Publish rolling nightly release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/latest/release/app-latest-release.apk "${{ steps.version.outputs.apk_name }}"
           gh release delete nightly --yes --cleanup-tag || true
