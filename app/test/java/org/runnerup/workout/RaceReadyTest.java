@@ -64,8 +64,8 @@ public class RaceReadyTest {
   }
 
   @Test
-  public void enabledDefaultsOn() {
-    assertTrue(RaceReady.enabled(res, prefs()));
+  public void enabledDefaultsOff() {
+    assertFalse(RaceReady.enabled(res, prefs()));
   }
 
   @Test

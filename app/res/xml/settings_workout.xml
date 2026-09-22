@@ -128,7 +128,7 @@
         app:iconSpaceReserved="false">
 
         <CheckBoxPreference
-            android:defaultValue="true"
+            android:defaultValue="false"
             android:key="@string/pref_race_ready_start"
             android:persistent="true"
             android:summary="@string/Race_ready_start_summary"

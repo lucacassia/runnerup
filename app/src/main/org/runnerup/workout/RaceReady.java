@@ -29,7 +29,7 @@ public final class RaceReady {
   private RaceReady() {}
 
   public static boolean enabled(Resources res, SharedPreferences prefs) {
-    return prefs.getBoolean(res.getString(R.string.pref_race_ready_start), true);
+    return prefs.getBoolean(res.getString(R.string.pref_race_ready_start), false);
   }
 
   public static boolean gpsLockedCueEnabled(Resources res, SharedPreferences prefs) {

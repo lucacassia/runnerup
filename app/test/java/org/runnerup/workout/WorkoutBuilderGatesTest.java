@@ -88,6 +88,7 @@ public class WorkoutBuilderGatesTest {
 
   @Test
   public void noGatesForGymWorkouts() {
+    store.put("pref_race_ready_start", true);
     Workout w = workout();
     w.sport = org.runnerup.common.util.Constants.DB.ACTIVITY.SPORT_TREADMILL;
     WorkoutBuilder.injectRaceReadyGates(res, prefs, w);
@@ -98,6 +99,7 @@ public class WorkoutBuilderGatesTest {
   public void countdownPlusGate() {
     store.put("pref_countdown_active", true);
     store.put("pref_countdown_time", "5");
+    store.put("pref_race_ready_start", true);
     Workout w = workout();
     WorkoutBuilder.injectRaceReadyGates(res, prefs, w);
     assertEquals(3, w.steps.size());
@@ -110,6 +112,7 @@ public class WorkoutBuilderGatesTest {
   @Test
   public void gateOnlyWhenCountdownOff() {
     store.put("pref_countdown_active", false);
+    store.put("pref_race_ready_start", true);
     Workout w = workout();
     WorkoutBuilder.injectRaceReadyGates(res, prefs, w);
     assertEquals(2, w.steps.size());
@@ -118,6 +121,7 @@ public class WorkoutBuilderGatesTest {
 
   @Test
   public void gateCarriesCueAndVibration() {
+    store.put("pref_race_ready_start", true);
     Workout w = workout();
     WorkoutBuilder.injectRaceReadyGates(res, prefs, w);
     GpsWaitStep gate = (GpsWaitStep) w.steps.get(0);
@@ -149,6 +153,7 @@ public class WorkoutBuilderGatesTest {
   public void removeGpsWaitGatesDropsOnlyTheGate() {
     store.put("pref_countdown_active", true);
     store.put("pref_countdown_time", "5");
+    store.put("pref_race_ready_start", true);
     Workout w = workout();
     WorkoutBuilder.injectRaceReadyGates(res, prefs, w);
     assertEquals(3, w.steps.size());

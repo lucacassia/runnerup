@@ -954,17 +954,26 @@ public class StartFragment extends Fragment implements TickListener {
       return;
     }
     if (startRunButton == null) return;
-    boolean raceReady = RaceReady.enabled(getResources(), appPrefs);
-    if (raceReady || sportWithoutGps) {
-      startRunButton.setEnabled(true);
-      return;
-    }
     boolean ready =
-        mGpsStatus.isStarted()
-            && mGpsStatus.isLogging()
-            && mGpsStatus.isFixed()
-            && mTracker.getState() == TrackerState.CONNECTED;
+        startRunEnabled(
+            sportWithoutGps,
+            mGpsStatus.isStarted(),
+            mGpsStatus.isLogging(),
+            mGpsStatus.isFixed(),
+            mTracker.getState() == TrackerState.CONNECTED);
     startRunButton.setEnabled(ready);
+  }
+
+  static boolean startRunEnabled(
+      boolean sportWithoutGps,
+      boolean gpsStarted,
+      boolean gpsLogging,
+      boolean gpsFixed,
+      boolean trackerConnected) {
+    if (sportWithoutGps) {
+      return true;
+    }
+    return gpsStarted && gpsLogging && gpsFixed && trackerConnected;
   }
 
   private void toggleSetupGpsPopup() {
