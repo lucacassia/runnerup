@@ -26,6 +26,7 @@ import org.osmdroid.views.CustomZoomButtonsController;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
+import org.osmdroid.views.overlay.gestures.RotationGestureOverlay;
 import org.runnerup.R;
 import org.runnerup.db.entities.LocationEntity;
 
@@ -42,6 +43,7 @@ public class LiveMap {
 
   private final MapView mapView;
   private final View recenterButton;
+  private final View northButton;
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
   private final List<GeoPoint> points = new ArrayList<>();
@@ -66,11 +68,13 @@ public class LiveMap {
     }
   }
 
-  public LiveMap(MapViewWrapper mapView, View recenterButton) {
+  public LiveMap(MapViewWrapper mapView, View recenterButton, View northButton) {
     this.mapView = mapView;
     this.recenterButton = recenterButton;
+    this.northButton = northButton;
     org.osmdroid.config.Configuration.getInstance().setUserAgentValue(OSMDROID_USER_AGENT);
     recenterButton.setOnClickListener(v -> recenter());
+    northButton.setOnClickListener(v -> resetNorth());
   }
 
   public void onCreate(Bundle savedInstanceState) {
@@ -80,6 +84,16 @@ public class LiveMap {
     edge.getOutlinePaint().setColor(MapTheme.edgeColor(isNight));
     mapView.getZoomController().setVisibility(CustomZoomButtonsController.Visibility.NEVER);
     mapView.setMultiTouchControls(true);
+    RotationGestureOverlay rotationOverlay =
+        new RotationGestureOverlay(mapView) {
+          @Override
+          public void onRotate(float angle) {
+            super.onRotate(angle);
+            updateNorthButton();
+          }
+        };
+    rotationOverlay.setEnabled(true);
+    mapView.getOverlays().add(rotationOverlay);
     mapView.getController().setZoom(INITIAL_ZOOM);
     mapView.setOnTouchListener(
         (v, event) -> {
@@ -231,6 +245,16 @@ public class LiveMap {
   private void stopFollowing() {
     following = false;
     recenterButton.setVisibility(View.VISIBLE);
+  }
+
+  private void resetNorth() {
+    mapView.setMapOrientation(0);
+    updateNorthButton();
+  }
+
+  private void updateNorthButton() {
+    northButton.setVisibility(
+        Math.abs(mapView.getMapOrientation()) > 1f ? View.VISIBLE : View.GONE);
   }
 
   private void centerOn(GeoPoint point) {

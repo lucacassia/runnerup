@@ -7,7 +7,7 @@ import android.view.View;
 
 public class LiveMap {
 
-  public LiveMap(MapViewWrapper mapView, View recenterButton) {}
+  public LiveMap(MapViewWrapper mapView, View recenterButton, View northButton) {}
 
   public void onCreate(Bundle savedInstanceState) {}
 

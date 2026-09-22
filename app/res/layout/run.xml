@@ -572,6 +572,18 @@
             app:srcCompat="@drawable/ic_recenter"
             app:tint="?attr/colorOnPrimaryContainer" />
 
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/north_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="@dimen/run_north_bottom_margin"
+            android:contentDescription="@string/North_up"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_north"
+            app:tint="?attr/colorOnPrimaryContainer" />
+
             <LinearLayout
                 android:id="@+id/run_bottom_sheet"
                 android:layout_width="match_parent"

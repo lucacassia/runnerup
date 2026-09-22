@@ -41,6 +41,7 @@ public class LiveMap {
   private final Context context;
   private final MapView mapView;
   private final View recenterButton;
+  private final View northButton;
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
   private final List<Point> points = new ArrayList<>();
@@ -67,15 +68,18 @@ public class LiveMap {
     }
   }
 
-  public LiveMap(MapViewWrapper mapView, View recenterButton) {
+  public LiveMap(MapViewWrapper mapView, View recenterButton, View northButton) {
     this.context = mapView.getContext();
     this.mapView = mapView;
     this.recenterButton = recenterButton;
+    this.northButton = northButton;
     recenterButton.setOnClickListener(v -> recenter());
+    northButton.setOnClickListener(v -> resetNorth());
   }
 
   public void onCreate(Bundle savedInstanceState) {
     mapView.getMapboxMap().setCamera(new CameraOptions.Builder().zoom(INITIAL_ZOOM).build());
+    mapView.getUiSettings().setCompassEnabled(false);
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
     Resources res = context.getResources();
     String val =
@@ -125,6 +129,7 @@ public class LiveMap {
             .getMapboxMap()
             .subscribeCameraChanged(
                 cameraChanged -> {
+                  updateNorthButton();
                   if (Double.isNaN(lastZoom)) {
                     lastZoom = cameraChanged.getCameraState().getZoom();
                     return;
@@ -317,6 +322,16 @@ public class LiveMap {
   private void stopFollowing() {
     following = false;
     recenterButton.setVisibility(View.VISIBLE);
+  }
+
+  private void resetNorth() {
+    mapView.getMapboxMap().setCamera(new CameraOptions.Builder().bearing(0.0).build());
+    updateNorthButton();
+  }
+
+  private void updateNorthButton() {
+    double bearing = mapView.getMapboxMap().getCameraState().getBearing();
+    northButton.setVisibility(Math.abs(bearing) > 0.5 ? View.VISIBLE : View.GONE);
   }
 
   private RouteData loadRoute(SQLiteDatabase mDB, long activityId) {

@@ -431,6 +431,7 @@
     <string name="export_activities_cancelled">Export cancelled</string>
     <string name="export_activities_nothing">No activities to export</string>
     <string name="Recenter">Recenter</string>
+    <string name="North_up">North up</string>
     <string name="Scan_parkrun_barcode">Scan parkrun barcode</string>
     <string name="Barcode_scan_hint">Point the camera at your parkrun barcode</string>
     <string name="Camera_permission_text">RunnerUp needs camera access to scan your parkrun barcode.</string>
