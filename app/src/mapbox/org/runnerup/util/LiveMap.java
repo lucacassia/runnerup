@@ -325,7 +325,16 @@ public class LiveMap {
   }
 
   private void resetNorth() {
-    mapView.getMapboxMap().setCamera(new CameraOptions.Builder().bearing(0.0).build());
+    CameraOptions.Builder options = new CameraOptions.Builder().bearing(0.0);
+    if (!Double.isNaN(lastLat) && !Double.isNaN(lastLng)) {
+      options.center(Point.fromLngLat(lastLng, lastLat));
+    }
+    suppressCamera = true;
+    try {
+      mapView.getMapboxMap().setCamera(options.build());
+    } finally {
+      suppressCamera = false;
+    }
     updateNorthButton();
   }
 

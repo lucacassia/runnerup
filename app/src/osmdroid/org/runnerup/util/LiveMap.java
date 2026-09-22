@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -17,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.events.MapListener;
 import org.osmdroid.events.ScrollEvent;
 import org.osmdroid.events.ZoomEvent;
@@ -248,7 +250,26 @@ public class LiveMap {
   }
 
   private void resetNorth() {
-    mapView.setMapOrientation(0);
+    if (!Double.isNaN(lastLat) && !Double.isNaN(lastLng)) {
+      GeoPoint pivot = new GeoPoint(lastLat, lastLng);
+      Point before = mapView.getProjection().toPixels(pivot, new Point());
+      mapView.setMapOrientation(0);
+      Point after = mapView.getProjection().toPixels(pivot, new Point());
+      int dx = before.x - after.x;
+      int dy = before.y - after.y;
+      IGeoPoint newCenter =
+          mapView
+              .getProjection()
+              .fromPixels(mapView.getWidth() / 2 - dx, mapView.getHeight() / 2 - dy);
+      suppressScroll = true;
+      try {
+        mapView.getController().setCenter(newCenter);
+      } finally {
+        suppressScroll = false;
+      }
+    } else {
+      mapView.setMapOrientation(0);
+    }
     updateNorthButton();
   }
 
