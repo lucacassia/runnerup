@@ -105,7 +105,7 @@ jobs:
 
             - Commit: ${{ github.sha }}
             - Package: org.runnerup.free (minSdk 28)
-            - Build: \$(date -u)
+            - Build: $(date -u)
 
             Install on any Android 9+ phone; enable \"Unknown sources\" for the browser/downloader. To replace a previous nightly or the official F-Droid build, uninstall it first." \
             --prerelease \
