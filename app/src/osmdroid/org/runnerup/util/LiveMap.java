@@ -26,6 +26,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.CustomZoomButtonsController;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.Projection;
 import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Polyline;
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay;
@@ -252,21 +253,21 @@ public class LiveMap {
   private void resetNorth() {
     if (!Double.isNaN(lastLat) && !Double.isNaN(lastLng)) {
       GeoPoint pivot = new GeoPoint(lastLat, lastLng);
-      Point before = mapView.getProjection().toPixels(pivot, new Point());
-      mapView.setMapOrientation(0);
-      Point after = mapView.getProjection().toPixels(pivot, new Point());
-      int dx = before.x - after.x;
-      int dy = before.y - after.y;
+      Projection projection = mapView.getProjection();
+      Point unrotated = projection.toPixels(pivot, new Point());
+      Point rendered = projection.rotateAndScalePoint(unrotated.x, unrotated.y, new Point());
+      int dx = rendered.x - unrotated.x;
+      int dy = rendered.y - unrotated.y;
       IGeoPoint newCenter =
-          mapView
-              .getProjection()
-              .fromPixels(mapView.getWidth() / 2 - dx, mapView.getHeight() / 2 - dy);
+          projection.fromPixels(
+              projection.getScreenCenterX() - dx, projection.getScreenCenterY() - dy);
       suppressScroll = true;
       try {
         mapView.getController().setCenter(newCenter);
       } finally {
         suppressScroll = false;
       }
+      mapView.setMapOrientation(0);
     } else {
       mapView.setMapOrientation(0);
     }
