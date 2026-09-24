@@ -3,7 +3,7 @@
 
     <issue
         id="GradleDependency"
-        message="A newer version of androidx.core:core than 1.18.0 is available: 1.19.0"
+        message="A newer version of androidx.core:core than 1.18.0 is available: 1.19.1"
         errorLine1="    implementation &quot;androidx.core:core:1.18.0&quot;"
         errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
