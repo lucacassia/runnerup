@@ -3,6 +3,7 @@ RunnerUp
 
 [![Join the chat at https://gitter.im/jonasoreland/runnerup](https://badges.gitter.im/jonasoreland/runnerup.svg)](https://gitter.im/jonasoreland/runnerup?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Android CI](https://github.com/lucacassia/runnerup/actions/workflows/actions.yml/badge.svg)](https://github.com/lucacassia/runnerup/actions/workflows/actions.yml)
+[![Nightly](https://github.com/lucacassia/runnerup/actions/workflows/nightly.yml/badge.svg)](https://github.com/lucacassia/runnerup/actions/workflows/nightly.yml)
 
 Track your sport activities with RunnerUp using the GPS in your Android phone.
 
