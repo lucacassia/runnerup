@@ -72,13 +72,10 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/history_sport_filter">
 
-        <androidx.recyclerview.widget.RecyclerView
+        <androidx.compose.ui.platform.ComposeView
             android:id="@+id/history_list"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingBottom="@dimen/margin_for_fab"
-            android:scrollbarStyle="outsideOverlay" />
+            android:layout_height="match_parent" />
 
         <LinearLayout
             android:id="@+id/history_empty"

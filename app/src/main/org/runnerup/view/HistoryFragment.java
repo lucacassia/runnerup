@@ -17,7 +17,6 @@
 
 package org.runnerup.view;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -36,7 +35,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
@@ -45,15 +43,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.compose.ui.platform.ComposeView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.loader.app.LoaderManager;
-import androidx.loader.app.LoaderManager.LoaderCallbacks;
-import androidx.loader.content.Loader;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.chip.Chip;
@@ -62,7 +56,6 @@ import com.google.android.material.tabs.TabLayout;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -80,16 +73,11 @@ import org.runnerup.db.RecordUtils;
 import org.runnerup.db.Statistics;
 import org.runnerup.db.Statistics.BucketPeriod;
 import org.runnerup.db.Statistics.Metric;
-import org.runnerup.db.entities.ActivityEntity;
 import org.runnerup.db.entities.LocationEntity;
 import org.runnerup.util.Formatter;
-import org.runnerup.util.SimpleCursorLoader;
 import org.runnerup.workout.Sport;
 
-public class HistoryFragment extends Fragment implements Constants, LoaderCallbacks<Cursor> {
-
-  private static final int TYPE_HEADER = 0;
-  private static final int TYPE_ROW = 1;
+public class HistoryFragment extends Fragment implements Constants {
 
   private static final double[] RECORD_DISTANCES = {
     1000.0, 1609.344, 3218.688, 5000.0, 8046.72, 10000.0, 21097.5, 42195.0
@@ -119,7 +107,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   private SQLiteDatabase mDB = null;
   private Formatter formatter = null;
 
-  HistoryListAdapter adapter = null;
+  private HistoryViewModel historyViewModel;
+  private boolean historyListEmpty = true;
   View fab = null;
   View emptyView = null;
 
@@ -161,7 +150,9 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
           new ActivityResultContracts.StartActivityForResult(),
           result -> {
             recordsFingerprint = -1L;
-            LoaderManager.getInstance(this).restartLoader(0, null, this);
+            if (historyViewModel != null) {
+              historyViewModel.load(currentSport);
+            }
           });
 
   public HistoryFragment() {
@@ -172,7 +163,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
-    RecyclerView listView = view.findViewById(R.id.history_list);
+    ComposeView listView = view.findViewById(R.id.history_list);
     fab = view.findViewById(R.id.history_add);
     emptyView = view.findViewById(R.id.history_empty);
 
@@ -192,11 +183,11 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
 
     mDB = DBHelper.getReadableDatabase(context);
     formatter = new Formatter(context);
-    listView.setLayoutManager(new LinearLayoutManager(context));
-    adapter = new HistoryListAdapter(context);
-    listView.setAdapter(adapter);
 
-    LoaderManager.getInstance(this).initLoader(0, null, this);
+    historyViewModel = new ViewModelProvider(this).get(HistoryViewModel.class);
+    HistoryScreenHost.INSTANCE.attach(
+        listView, historyViewModel, this::openActivity, this::onHistoryStateChanged);
+
     AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
     new ActivityCleaner().conditionalRecompute(mDB);
@@ -266,7 +257,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                   getString(org.runnerup.common.R.string.pref_statistics_sport),
                   currentSport == null ? -1 : currentSport)
               .apply();
-          LoaderManager.getInstance(this).restartLoader(0, null, this);
+          historyViewModel.load(currentSport);
           if (currentTab == TAB_STATISTICS_INDEX) {
             loadStatistics();
             loadCalendar();
@@ -276,9 +267,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
         });
     refreshSportBadges();
     loadRecords();
-    if (currentSport != null) {
-      LoaderManager.getInstance(this).restartLoader(0, null, this);
-    }
+    historyViewModel.load(currentSport);
 
     TabLayout historyTabs = view.findViewById(R.id.history_tabs);
     historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Activities));
@@ -377,7 +366,7 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
   @Override
   public void onResume() {
     super.onResume();
-    LoaderManager.getInstance(this).restartLoader(0, null, this);
+    historyViewModel.load(currentSport);
     if (currentTab == TAB_STATISTICS_INDEX) {
       loadStatistics();
       loadCalendar();
@@ -392,52 +381,6 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     DBHelper.closeDB(mDB);
   }
 
-  @NonNull
-  @Override
-  public Loader<Cursor> onCreateLoader(int arg0, Bundle arg1) {
-    String[] from =
-        new String[] {
-          "_id",
-          DB.ACTIVITY.START_TIME,
-          DB.ACTIVITY.DISTANCE,
-          DB.ACTIVITY.TIME,
-          DB.ACTIVITY.SPORT,
-          DB.ACTIVITY.AVG_HR
-        };
-    String selection = "deleted == 0";
-    String[] args = null;
-    if (currentSport != null) {
-      selection += " AND " + DB.ACTIVITY.SPORT + " = ?";
-      args = new String[] {Integer.toString(currentSport)};
-    }
-    return new SimpleCursorLoader(
-        requireContext(),
-        mDB,
-        DB.ACTIVITY.TABLE,
-        from,
-        selection,
-        args,
-        DB.ACTIVITY.START_TIME + " desc");
-  }
-
-  @Override
-  public void onLoadFinished(@NonNull Loader<Cursor> arg0, Cursor arg1) {
-    boolean empty = arg1 == null || arg1.getCount() == 0;
-    if (emptyView != null) {
-      emptyView.setVisibility(empty ? View.VISIBLE : View.GONE);
-    }
-    if (fab != null) {
-      fab.setVisibility(!empty && currentTab == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
-    }
-    adapter.setData(arg1);
-    refreshSportBadges();
-  }
-
-  @Override
-  public void onLoaderReset(@NonNull Loader<Cursor> arg0) {
-    adapter.setData(null);
-  }
-
   private void selectTab(int index) {
     currentTab = index;
     View view = getView();
@@ -447,13 +390,24 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     view.findViewById(R.id.history_list_content)
         .setVisibility(index == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
     statisticsContent.setVisibility(index == TAB_STATISTICS_INDEX ? View.VISIBLE : View.GONE);
-    fab.setVisibility(
-        index == TAB_HISTORY_INDEX && adapter.getItemCount() > 0 ? View.VISIBLE : View.GONE);
+    fab.setVisibility(index == TAB_HISTORY_INDEX && !historyListEmpty ? View.VISIBLE : View.GONE);
     if (index == TAB_STATISTICS_INDEX) {
       loadStatistics();
       loadCalendar();
     }
     loadRecords();
+  }
+
+  private void onHistoryStateChanged(HistoryUiState state) {
+    historyListEmpty = state.getRows().isEmpty();
+    if (emptyView != null) {
+      emptyView.setVisibility(state.getLoaded() && historyListEmpty ? View.VISIBLE : View.GONE);
+    }
+    if (fab != null) {
+      fab.setVisibility(
+          !historyListEmpty && currentTab == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
+    }
+    refreshSportBadges();
   }
 
   private void loadStatistics() {
@@ -575,7 +529,6 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     sheet.show();
   }
 
-  @SuppressLint("NotifyDataSetChanged")
   private void loadRecords() {
     if (mDB == null || recordsGrid == null) {
       return;
@@ -597,8 +550,8 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
                   return;
                 }
                 renderRecordBadges(records);
-                if (adapter != null) {
-                  adapter.notifyDataSetChanged();
+                if (historyViewModel != null) {
+                  historyViewModel.setRecordHolders(recordHolderActivityIds);
                 }
               });
         });
@@ -1146,281 +1099,5 @@ public class HistoryFragment extends Fragment implements Constants, LoaderCallba
     intent.putExtra("ID", id);
     intent.putExtra("mode", "details");
     reloadLauncher.launch(intent);
-  }
-
-  private static final class HistoryItem {
-    final long id;
-    final boolean isHeader;
-    final String monthText;
-    final long startTime;
-    final Double distance;
-    final Long time;
-    final Integer sport;
-    final Integer avgHr;
-
-    private HistoryItem(
-        long id,
-        boolean isHeader,
-        String monthText,
-        long startTime,
-        Double distance,
-        Long time,
-        Integer sport,
-        Integer avgHr) {
-      this.id = id;
-      this.isHeader = isHeader;
-      this.monthText = monthText;
-      this.startTime = startTime;
-      this.distance = distance;
-      this.time = time;
-      this.sport = sport == null ? Sport.OTHER.getDbValue() : sport;
-      this.avgHr = avgHr;
-    }
-
-    static HistoryItem header(String monthText, int year, int month) {
-      return new HistoryItem(-(year * 100L + month), true, monthText, 0, null, null, null, null);
-    }
-
-    static HistoryItem row(ActivityEntity ae) {
-      long startTime = ae.getStartTime() == null ? 0 : ae.getStartTime();
-      return new HistoryItem(
-          ae.getId(),
-          false,
-          null,
-          startTime,
-          ae.getDistance(),
-          ae.getTime(),
-          ae.getSport(),
-          ae.getAvgHr());
-    }
-
-    boolean sameHeader(HistoryItem other) {
-      return isHeader == other.isHeader
-          && (monthText == null ? other.monthText == null : monthText.equals(other.monthText));
-    }
-
-    boolean sameRow(HistoryItem other) {
-      return startTime == other.startTime
-          && (distance == null ? other.distance == null : distance.equals(other.distance))
-          && (time == null ? other.time == null : time.equals(other.time))
-          && sport.equals(other.sport)
-          && (avgHr == null ? other.avgHr == null : avgHr.equals(other.avgHr));
-    }
-  }
-
-  class HistoryListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private final LayoutInflater inflater;
-    private final List<HistoryItem> items = new ArrayList<>();
-
-    HistoryListAdapter(Context context) {
-      inflater = LayoutInflater.from(context);
-      setHasStableIds(true);
-    }
-
-    void setData(Cursor cursor) {
-      List<HistoryItem> newItems = new ArrayList<>();
-      if (cursor != null && cursor.moveToFirst()) {
-        Calendar prevCal = null;
-        do {
-          ActivityEntity ae = new ActivityEntity(cursor);
-          long startTime = ae.getStartTime() == null ? 0 : ae.getStartTime();
-          Date date = new Date(startTime * 1000);
-          Calendar cal = Calendar.getInstance();
-          cal.setTime(date);
-          if (prevCal == null
-              || prevCal.get(Calendar.YEAR) != cal.get(Calendar.YEAR)
-              || prevCal.get(Calendar.MONTH) != cal.get(Calendar.MONTH)) {
-            newItems.add(
-                HistoryItem.header(
-                    formatter.formatMonth(date), cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)));
-            prevCal = cal;
-          }
-          newItems.add(HistoryItem.row(ae));
-        } while (cursor.moveToNext());
-      }
-      DiffUtil.DiffResult result = DiffUtil.calculateDiff(new HistoryDiffCallback(items, newItems));
-      items.clear();
-      items.addAll(newItems);
-      result.dispatchUpdatesTo(this);
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-      return items.get(position).isHeader ? TYPE_HEADER : TYPE_ROW;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-      if (viewType == TYPE_HEADER) {
-        return new HistoryHeaderViewHolder(
-            inflater.inflate(R.layout.history_section_header, parent, false));
-      }
-      return new HistoryRowViewHolder(inflater.inflate(R.layout.history_row, parent, false));
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-      if (holder instanceof HistoryHeaderViewHolder) {
-        ((HistoryHeaderViewHolder) holder).sectionTitle.setText(items.get(position).monthText);
-      } else {
-        bindRow((HistoryRowViewHolder) holder, items.get(position));
-      }
-    }
-
-    private void bindRow(HistoryRowViewHolder holder, HistoryItem item) {
-      Context context = holder.itemView.getContext();
-      holder.dateText.setText(formatter.formatDateTime(item.startTime));
-
-      Double d = item.distance;
-      if (d != null) {
-        holder.distanceText.setText(
-            formatter.formatDistance(Formatter.Format.TXT_SHORT, d.longValue()));
-      } else {
-        holder.distanceText.setText("");
-      }
-
-      int sportColor = ContextCompat.getColor(context, Sport.colorOf(item.sport));
-      TypedValue tv = new TypedValue();
-      context
-          .getTheme()
-          .resolveAttribute(com.google.android.material.R.attr.colorOnSurfaceVariant, tv, true);
-      int secondaryColor = tv.data;
-      Drawable sportDrawable =
-          AppCompatResources.getDrawable(context, Sport.drawableColored16Of(item.sport));
-      holder.emblem.setImageDrawable(sportDrawable);
-      holder.emblem.setColorFilter(sportColor);
-      holder.distanceText.setTextColor(sportColor);
-
-      if (item.avgHr != null) {
-        holder.additionalText.setText(
-            formatter.formatHeartRate(Formatter.Format.TXT_SHORT, item.avgHr));
-        holder.additionalText.setTextColor(secondaryColor);
-        Drawable hrIcon = AppCompatResources.getDrawable(context, R.drawable.ic_history_hr);
-        if (hrIcon != null) {
-          hrIcon.setTint(secondaryColor);
-        }
-        holder.additionalText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-            hrIcon, null, null, null);
-      } else {
-        holder.additionalText.setText(null);
-        holder.additionalText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-            null, null, null, null);
-      }
-
-      Long dur = item.time;
-      if (dur != null) {
-        holder.durationText.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, dur));
-      } else {
-        holder.durationText.setText("");
-      }
-
-      String paceTextContents = "";
-      if (d != null && dur != null && dur != 0) {
-        paceTextContents =
-            formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / dur);
-      }
-      holder.paceText.setText(paceTextContents);
-
-      if (recordHolderActivityIds.contains(item.id)) {
-        Drawable trophy = AppCompatResources.getDrawable(context, R.drawable.ic_trophy_20dp);
-        if (trophy != null) {
-          trophy = trophy.mutate();
-          TypedValue trophyTint = new TypedValue();
-          context
-              .getTheme()
-              .resolveAttribute(com.google.android.material.R.attr.colorTertiary, trophyTint, true);
-          trophy.setTint(trophyTint.data);
-          holder.distanceText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-              trophy, null, holder.distanceText.getCompoundDrawablesRelative()[2], null);
-        }
-      } else {
-        holder.distanceText.setCompoundDrawablesRelativeWithIntrinsicBounds(
-            null, null, holder.distanceText.getCompoundDrawablesRelative()[2], null);
-      }
-    }
-
-    @Override
-    public long getItemId(int position) {
-      return items.get(position).id;
-    }
-
-    @Override
-    public int getItemCount() {
-      return items.size();
-    }
-
-    class HistoryHeaderViewHolder extends RecyclerView.ViewHolder {
-      final TextView sectionTitle;
-
-      HistoryHeaderViewHolder(@NonNull View itemView) {
-        super(itemView);
-        sectionTitle = itemView.findViewById(R.id.history_section_title);
-      }
-    }
-
-    class HistoryRowViewHolder extends RecyclerView.ViewHolder {
-      final ImageView emblem;
-      final TextView distanceText;
-      final TextView dateText;
-      final TextView durationText;
-      final TextView paceText;
-      final TextView additionalText;
-
-      HistoryRowViewHolder(@NonNull View itemView) {
-        super(itemView);
-        emblem = itemView.findViewById(R.id.history_list_emblem);
-        distanceText = itemView.findViewById(R.id.history_list_distance);
-        dateText = itemView.findViewById(R.id.history_list_date);
-        durationText = itemView.findViewById(R.id.history_list_duration);
-        paceText = itemView.findViewById(R.id.history_list_pace);
-        additionalText = itemView.findViewById(R.id.history_list_additional);
-        itemView.setOnClickListener(
-            v -> {
-              int position = getBindingAdapterPosition();
-              if (position == RecyclerView.NO_POSITION) {
-                return;
-              }
-              HistoryItem item = items.get(position);
-              if (!item.isHeader) {
-                openActivity(item.id);
-              }
-            });
-      }
-    }
-  }
-
-  class HistoryDiffCallback extends DiffUtil.Callback {
-    private final List<HistoryItem> oldList;
-    private final List<HistoryItem> newList;
-
-    HistoryDiffCallback(List<HistoryItem> oldList, List<HistoryItem> newList) {
-      this.oldList = oldList;
-      this.newList = newList;
-    }
-
-    @Override
-    public int getOldListSize() {
-      return oldList.size();
-    }
-
-    @Override
-    public int getNewListSize() {
-      return newList.size();
-    }
-
-    @Override
-    public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
-      return oldList.get(oldItemPosition).id == newList.get(newItemPosition).id;
-    }
-
-    @Override
-    public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
-      HistoryItem oldItem = oldList.get(oldItemPosition);
-      HistoryItem newItem = newList.get(newItemPosition);
-      return oldItem.isHeader
-          ? oldItem.sameHeader(newItem)
-          : !newItem.isHeader && oldItem.sameRow(newItem);
-    }
   }
 }

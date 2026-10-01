@@ -187,6 +187,7 @@ dependencies {
     implementation "androidx.activity:activity-compose:${rootProject.ext.activity_compose_version}"
     implementation "androidx.lifecycle:lifecycle-viewmodel-compose:${rootProject.ext.lifecycle_compose_version}"
     implementation "androidx.lifecycle:lifecycle-runtime-compose:${rootProject.ext.lifecycle_compose_version}"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:${rootProject.ext.lifecycle_compose_version}"
 
     latestImplementation "com.google.android.material:material:1.14.0"
     if (rootProject.ext.enableWear) {
