@@ -29,7 +29,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
@@ -42,11 +41,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -55,7 +52,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.compose.ui.platform.ComposeView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -63,11 +59,11 @@ import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import org.runnerup.BuildConfig;
@@ -137,6 +133,7 @@ public class StartFragment extends Fragment implements TickListener {
   private PickerKind pickerKind = PickerKind.SPORT;
   private String[] pickerItems = new String[0];
   private int pickerSelected = 0;
+  private PickerPageState pickerPageState = null;
 
   private SetupPageState setupPageState = null;
 
@@ -230,13 +227,9 @@ public class StartFragment extends Fragment implements TickListener {
         () -> startRunClick.onClick(setupRoot));
     updateSetupSportIcon(initialSport);
 
-    ((MaterialToolbar) view.findViewById(R.id.picker_toolbar))
-        .setNavigationOnClickListener(
-            v -> {
-              if (!pageStack.isEmpty()) {
-                popPage();
-              }
-            });
+    pickerPageState = new PickerPageState();
+    PickerScreenHost.INSTANCE.attach(
+        (ComposeView) pickerRoot, pickerPageState, this::onPickerItemClick, this::popPage);
 
     mWearNotifier = new TrackerWear.WearNotifier(requireActivity().getApplicationContext());
     mWearNotifier.onViewCreated();
@@ -1021,23 +1014,20 @@ public class StartFragment extends Fragment implements TickListener {
         title = requireContext().getString(org.runnerup.common.R.string.Workout);
         break;
     }
-    TextView titleView = pickerRoot.findViewById(R.id.picker_title);
-    titleView.setText(title);
-    bindPickerList();
+    pickerPageState.setTitle(title);
+    updatePickerState();
     pushPage(Page.PICKER);
   }
 
   private void refreshPicker() {
     if (pickerRoot == null || pickerRoot.getVisibility() != View.VISIBLE) return;
     getPickerItems();
-    bindPickerList();
+    updatePickerState();
   }
 
-  private void bindPickerList() {
-    ListView list = pickerRoot.findViewById(R.id.picker_list);
-    PickerListAdapter adapter = new PickerListAdapter(pickerItems, pickerSelected);
-    list.setOnItemClickListener((parent, view, position, id) -> onPickerItemClick(position));
-    list.setAdapter(adapter);
+  private void updatePickerState() {
+    pickerPageState.setItems(Arrays.asList(pickerItems));
+    pickerPageState.setSelected(pickerSelected);
   }
 
   private void getPickerItems() {
@@ -1141,47 +1131,6 @@ public class StartFragment extends Fragment implements TickListener {
     }
     appPrefs.edit().putString(getString(R.string.pref_advanced_workout), name).apply();
     loadAdvanced(name);
-  }
-
-  private class PickerListAdapter extends BaseAdapter {
-    private final String[] items;
-    private final int selected;
-
-    PickerListAdapter(String[] items, int selected) {
-      this.items = items;
-      this.selected = selected;
-    }
-
-    @Override
-    public int getCount() {
-      return items.length;
-    }
-
-    @Override
-    public Object getItem(int position) {
-      return items[position];
-    }
-
-    @Override
-    public long getItemId(int position) {
-      return position;
-    }
-
-    @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-      if (convertView == null) {
-        convertView =
-            LayoutInflater.from(parent.getContext()).inflate(R.layout.picker_item, parent, false);
-      }
-      TextView text = (TextView) convertView;
-      text.setText(items[position]);
-      Drawable check = null;
-      if (position == selected) {
-        check = AppCompatResources.getDrawable(requireContext(), R.drawable.ic_check);
-      }
-      text.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, check, null);
-      return text;
-    }
   }
 
   private boolean updateHRView() {

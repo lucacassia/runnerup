@@ -46,9 +46,8 @@
             android:layout_height="match_parent"
             android:visibility="gone" />
 
-        <include
+        <androidx.compose.ui.platform.ComposeView
             android:id="@+id/picker_root"
-            layout="@layout/start_picker"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone" />
