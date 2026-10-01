@@ -135,9 +135,8 @@
             app:tint="?attr/colorOnPrimaryContainer" />
     </FrameLayout>
 
-    <include
+    <androidx.compose.ui.platform.ComposeView
         android:id="@+id/statistics_content"
-        layout="@layout/statistics"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:visibility="gone"

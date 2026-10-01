@@ -22,19 +22,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.util.TypedValue;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.result.ActivityResultLauncher;
@@ -49,19 +43,11 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.tabs.TabLayout;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.runnerup.R;
@@ -71,8 +57,6 @@ import org.runnerup.db.BestEffort;
 import org.runnerup.db.DBHelper;
 import org.runnerup.db.RecordUtils;
 import org.runnerup.db.Statistics;
-import org.runnerup.db.Statistics.BucketPeriod;
-import org.runnerup.db.Statistics.Metric;
 import org.runnerup.db.entities.LocationEntity;
 import org.runnerup.util.Formatter;
 import org.runnerup.workout.Sport;
@@ -108,6 +92,7 @@ public class HistoryFragment extends Fragment implements Constants {
   private Formatter formatter = null;
 
   private HistoryViewModel historyViewModel;
+  private ProgressViewModel progressViewModel;
   private boolean historyListEmpty = true;
   View fab = null;
   View emptyView = null;
@@ -119,31 +104,13 @@ public class HistoryFragment extends Fragment implements Constants {
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
   private int currentTab = TAB_HISTORY_INDEX;
-  private BucketPeriod currentPeriod = BucketPeriod.DAY;
-  private Metric currentMetric = Metric.DISTANCE;
-  private boolean chartBarMode = false;
-  private List<Statistics.ActivityRow> statisticsRows = null;
-  private View statisticsContent;
-  private View statisticsEmpty;
-  private DistanceChartView statisticsChart;
-  private TextView statisticsChartTitle;
-  private TextView statistics7Value;
-  private TextView statistics30Value;
-  private TextView statistics365Value;
+  private ComposeView statisticsContent;
   private Integer currentSport = null; // null = all sports
   private final List<Chip> sportChips = new ArrayList<>();
   private final List<String> sportChipLabels = new ArrayList<>();
 
-  private View recordsSection;
-  private ViewGroup recordsGrid;
-  private final Set<Long> recordHolderActivityIds = new HashSet<>();
   private long recordsFingerprint = -1L;
-  private List<RecordInfo> recordsCache = null;
-
-  private LocalDate shownMonth = null;
-  private Map<LocalDate, List<Statistics.ActivityRow>> calendarByDay = new HashMap<>();
-  private TextView calendarMonthLabel;
-  private CalendarHeatmapView calendarHeatmap;
+  private List<ProgressRecord> recordsCache = null;
 
   private final ActivityResultLauncher<Intent> reloadLauncher =
       registerForActivityResult(
@@ -188,28 +155,14 @@ public class HistoryFragment extends Fragment implements Constants {
     HistoryScreenHost.INSTANCE.attach(
         listView, historyViewModel, this::openActivity, this::onHistoryStateChanged);
 
+    statisticsContent = view.findViewById(R.id.statistics_content);
+    progressViewModel = new ViewModelProvider(this).get(ProgressViewModel.class);
+    ProgressScreenHost.INSTANCE.attach(
+        statisticsContent, progressViewModel, this::openActivity, this::openDay);
+
     AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
 
     new ActivityCleaner().conditionalRecompute(mDB);
-
-    statisticsContent = view.findViewById(R.id.statistics_content);
-    statisticsEmpty = view.findViewById(R.id.statistics_empty);
-    statisticsChart = view.findViewById(R.id.statistics_chart);
-    statisticsChartTitle = view.findViewById(R.id.statistics_chart_title);
-    statistics7Value = view.findViewById(R.id.statistics_7_value);
-    statistics30Value = view.findViewById(R.id.statistics_30_value);
-    statistics365Value = view.findViewById(R.id.statistics_365_value);
-    statisticsChart.setLabelFormatter(this::formatChartValue);
-
-    recordsSection = view.findViewById(R.id.records_section);
-    recordsGrid = view.findViewById(R.id.records_grid);
-
-    calendarMonthLabel = view.findViewById(R.id.calendar_month_label);
-    calendarHeatmap = view.findViewById(R.id.calendar_heatmap);
-    calendarHeatmap.setDayLabelFormatter(formatter::getDistanceDisplay);
-    calendarHeatmap.setOnDayTapListener(this::openDay);
-    view.findViewById(R.id.calendar_prev).setOnClickListener(v -> changeMonth(-1));
-    view.findViewById(R.id.calendar_next).setOnClickListener(v -> changeMonth(1));
 
     ChipGroup chipGroup = view.findViewById(R.id.history_sport_chips);
     SharedPreferences sportPrefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -259,14 +212,14 @@ public class HistoryFragment extends Fragment implements Constants {
               .apply();
           historyViewModel.load(currentSport);
           if (currentTab == TAB_STATISTICS_INDEX) {
-            loadStatistics();
-            loadCalendar();
+            progressViewModel.load(currentSport);
           }
           loadRecords();
           refreshSportBadges();
         });
     refreshSportBadges();
     loadRecords();
+    progressViewModel.load(currentSport);
     historyViewModel.load(currentSport);
 
     TabLayout historyTabs = view.findViewById(R.id.history_tabs);
@@ -285,82 +238,11 @@ public class HistoryFragment extends Fragment implements Constants {
           @Override
           public void onTabReselected(TabLayout.Tab tab) {
             if (tab.getPosition() == TAB_STATISTICS_INDEX) {
-              loadStatistics();
-              loadCalendar();
+              progressViewModel.load(currentSport);
             }
             loadRecords();
           }
         });
-
-    MaterialButtonToggleGroup statisticsToggle = view.findViewById(R.id.statistics_toggle);
-    statisticsToggle.addOnButtonCheckedListener(
-        (group, checkedId, isChecked) -> {
-          if (!isChecked) {
-            return;
-          }
-          BucketPeriod period =
-              checkedId == R.id.statistics_toggle_week
-                  ? BucketPeriod.WEEK
-                  : checkedId == R.id.statistics_toggle_month
-                      ? BucketPeriod.MONTH
-                      : checkedId == R.id.statistics_toggle_year
-                          ? BucketPeriod.YEAR
-                          : BucketPeriod.DAY;
-          currentPeriod = period;
-          renderChart();
-        });
-
-    MaterialButtonToggleGroup metricToggle = view.findViewById(R.id.statistics_metric_toggle);
-    SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-    int savedMetric =
-        prefs.getInt(getString(org.runnerup.common.R.string.pref_statistics_metric), 0);
-    currentMetric = Metric.values()[savedMetric];
-    if (savedMetric != 0) {
-      int checkedId =
-          savedMetric == 1 ? R.id.statistics_metric_time : R.id.statistics_metric_elevation;
-      metricToggle.check(checkedId);
-    }
-    metricToggle.addOnButtonCheckedListener(
-        (group, checkedId, isChecked) -> {
-          if (!isChecked) {
-            return;
-          }
-          Metric metric;
-          if (checkedId == R.id.statistics_metric_time) {
-            metric = Metric.TIME;
-          } else if (checkedId == R.id.statistics_metric_elevation) {
-            metric = Metric.ELEVATION_GAIN;
-          } else {
-            metric = Metric.DISTANCE;
-          }
-          currentMetric = metric;
-          prefs
-              .edit()
-              .putInt(
-                  getString(org.runnerup.common.R.string.pref_statistics_metric), metric.ordinal())
-              .apply();
-          if (statisticsRows != null) {
-            updateStatisticsCards();
-            renderChart();
-          }
-        });
-
-    ImageButton chartToggle = view.findViewById(R.id.statistics_chart_toggle);
-    SharedPreferences chartPrefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
-    chartBarMode =
-        chartPrefs.getBoolean(getString(org.runnerup.common.R.string.pref_statistics_chart), false);
-    chartToggle.setOnClickListener(
-        v -> {
-          chartBarMode = !chartBarMode;
-          chartPrefs
-              .edit()
-              .putBoolean(
-                  getString(org.runnerup.common.R.string.pref_statistics_chart), chartBarMode)
-              .apply();
-          updateChartToggle(chartToggle);
-          renderChart();
-        });
-    updateChartToggle(chartToggle);
   }
 
   @Override
@@ -368,8 +250,7 @@ public class HistoryFragment extends Fragment implements Constants {
     super.onResume();
     historyViewModel.load(currentSport);
     if (currentTab == TAB_STATISTICS_INDEX) {
-      loadStatistics();
-      loadCalendar();
+      progressViewModel.load(currentSport);
     }
     loadRecords();
   }
@@ -392,8 +273,7 @@ public class HistoryFragment extends Fragment implements Constants {
     statisticsContent.setVisibility(index == TAB_STATISTICS_INDEX ? View.VISIBLE : View.GONE);
     fab.setVisibility(index == TAB_HISTORY_INDEX && !historyListEmpty ? View.VISIBLE : View.GONE);
     if (index == TAB_STATISTICS_INDEX) {
-      loadStatistics();
-      loadCalendar();
+      progressViewModel.load(currentSport);
     }
     loadRecords();
   }
@@ -410,70 +290,9 @@ public class HistoryFragment extends Fragment implements Constants {
     refreshSportBadges();
   }
 
-  private void loadStatistics() {
-    if (mDB == null || statisticsContent == null) {
-      return;
-    }
-    statisticsExecutor.execute(
-        () -> {
-          long now = System.currentTimeMillis() / 1000;
-          long from =
-              Statistics.bucketStarts(Statistics.BucketPeriod.YEAR, now, ZoneId.systemDefault())[0];
-          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, from, currentSport);
-          mainHandler.post(
-              () -> {
-                statisticsRows = rows;
-                statisticsExecutor.execute(
-                    () -> {
-                      Statistics.computeMissingElevation(mDB, rows);
-                      mainHandler.post(
-                          () -> {
-                            updateStatisticsCards();
-                            renderChart();
-                          });
-                    });
-              });
-        });
-  }
-
-  private void loadCalendar() {
-    if (mDB == null || calendarHeatmap == null) {
-      return;
-    }
-    if (shownMonth == null) {
-      shownMonth = LocalDate.now(ZoneId.systemDefault()).withDayOfMonth(1);
-    }
-    statisticsExecutor.execute(
-        () -> {
-          List<Statistics.ActivityRow> rows = Statistics.queryActivities(mDB, 0L, currentSport);
-          Map<LocalDate, List<Statistics.ActivityRow>> byDay =
-              Statistics.groupActivitiesByDay(rows, ZoneId.systemDefault());
-          mainHandler.post(
-              () -> {
-                calendarByDay = byDay;
-                renderCalendar();
-              });
-        });
-  }
-
-  private void renderCalendar() {
-    if (shownMonth == null || calendarHeatmap == null) {
-      return;
-    }
-    calendarHeatmap.setData(Statistics.calendarDays(shownMonth, calendarByDay));
-    calendarMonthLabel.setText(
-        formatter.formatMonth(
-            Date.from(shownMonth.atStartOfDay(ZoneId.systemDefault()).toInstant())));
-  }
-
-  private void changeMonth(int delta) {
-    shownMonth = shownMonth.plusMonths(delta);
-    renderCalendar();
-  }
-
   private void openDay(int dayOfMonth) {
-    List<Statistics.ActivityRow> dayRows = calendarByDay.get(shownMonth.withDayOfMonth(dayOfMonth));
-    if (dayRows == null || dayRows.isEmpty()) {
+    List<Statistics.ActivityRow> dayRows = progressViewModel.activitiesOn(dayOfMonth);
+    if (dayRows.isEmpty()) {
       return;
     }
     if (dayRows.size() == 1) {
@@ -529,14 +348,18 @@ public class HistoryFragment extends Fragment implements Constants {
     sheet.show();
   }
 
+  private int dp(int value) {
+    return Math.round(getResources().getDisplayMetrics().density * value);
+  }
+
   private void loadRecords() {
-    if (mDB == null || recordsGrid == null) {
+    if (mDB == null) {
       return;
     }
     statisticsExecutor.execute(
         () -> {
           long fingerprint = computeRecordsFingerprint(mDB);
-          List<RecordInfo> records;
+          List<ProgressRecord> records;
           if (fingerprint == recordsFingerprint && recordsCache != null) {
             records = recordsCache;
           } else {
@@ -546,19 +369,19 @@ public class HistoryFragment extends Fragment implements Constants {
           }
           mainHandler.post(
               () -> {
-                if (recordsGrid == null) {
+                if (progressViewModel == null) {
                   return;
                 }
-                renderRecordBadges(records);
+                progressViewModel.setRecords(records, currentSport);
                 if (historyViewModel != null) {
-                  historyViewModel.setRecordHolders(recordHolderActivityIds);
+                  historyViewModel.setRecordHolders(progressViewModel.recordHolderIds());
                 }
               });
         });
   }
 
-  private static List<RecordInfo> computeRecords(SQLiteDatabase db) {
-    List<RecordInfo> records = new ArrayList<>();
+  private static List<ProgressRecord> computeRecords(SQLiteDatabase db) {
+    List<ProgressRecord> records = new ArrayList<>();
     for (int sport = DB.ACTIVITY.SPORT_RUNNING; sport <= DB.ACTIVITY.SPORT_MAX; sport++) {
       if (sport == DB.ACTIVITY.SPORT_RUNNING) {
         double longestDistance = queryLongestDistance(db, sport);
@@ -567,7 +390,7 @@ public class HistoryFragment extends Fragment implements Constants {
           if (longestDistance < RecordUtils.bandLower(RECORD_DISTANCES[i])) {
             break;
           }
-          RecordInfo record = queryBestRunningRecord(db, sport, RECORD_DISTANCES[i], tracks);
+          ProgressRecord record = queryBestRunningRecord(db, sport, RECORD_DISTANCES[i], tracks);
           if (record != null) {
             record.recordLabelRes = RECORD_DISTANCE_STRINGS[i];
             record.ringColorRes = RECORD_DISTANCE_COLORS[i];
@@ -576,7 +399,7 @@ public class HistoryFragment extends Fragment implements Constants {
         }
       }
       boolean byDistance = !Sport.isWithoutGps(sport);
-      RecordInfo longest = queryLongestRecord(db, sport, byDistance);
+      ProgressRecord longest = queryLongestRecord(db, sport, byDistance);
       if (longest != null) {
         longest.recordLabelRes = org.runnerup.R.string.records_longest;
         longest.ringColorRes = RECORD_LONGEST_COLOR;
@@ -685,7 +508,8 @@ public class HistoryFragment extends Fragment implements Constants {
     return new BestEffort.Points(distArr, timeArr, elapsedArr);
   }
 
-  private static RecordInfo queryLongestRecord(SQLiteDatabase db, int sport, boolean byDistance) {
+  private static ProgressRecord queryLongestRecord(
+      SQLiteDatabase db, int sport, boolean byDistance) {
     String selection = DB.ACTIVITY.DELETED + " == 0 AND " + DB.ACTIVITY.SPORT + " = ?";
     if (byDistance) {
       selection +=
@@ -710,7 +534,7 @@ public class HistoryFragment extends Fragment implements Constants {
       if (!cursor.moveToFirst()) {
         return null;
       }
-      RecordInfo info = new RecordInfo();
+      ProgressRecord info = new ProgressRecord();
       info.activityId = cursor.getLong(0);
       info.time = cursor.isNull(1) ? 0 : cursor.getLong(1);
       info.distance = cursor.isNull(2) ? 0 : cursor.getDouble(2);
@@ -720,7 +544,8 @@ public class HistoryFragment extends Fragment implements Constants {
     }
   }
 
-  private static RecordInfo queryWholeRunBandRecord(SQLiteDatabase db, int sport, double distance) {
+  private static ProgressRecord queryWholeRunBandRecord(
+      SQLiteDatabase db, int sport, double distance) {
     String selection =
         DB.ACTIVITY.DELETED
             + " == 0 AND "
@@ -748,7 +573,7 @@ public class HistoryFragment extends Fragment implements Constants {
       if (!cursor.moveToFirst()) {
         return null;
       }
-      RecordInfo info = new RecordInfo();
+      ProgressRecord info = new ProgressRecord();
       info.activityId = cursor.getLong(0);
       info.time = cursor.getLong(1);
       info.distance = cursor.getDouble(2);
@@ -758,7 +583,7 @@ public class HistoryFragment extends Fragment implements Constants {
     }
   }
 
-  private static RecordInfo queryBestRunningRecord(
+  private static ProgressRecord queryBestRunningRecord(
       SQLiteDatabase db, int sport, double distance, List<RunTrack> tracks) {
     long bestTimeMs = -1L;
     long bestActivity = 0L;
@@ -775,7 +600,7 @@ public class HistoryFragment extends Fragment implements Constants {
         bestStart = track.startTime;
       }
     }
-    RecordInfo wholeRun = queryWholeRunBandRecord(db, sport, distance);
+    ProgressRecord wholeRun = queryWholeRunBandRecord(db, sport, distance);
     if (wholeRun != null && (bestTimeMs < 0 || wholeRun.time * 1000L < bestTimeMs)) {
       bestTimeMs = wholeRun.time * 1000L;
       bestActivity = wholeRun.activityId;
@@ -784,143 +609,13 @@ public class HistoryFragment extends Fragment implements Constants {
     if (bestTimeMs < 0) {
       return null;
     }
-    RecordInfo info = new RecordInfo();
+    ProgressRecord info = new ProgressRecord();
     info.activityId = bestActivity;
     info.time = Math.round(bestTimeMs / 1000.0);
     info.distance = distance;
     info.startTime = bestStart;
     info.sport = sport;
     return info;
-  }
-
-  private void renderRecordBadges(List<RecordInfo> records) {
-    recordsGrid.removeAllViews();
-    recordHolderActivityIds.clear();
-    int headerSport = -1;
-    List<RecordInfo> group = new ArrayList<>();
-    for (RecordInfo record : records) {
-      if (currentSport != null && record.sport != currentSport) {
-        continue;
-      }
-      if (currentSport == null && record.sport != headerSport) {
-        flushRecordGroup(group);
-        group.clear();
-        recordsGrid.addView(buildRecordSportHeader(record.sport));
-        headerSport = record.sport;
-      }
-      recordHolderActivityIds.add(record.activityId);
-      group.add(record);
-    }
-    flushRecordGroup(group);
-    recordsSection.setVisibility(recordHolderActivityIds.isEmpty() ? View.GONE : View.VISIBLE);
-  }
-
-  private void flushRecordGroup(List<RecordInfo> group) {
-    for (int i = 0; i < group.size(); i += 2) {
-      addBadgeRow(group, i);
-    }
-  }
-
-  private void addBadgeRow(List<RecordInfo> group, int start) {
-    LinearLayout row = new LinearLayout(requireContext());
-    row.setOrientation(LinearLayout.HORIZONTAL);
-    LinearLayout.LayoutParams rowLp =
-        new LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-    rowLp.bottomMargin = dp(8);
-    recordsGrid.addView(row, rowLp);
-    for (int i = start; i < group.size() && i < start + 2; i++) {
-      View badge = buildBadgeCard(group.get(i), row);
-      LinearLayout.LayoutParams lp =
-          new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-      if (i % 2 == 0) {
-        lp.setMarginEnd(dp(4));
-      } else {
-        lp.setMarginStart(dp(4));
-      }
-      row.addView(badge, lp);
-    }
-  }
-
-  private View buildRecordSportHeader(int sport) {
-    View header =
-        LayoutInflater.from(requireContext())
-            .inflate(R.layout.history_section_header, recordsGrid, false);
-    TextView title = header.findViewById(R.id.history_section_title);
-    title.setText(Sport.textOf(getResources(), sport));
-    return header;
-  }
-
-  private View buildBadgeCard(RecordInfo record, ViewGroup parent) {
-    View card = LayoutInflater.from(requireContext()).inflate(R.layout.record_badge, parent, false);
-    TextView label = card.findViewById(R.id.record_badge_label);
-    TextView time = card.findViewById(R.id.record_badge_time);
-    TextView meta = card.findViewById(R.id.record_badge_meta);
-    View ribbon = card.findViewById(R.id.record_badge_ribbon);
-    int ringColor = ContextCompat.getColor(requireContext(), record.ringColorRes);
-
-    label.setText(record.recordLabelRes);
-    if (record.medalShowsDistance) {
-      time.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
-      time.setText(
-          formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(record.distance)));
-    } else {
-      time.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-      time.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, record.time));
-    }
-    time.setTextColor(ringColor);
-
-    StringBuilder metaText = new StringBuilder(formatter.formatDate(record.startTime));
-    if (record.medalShowsDistance && record.time > 0) {
-      metaText
-          .append(" · ")
-          .append(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, record.time));
-    } else if (!record.medalShowsDistance && record.time > 0 && record.distance > 0) {
-      metaText
-          .append(" · ")
-          .append(
-              formatter.formatVelocityByPreferredUnit(
-                  Formatter.Format.TXT_LONG, record.distance / record.time));
-    }
-    meta.setText(metaText);
-
-    GradientDrawable ring = new GradientDrawable();
-    ring.setShape(GradientDrawable.OVAL);
-    ring.setColor(Color.WHITE);
-    ring.setStroke(dp(4), ringColor);
-    time.setBackground(ring);
-
-    GradientDrawable ribbonDrawable =
-        new GradientDrawable(
-            GradientDrawable.Orientation.LEFT_RIGHT,
-            new int[] {ringColor, lighten(ringColor), ringColor});
-    ribbonDrawable.setCornerRadius(dp(3));
-    ribbon.setBackground(ribbonDrawable);
-
-    card.setOnClickListener(v -> openActivity(record.activityId));
-    return card;
-  }
-
-  private int dp(int value) {
-    return Math.round(getResources().getDisplayMetrics().density * value);
-  }
-
-  private static int lighten(int color) {
-    return Color.rgb(
-        (Color.red(color) + 255) / 2,
-        (Color.green(color) + 255) / 2,
-        (Color.blue(color) + 255) / 2);
-  }
-
-  private static final class RecordInfo {
-    long activityId;
-    long time;
-    double distance;
-    long startTime;
-    int sport;
-    int recordLabelRes;
-    int ringColorRes;
-    boolean medalShowsDistance;
   }
 
   private static final class RunTrack {
@@ -984,114 +679,6 @@ public class HistoryFragment extends Fragment implements Constants {
     int end = sb.length();
     sb.setSpan(new PillSpan(pillColor, density), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     return sb;
-  }
-
-  private void renderChart() {
-    if (statisticsRows == null) {
-      return;
-    }
-    long now = System.currentTimeMillis() / 1000;
-    double[] buckets =
-        Statistics.bucketize(
-            statisticsRows, currentMetric, currentPeriod, now, ZoneId.systemDefault());
-    long[] starts = Statistics.bucketStarts(currentPeriod, now, ZoneId.systemDefault());
-    statisticsChartTitle.setText(chartTitleFor(currentPeriod));
-    statisticsChart.setData(buckets, buildXLabels(currentPeriod, starts));
-    statisticsChart.setBarMode(chartBarMode);
-    boolean empty = true;
-    for (double value : buckets) {
-      if (value > 0) {
-        empty = false;
-        break;
-      }
-    }
-    statisticsEmpty.setVisibility(empty ? View.VISIBLE : View.GONE);
-    statisticsChart.setVisibility(empty ? View.GONE : View.VISIBLE);
-  }
-
-  private void updateChartToggle(ImageButton button) {
-    button.setImageResource(chartBarMode ? R.drawable.ic_chart_line : R.drawable.ic_chart_bar);
-    button.setContentDescription(
-        getString(
-            chartBarMode
-                ? org.runnerup.common.R.string.Statistics_switch_to_line
-                : org.runnerup.common.R.string.Statistics_switch_to_bars));
-  }
-
-  private void updateStatisticsCards() {
-    if (statisticsRows == null) {
-      return;
-    }
-    long now = System.currentTimeMillis() / 1000;
-    double[] totals = Statistics.totals(statisticsRows, currentMetric, now, ZoneId.systemDefault());
-    switch (currentMetric) {
-      case TIME:
-        long t7 = Math.round(totals[0] / 60.0) * 60;
-        long t30 = Math.round(totals[1] / 60.0) * 60;
-        long t365 = Math.round(totals[2] / 60.0) * 60;
-        statistics7Value.setText(formatter.formatElapsedTime(Formatter.Format.TXT_LONG, t7));
-        statistics30Value.setText(formatter.formatElapsedTime(Formatter.Format.TXT_LONG, t30));
-        statistics365Value.setText(formatter.formatElapsedTime(Formatter.Format.TXT_LONG, t365));
-        break;
-      case ELEVATION_GAIN:
-        statistics7Value.setText(
-            formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(totals[0])));
-        statistics30Value.setText(
-            formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(totals[1])));
-        statistics365Value.setText(
-            formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(totals[2])));
-        break;
-      case DISTANCE:
-      default:
-        statistics7Value.setText(
-            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[0])));
-        statistics30Value.setText(
-            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[1])));
-        statistics365Value.setText(
-            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(totals[2])));
-        break;
-    }
-  }
-
-  private String formatChartValue(double value) {
-    switch (currentMetric) {
-      case TIME:
-        return formatter.formatElapsedTime(
-            Formatter.Format.TXT_LONG, Math.round(value / 60.0) * 60);
-      case ELEVATION_GAIN:
-        return formatter.formatElevation(Formatter.Format.TXT_LONG, Math.round(value));
-      case DISTANCE:
-      default:
-        return formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(value));
-    }
-  }
-
-  private String[] buildXLabels(BucketPeriod period, long[] starts) {
-    String[] labels = new String[starts.length];
-    for (int i = 0; i < starts.length; i++) {
-      Date date = new Date(starts[i] * 1000);
-      labels[i] =
-          period == BucketPeriod.MONTH
-              ? formatter.formatMonthShort(date)
-              : period == BucketPeriod.YEAR
-                  ? formatter.formatYear(date)
-                  : formatter.formatDayOfMonth(date);
-    }
-    return labels;
-  }
-
-  private int chartTitleFor(BucketPeriod period) {
-    switch (period) {
-      case WEEK:
-        return org.runnerup.common.R.string.Statistics_last_12_weeks;
-      case MONTH:
-        return org.runnerup.common.R.string.Statistics_last_12_months;
-      case YEAR:
-        return org.runnerup.common.R.string.Statistics_last_12_years;
-      case DAY:
-      default:
-        return org.runnerup.common.R.string.Statistics_last_12_days;
-    }
   }
 
   private void openActivity(long id) {
