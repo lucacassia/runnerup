@@ -57,6 +57,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.compose.ui.platform.ComposeView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -132,7 +133,7 @@ public class StartFragment extends Fragment implements TickListener {
   private View recordRoot = null;
   private View setupRoot = null;
   private View pickerRoot = null;
-  private View startButton = null;
+  private RecordPageState recordPageState = null;
 
   private PickerKind pickerKind = PickerKind.SPORT;
   private String[] pickerItems = new String[0];
@@ -153,13 +154,6 @@ public class StartFragment extends Fragment implements TickListener {
 
   private String selectedWorkoutName = "";
 
-  private TextView noDevicesConnected = null;
-
-  private View hrIndicator = null;
-  private TextView hrMessage = null;
-
-  private View wearOsIndicator = null;
-  private TextView wearOsMessage = null;
   private TrackerWear.WearNotifier mWearNotifier = null;
 
   boolean sportWithoutGps = false;
@@ -226,16 +220,9 @@ public class StartFragment extends Fragment implements TickListener {
         prefs.getInt(getResources().getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
     sportWithoutGps = Sport.isWithoutGps(initialSport);
 
-    startButton = view.findViewById(R.id.start_button);
-    startButton.setOnClickListener(startButtonClick);
-
-    noDevicesConnected = view.findViewById(R.id.device_status);
-
-    hrMessage = view.findViewById(R.id.hr_message);
-    hrIndicator = view.findViewById(R.id.hr_indicator);
-
-    wearOsIndicator = view.findViewById(R.id.wearos_indicator);
-    wearOsMessage = view.findViewById(R.id.wearos_message);
+    recordPageState = new RecordPageState();
+    RecordScreenHost.INSTANCE.attach(
+        (ComposeView) recordRoot, recordPageState, () -> startButtonClick.onClick(recordRoot));
 
     LayoutInflater inflater = getLayoutInflater();
     advancedAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
@@ -710,7 +697,6 @@ public class StartFragment extends Fragment implements TickListener {
     animateRoot(recordRoot, record);
     animateRoot(setupRoot, page == Page.SETUP);
     animateRoot(pickerRoot, page == Page.PICKER);
-    requireView().findViewById(R.id.status_layout).setVisibility(record ? View.VISIBLE : View.GONE);
     if (getActivity() instanceof MainLayout mainLayout) {
       mainLayout.setStartFlowActive(!record);
     }
@@ -912,18 +898,13 @@ public class StartFragment extends Fragment implements TickListener {
   }
 
   public void updateView() {
-    updateStartButtonView();
     updateSetupValues();
     updateStartRunButtonView();
     updateSetupGpsChip();
     boolean hrPresent = updateHRView();
     boolean wearPresent = updateWearOSView();
 
-    noDevicesConnected.setVisibility(hrPresent || wearPresent ? View.GONE : View.VISIBLE);
-  }
-
-  private void updateStartButtonView() {
-    startButton.setVisibility(View.VISIBLE);
+    recordPageState.setDeviceStatusVisible(!hrPresent && !wearPresent);
   }
 
   private void updateSetupValues() {
@@ -1251,8 +1232,8 @@ public class StartFragment extends Fragment implements TickListener {
 
   private boolean updateHRView() {
     if (mTracker == null || !mTracker.isComponentConfigured(TrackerHRM.NAME)) {
-      hrIndicator.setVisibility(View.GONE);
-      hrMessage.setVisibility(View.GONE);
+      recordPageState.setHrIndicatorVisible(false);
+      recordPageState.setHrMessage(null);
       return false;
     }
     Integer hrVal = null;
@@ -1266,28 +1247,26 @@ public class StartFragment extends Fragment implements TickListener {
       }
     }
 
-    hrMessage.setText(getHRDetailString());
-    hrIndicator.setVisibility(View.VISIBLE);
-    hrMessage.setVisibility(View.VISIBLE);
+    recordPageState.setHrIndicatorVisible(true);
+    recordPageState.setHrMessage(getHRDetailString());
 
     return true;
   }
 
   private boolean updateWearOSView() {
     if (mTracker == null || !mTracker.isComponentConfigured(TrackerWear.NAME)) {
-      wearOsIndicator.setVisibility(View.GONE);
-      wearOsMessage.setVisibility(View.GONE);
+      recordPageState.setWearIndicatorVisible(false);
+      recordPageState.setWearMessage(null);
       return false;
     }
 
-    wearOsIndicator.setVisibility(View.VISIBLE);
+    recordPageState.setWearIndicatorVisible(true);
 
     if (!mTracker.isComponentConnected(TrackerWear.NAME)) {
-      wearOsMessage.setVisibility(View.VISIBLE);
-      wearOsMessage.setText("?");
+      recordPageState.setWearMessage("?");
     } else {
-      // wearOsMessage.setText(""); //todo show device name
-      wearOsMessage.setVisibility(View.GONE);
+      // recordPageState.setWearMessage(""); //todo show device name
+      recordPageState.setWearMessage(null);
     }
 
     return true;
