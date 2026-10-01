@@ -59,7 +59,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.util.Locale
@@ -314,19 +313,11 @@ private fun Chart(state: ProgressUiState, formatter: Formatter, modifier: Modifi
     }
     return
   }
-  val labelFormatter =
-    remember(state.metric, formatter) {
-      DistanceChartView.LabelFormatter { value ->
-        formatMetricValue(value, state.metric, formatter)
-      }
-    }
-  AndroidView(
-    factory = { context -> DistanceChartView(context) },
-    update = { chart ->
-      chart.setLabelFormatter(labelFormatter)
-      chart.setBarMode(state.barMode)
-      chart.setData(state.buckets.toDoubleArray(), state.xLabels.toTypedArray())
-    },
+  ProgressChart(
+    values = state.buckets,
+    xLabels = state.xLabels,
+    barMode = state.barMode,
+    labelFormatter = { value -> formatMetricValue(value, state.metric, formatter) },
     modifier = modifier.fillMaxWidth().height(240.dp),
   )
 }
@@ -369,17 +360,10 @@ private fun CalendarSection(
         )
       }
     }
-    val dayLabelFormatter =
-      remember(formatter) {
-        CalendarHeatmapView.DayLabelFormatter { meters -> formatter.getDistanceDisplay(meters) }
-      }
-    AndroidView(
-      factory = { context -> CalendarHeatmapView(context) },
-      update = { heatmap ->
-        heatmap.setDayLabelFormatter(dayLabelFormatter)
-        heatmap.setOnDayTapListener { dayOfMonth -> onDayClick(dayOfMonth) }
-        heatmap.setData(state.calendarCells.toTypedArray())
-      },
+    ProgressCalendar(
+      cells = state.calendarCells,
+      distanceFormatter = { meters -> formatter.getDistanceDisplay(meters) },
+      onDayClick = onDayClick,
       modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
     )
   }
