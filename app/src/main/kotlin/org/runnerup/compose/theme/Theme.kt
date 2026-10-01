@@ -17,6 +17,8 @@
 package org.runnerup.compose.theme
 
 import android.content.Context
+import android.util.TypedValue
+import androidx.annotation.AttrRes
 import androidx.appcompat.R as AppCompatR
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import com.google.android.material.R
 
 @Composable
@@ -32,6 +35,26 @@ fun RunnerUpTheme(content: @Composable () -> Unit) {
   val context = LocalContext.current
   val colorScheme = remember(context) { colorSchemeFromTheme(context) }
   MaterialTheme(colorScheme = colorScheme, content = content)
+}
+
+/**
+ * Resolves a plain color attribute of the XML theme, for the handful of colors that have no
+ * Material 3 color scheme role, e.g. `android.R.attr.textColorPrimary` which is what a TextView
+ * without an explicit textColor resolves to.
+ */
+@Composable
+fun themeAttrColor(@AttrRes attr: Int): Color {
+  val context = LocalContext.current
+  return remember(context, attr) {
+    val value = TypedValue()
+    if (context.theme.resolveAttribute(attr, value, true)) {
+      val color =
+        if (value.resourceId != 0) ContextCompat.getColor(context, value.resourceId) else value.data
+      Color(color)
+    } else {
+      Color.Unspecified
+    }
+  }
 }
 
 private val THEME_ATTRS =

@@ -45,7 +45,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -139,18 +138,7 @@ public class StartFragment extends Fragment implements TickListener {
   private String[] pickerItems = new String[0];
   private int pickerSelected = 0;
 
-  private MaterialButton startRunButton = null;
-  private TextView setupSportValue = null;
-  private TextView setupAudioValue = null;
-  private TextView setupWorkoutValue = null;
-  private TextView setupStepsHint = null;
-  private View setupGpsChip = null;
-  private ImageView setupGpsIndicator = null;
-  private TextView setupGpsMessage = null;
-  private View setupGpsPopup = null;
-  private ImageView setupGpsPopupIndicator = null;
-  private TextView setupGpsPopupMessage = null;
-  private TextView setupGpsPopupSatellites = null;
+  private SetupPageState setupPageState = null;
 
   private String selectedWorkoutName = "";
 
@@ -162,7 +150,6 @@ public class StartFragment extends Fragment implements TickListener {
   private SharedPreferences appPrefs = null;
 
   Workout advancedWorkout = null;
-  RecyclerView advancedStepList = null;
   WorkoutPlanAdapter advancedWorkoutStepsAdapter = null;
   AudioSchemeListAdapter advancedAudioListAdapter = null;
 
@@ -228,42 +215,21 @@ public class StartFragment extends Fragment implements TickListener {
     advancedAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
     advancedAudioListAdapter.reload();
 
-    advancedStepList = view.findViewById(R.id.advanced_step_list);
-    advancedStepList.setLayoutManager(new LinearLayoutManager(context));
     advancedWorkoutStepsAdapter = new WorkoutPlanAdapter(this::editRepeatCount, onWorkoutChanged);
-    advancedStepList.setAdapter(advancedWorkoutStepsAdapter);
 
-    setupSportValue = view.findViewById(R.id.setup_sport_value);
-    setupAudioValue = view.findViewById(R.id.setup_audio_value);
-    setupWorkoutValue = view.findViewById(R.id.setup_workout_value);
-    setupStepsHint = view.findViewById(R.id.setup_steps_hint);
-    setupGpsChip = view.findViewById(R.id.setup_gps_chip);
-    setupGpsIndicator = view.findViewById(R.id.setup_gps_indicator);
-    setupGpsMessage = view.findViewById(R.id.setup_gps_message);
-    setupGpsPopup = view.findViewById(R.id.setup_gps_popup);
-    setupGpsPopupIndicator = view.findViewById(R.id.setup_gps_popup_indicator);
-    setupGpsPopupMessage = view.findViewById(R.id.setup_gps_popup_message);
-    setupGpsPopupSatellites = view.findViewById(R.id.setup_gps_popup_satellites);
-    startRunButton = view.findViewById(R.id.start_run_button);
-    startRunButton.setOnClickListener(startRunClick);
-
-    setupGpsChip.setOnClickListener(v -> toggleSetupGpsPopup());
-
-    view.findViewById(R.id.setup_sport_row).setOnClickListener(v -> openPicker(PickerKind.SPORT));
-    view.findViewById(R.id.setup_audio_row).setOnClickListener(v -> openPicker(PickerKind.AUDIO));
-    view.findViewById(R.id.setup_workout_row)
-        .setOnClickListener(v -> openPicker(PickerKind.WORKOUT));
-
-    setupSportValue.setOnClickListener(v -> openPicker(PickerKind.SPORT));
+    setupPageState = new SetupPageState();
+    SetupScreenHost.INSTANCE.attach(
+        (ComposeView) setupRoot,
+        setupPageState,
+        this::createAdvancedStepList,
+        this::popPage,
+        () -> openPicker(PickerKind.SPORT),
+        () -> openPicker(PickerKind.AUDIO),
+        () -> openPicker(PickerKind.WORKOUT),
+        this::toggleSetupGpsPopup,
+        () -> startRunClick.onClick(setupRoot));
     updateSetupSportIcon(initialSport);
 
-    ((MaterialToolbar) view.findViewById(R.id.setup_toolbar))
-        .setNavigationOnClickListener(
-            v -> {
-              if (!pageStack.isEmpty()) {
-                popPage();
-              }
-            });
     ((MaterialToolbar) view.findViewById(R.id.picker_toolbar))
         .setNavigationOnClickListener(
             v -> {
@@ -331,12 +297,17 @@ public class StartFragment extends Fragment implements TickListener {
   }
 
   private void updateSetupSportIcon(int sport) {
-    if (setupSportValue == null) return;
-    ImageView icon = setupSportValue.getRootView().findViewById(R.id.setup_sport_icon);
-    if (icon == null) return;
-    Drawable d = AppCompatResources.getDrawable(requireContext(), Sport.drawableColored16Of(sport));
-    if (d != null) d.setTint(ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
-    icon.setImageDrawable(d);
+    if (setupPageState == null) return;
+    setupPageState.setSportIconRes(Sport.drawableColored16Of(sport));
+    setupPageState.setSportIconColor(
+        ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
+  }
+
+  private View createAdvancedStepList() {
+    RecyclerView list = new RecyclerView(requireContext());
+    list.setLayoutManager(new LinearLayoutManager(requireContext()));
+    list.setAdapter(advancedWorkoutStepsAdapter);
+    return list;
   }
 
   @Override
@@ -910,31 +881,22 @@ public class StartFragment extends Fragment implements TickListener {
   private void updateSetupValues() {
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(requireContext());
     int sportId = prefs.getInt(getString(R.string.pref_sport), DB.ACTIVITY.SPORT_RUNNING);
-    if (setupSportValue != null) {
-      setupSportValue.setText(Sport.getStringArray(requireContext().getResources())[sportId]);
-    }
-    if (setupAudioValue != null) {
-      String audio = prefs.getString(getString(R.string.pref_advanced_audio), null);
-      setupAudioValue.setText(
-          audio == null ? requireContext().getString(org.runnerup.common.R.string.Default) : audio);
-    }
-    if (setupWorkoutValue != null) {
-      setupWorkoutValue.setText(
-          selectedWorkoutName == null || selectedWorkoutName.isEmpty()
-              ? requireContext().getString(R.string.None)
-              : selectedWorkoutName);
-    }
-    int hasSteps = advancedWorkout == null ? View.GONE : View.VISIBLE;
-    if (setupStepsHint != null) setupStepsHint.setVisibility(hasSteps);
-    if (advancedStepList != null) advancedStepList.setVisibility(hasSteps);
+    setupPageState.setSportName(Sport.getStringArray(requireContext().getResources())[sportId]);
+    String audio = prefs.getString(getString(R.string.pref_advanced_audio), null);
+    setupPageState.setAudioName(
+        audio == null ? requireContext().getString(org.runnerup.common.R.string.Default) : audio);
+    setupPageState.setWorkoutName(
+        selectedWorkoutName == null || selectedWorkoutName.isEmpty()
+            ? requireContext().getString(R.string.None)
+            : selectedWorkoutName);
+    setupPageState.setStepsVisible(advancedWorkout != null);
   }
 
   private void updateStartRunButtonView() {
     if (mTracker == null || !mIsBound) {
-      if (startRunButton != null) startRunButton.setEnabled(false);
+      setupPageState.setStartRunEnabled(false);
       return;
     }
-    if (startRunButton == null) return;
     boolean ready =
         startRunEnabled(
             sportWithoutGps,
@@ -942,7 +904,7 @@ public class StartFragment extends Fragment implements TickListener {
             mGpsStatus.isLogging(),
             mGpsStatus.isFixed(),
             mTracker.getState() == TrackerState.CONNECTED);
-    startRunButton.setEnabled(ready);
+    setupPageState.setStartRunEnabled(ready);
   }
 
   static boolean startRunEnabled(
@@ -958,9 +920,8 @@ public class StartFragment extends Fragment implements TickListener {
   }
 
   private void toggleSetupGpsPopup() {
-    if (setupGpsPopup == null) return;
-    boolean show = setupGpsPopup.getVisibility() != View.VISIBLE;
-    setupGpsPopup.setVisibility(show ? View.VISIBLE : View.GONE);
+    boolean show = !setupPageState.getGpsPopupVisible();
+    setupPageState.setGpsPopupVisible(show);
     if (show) {
       populateGpsPopup();
     }
@@ -968,18 +929,12 @@ public class StartFragment extends Fragment implements TickListener {
 
   private void populateGpsPopup() {
     boolean gpsRunning = mGpsStatus.isEnabled() && mGpsStatus.isStarted() && mGpsStatus.isLogging();
-    if (setupGpsPopupIndicator != null) {
-      setupGpsPopupIndicator.setImageResource(gpsRunning ? gpsPopupIcon() : R.drawable.ic_gps_0);
-    }
-    if (setupGpsPopupMessage != null) {
-      setupGpsPopupMessage.setText(setupGpsMessage.getText());
-    }
-    if (setupGpsPopupSatellites == null) return;
+    setupPageState.setGpsPopupIndicatorRes(gpsRunning ? gpsPopupIcon() : R.drawable.ic_gps_0);
+    setupPageState.setGpsPopupMessage(getString(setupPageState.getGpsMessageRes()));
     if (!gpsRunning) {
-      setupGpsPopupSatellites.setVisibility(View.GONE);
+      setupPageState.setGpsPopupSatellites(null);
       return;
     }
-    setupGpsPopupSatellites.setVisibility(View.VISIBLE);
     int satFixedCount = mGpsStatus.getSatellitesFixed();
     int satAvailCount = mGpsStatus.getSatellitesAvailable();
     float accuracy = getGpsAccuracy();
@@ -995,7 +950,7 @@ public class StartFragment extends Fragment implements TickListener {
                 satFixedCount,
                 satAvailCount,
                 gpsAccuracy);
-    setupGpsPopupSatellites.setText(gpsDetail);
+    setupPageState.setGpsPopupSatellites(gpsDetail);
   }
 
   private int gpsPopupIcon() {
@@ -1014,39 +969,38 @@ public class StartFragment extends Fragment implements TickListener {
   }
 
   private void updateSetupGpsChip() {
-    if (setupGpsChip == null) return;
     if (sportWithoutGps) {
-      setupGpsChip.setVisibility(View.GONE);
-      if (setupGpsPopup != null) setupGpsPopup.setVisibility(View.GONE);
+      setupPageState.setGpsChipVisible(false);
+      setupPageState.setGpsPopupVisible(false);
       return;
     }
-    setupGpsChip.setVisibility(View.VISIBLE);
+    setupPageState.setGpsChipVisible(true);
     if (!mGpsStatus.isEnabled() || !mGpsStatus.isStarted() || !mGpsStatus.isLogging()) {
-      setupGpsIndicator.setImageResource(R.drawable.ic_gps_0);
-      setupGpsMessage.setText(org.runnerup.common.R.string.GPS_indicator_off);
+      setupPageState.setGpsIndicatorRes(R.drawable.ic_gps_0);
+      setupPageState.setGpsMessageRes(org.runnerup.common.R.string.GPS_indicator_off);
     } else {
       var gpsLevel = getGpsLevel(getGpsAccuracy(), mGpsStatus.getSatellitesFixed());
       switch (gpsLevel) {
         case NOT_FIXED:
-          setupGpsIndicator.setImageResource(R.drawable.ic_gps_0);
-          setupGpsMessage.setText(org.runnerup.common.R.string.Waiting_for_GPS);
+          setupPageState.setGpsIndicatorRes(R.drawable.ic_gps_0);
+          setupPageState.setGpsMessageRes(org.runnerup.common.R.string.Waiting_for_GPS);
           break;
         case POOR:
-          setupGpsIndicator.setImageResource(R.drawable.ic_gps_1);
-          setupGpsMessage.setText(org.runnerup.common.R.string.GPS_level_poor);
+          setupPageState.setGpsIndicatorRes(R.drawable.ic_gps_1);
+          setupPageState.setGpsMessageRes(org.runnerup.common.R.string.GPS_level_poor);
           break;
         case ACCEPTABLE:
-          setupGpsIndicator.setImageResource(R.drawable.ic_gps_2);
-          setupGpsMessage.setText(org.runnerup.common.R.string.GPS_level_acceptable);
+          setupPageState.setGpsIndicatorRes(R.drawable.ic_gps_2);
+          setupPageState.setGpsMessageRes(org.runnerup.common.R.string.GPS_level_acceptable);
           break;
         case GOOD:
-          setupGpsIndicator.setImageResource(R.drawable.ic_gps_3);
-          setupGpsMessage.setText(org.runnerup.common.R.string.GPS_level_good);
+          setupPageState.setGpsIndicatorRes(R.drawable.ic_gps_3);
+          setupPageState.setGpsMessageRes(org.runnerup.common.R.string.GPS_level_good);
           break;
       }
     }
     // Keep the popup in sync while it is open
-    if (setupGpsPopup != null && setupGpsPopup.getVisibility() == View.VISIBLE) {
+    if (setupPageState.getGpsPopupVisible()) {
       populateGpsPopup();
     }
   }

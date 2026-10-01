@@ -40,9 +40,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <include
+        <androidx.compose.ui.platform.ComposeView
             android:id="@+id/setup_root"
-            layout="@layout/start_setup"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:visibility="gone" />
