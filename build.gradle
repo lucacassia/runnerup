@@ -5,6 +5,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:9.4.0'
+        classpath 'org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10'
     }
 }
 
@@ -36,6 +37,10 @@ compileSdk = 37.2 // also .github/workflows/actions.yml
 
     camerax_version = "1.6.1"
     zxingVersion = "3.5.4"
+
+    compose_bom_version = "2026.09.00"
+    activity_compose_version = "1.13.0"
+    lifecycle_compose_version = "2.11.0"
 
     //The Git tag for the release must be identical for F-Droid
     versionName = '2.11.0.1' + (project.findProperty('nightlyVersionSuffix') ?: '')

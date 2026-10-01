@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 def getGitHash = providers.exec {
     commandLine('git', 'rev-parse', '--short', 'HEAD')
@@ -135,6 +136,7 @@ android {
     buildFeatures {
         aidl = true
         buildConfig = true
+        compose = true
         resValues = true
     }
     androidResources {
@@ -175,6 +177,16 @@ dependencies {
     implementation "androidx.viewpager2:viewpager2:1.1.0"
     implementation "androidx.constraintlayout:constraintlayout:2.2.2"
     implementation "androidx.core:core-location-altitude:1.0.0"
+
+    def composeBom = platform("androidx.compose:compose-bom:${rootProject.ext.compose_bom_version}")
+    implementation composeBom
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.compose.material3:material3"
+    implementation "androidx.compose.ui:ui-tooling-preview"
+    debugImplementation "androidx.compose.ui:ui-tooling"
+    implementation "androidx.activity:activity-compose:${rootProject.ext.activity_compose_version}"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:${rootProject.ext.lifecycle_compose_version}"
+    implementation "androidx.lifecycle:lifecycle-runtime-compose:${rootProject.ext.lifecycle_compose_version}"
 
     latestImplementation "com.google.android.material:material:1.14.0"
     if (rootProject.ext.enableWear) {
