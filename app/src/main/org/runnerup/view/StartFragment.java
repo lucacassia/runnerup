@@ -18,7 +18,6 @@
 package org.runnerup.view;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -40,11 +39,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
 import android.widget.CheckBox;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -57,9 +53,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -88,7 +81,6 @@ import org.runnerup.workout.RepeatStep;
 import org.runnerup.workout.Sport;
 import org.runnerup.workout.Step;
 import org.runnerup.workout.Workout;
-import org.runnerup.workout.Workout.StepListEntry;
 import org.runnerup.workout.WorkoutBuilder;
 import org.runnerup.workout.WorkoutSerializer;
 
@@ -147,7 +139,6 @@ public class StartFragment extends Fragment implements TickListener {
   private SharedPreferences appPrefs = null;
 
   Workout advancedWorkout = null;
-  WorkoutPlanAdapter advancedWorkoutStepsAdapter = null;
   AudioSchemeListAdapter advancedAudioListAdapter = null;
 
   SQLiteDatabase mDB = null;
@@ -212,13 +203,12 @@ public class StartFragment extends Fragment implements TickListener {
     advancedAudioListAdapter = new AudioSchemeListAdapter(mDB, inflater, false);
     advancedAudioListAdapter.reload();
 
-    advancedWorkoutStepsAdapter = new WorkoutPlanAdapter(this::editRepeatCount, onWorkoutChanged);
-
     setupPageState = new SetupPageState();
     SetupScreenHost.INSTANCE.attach(
         (ComposeView) setupRoot,
         setupPageState,
-        this::createAdvancedStepList,
+        this::editStep,
+        this::editRepeatCount,
         this::popPage,
         () -> openPicker(PickerKind.SPORT),
         () -> openPicker(PickerKind.AUDIO),
@@ -296,11 +286,13 @@ public class StartFragment extends Fragment implements TickListener {
         ContextCompat.getColor(requireContext(), Sport.colorOf(sport)));
   }
 
-  private View createAdvancedStepList() {
-    RecyclerView list = new RecyclerView(requireContext());
-    list.setLayoutManager(new LinearLayoutManager(requireContext()));
-    list.setAdapter(advancedWorkoutStepsAdapter);
-    return list;
+  private void editStep(Step step) {
+    StepEditor.showStepDialog(requireContext(), step, this::onWorkoutStepChanged);
+  }
+
+  private void onWorkoutStepChanged() {
+    onWorkoutChanged.run();
+    setupPageState.setWorkout(advancedWorkout);
   }
 
   @Override
@@ -1346,7 +1338,6 @@ public class StartFragment extends Fragment implements TickListener {
     updateView();
   }
 
-  @SuppressLint("NotifyDataSetChanged")
   private void loadAdvanced(String name) {
     Context ctx = requireActivity().getApplicationContext();
     if (name == null) {
@@ -1355,13 +1346,13 @@ public class StartFragment extends Fragment implements TickListener {
     selectedWorkoutName = name;
     advancedWorkout = null;
     if (name.isEmpty()) {
-      advancedWorkoutStepsAdapter.clear();
+      setupPageState.setWorkout(null);
       updateView();
       return;
     }
     try {
       advancedWorkout = WorkoutSerializer.readFile(ctx, name);
-      advancedWorkoutStepsAdapter.setWorkout(advancedWorkout);
+      setupPageState.setWorkout(advancedWorkout);
       updateView();
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -1387,205 +1378,12 @@ public class StartFragment extends Fragment implements TickListener {
             (dialog, whichButton) -> {
               repeat.setRepeatCount(numberPicker.getValue());
               dialog.dismiss();
-              advancedWorkoutStepsAdapter.setWorkout(advancedWorkout);
+              setupPageState.setWorkout(advancedWorkout);
               onWorkoutChanged.run();
             })
         .setNegativeButton(
             org.runnerup.common.R.string.Cancel, (dialog, whichButton) -> dialog.dismiss())
         .show();
-  }
-
-  final class WorkoutPlanAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-
-    interface EditRepeatCount {
-      void update(RepeatStep repeat);
-    }
-
-    static final int VIEW_TYPE_STEP = 0;
-    static final int VIEW_TYPE_REPEAT = 1;
-
-    private final EditRepeatCount onEdit;
-    final Runnable changed;
-    private final List<StepListEntry> items = new ArrayList<>();
-    private Workout workout = null;
-
-    WorkoutPlanAdapter(EditRepeatCount onEdit, Runnable changed) {
-      this.onEdit = onEdit;
-      this.changed = changed;
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    void setWorkout(Workout workout) {
-      this.workout = workout;
-      items.clear();
-      items.addAll(workout.entriesAtLevel(null));
-      notifyDataSetChanged();
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    void clear() {
-      workout = null;
-      items.clear();
-      notifyDataSetChanged();
-    }
-
-    @Override
-    public int getItemCount() {
-      return items.size();
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-      return items.get(position).step() instanceof RepeatStep ? VIEW_TYPE_REPEAT : VIEW_TYPE_STEP;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-      LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-      if (viewType == VIEW_TYPE_REPEAT) {
-        return new PlanRepeatViewHolder(
-            inflater.inflate(R.layout.advanced_workout_repeat_row, parent, false), this);
-      }
-      return new PlanStepViewHolder(
-          inflater.inflate(R.layout.advanced_workout_row, parent, false), this.changed);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-      StepListEntry entry = items.get(position);
-      if (viewHolder instanceof PlanStepViewHolder) {
-        ((PlanStepViewHolder) viewHolder).bind(entry.step());
-      } else {
-        ((PlanRepeatViewHolder) viewHolder).bind((RepeatStep) entry.step());
-      }
-    }
-
-    void editRepeatCount(RepeatStep repeat) {
-      onEdit.update(repeat);
-    }
-
-    List<StepListEntry> entriesOf(Step parent) {
-      return workout.entriesAtLevel(parent);
-    }
-  }
-
-  static class PlanStepViewHolder extends RecyclerView.ViewHolder {
-
-    final ImageButton moveUpButton;
-    final ImageButton delButton;
-    final StepButton button;
-
-    PlanStepViewHolder(@NonNull View itemView, Runnable changed) {
-      super(itemView);
-      moveUpButton = itemView.findViewById(R.id.move_up_button);
-      delButton = itemView.findViewById(R.id.del_button);
-      moveUpButton.setVisibility(View.GONE);
-      delButton.setVisibility(View.GONE);
-      button = itemView.findViewById(R.id.workout_step_button);
-      button.setOnChangedListener(changed);
-    }
-
-    void bind(Step step) {
-      button.setStep(step);
-      View buttonLayout = button.findViewById(R.id.step_button_layout);
-      buttonLayout.setBackground(null);
-      buttonLayout.setPadding(0, 0, 0, 0);
-    }
-  }
-
-  static class PlanRepeatViewHolder extends RecyclerView.ViewHolder {
-
-    final ImageButton moveUpButton;
-    final ImageButton delButton;
-    final MaterialButton addInsideButton;
-    final RecyclerView childrenHost;
-    final PlanChildrenAdapter childAdapter;
-    private final WorkoutPlanAdapter outerAdapter;
-    private final TextView title;
-
-    PlanRepeatViewHolder(@NonNull View itemView, WorkoutPlanAdapter outerAdapter) {
-      super(itemView);
-      this.outerAdapter = outerAdapter;
-      moveUpButton = itemView.findViewById(R.id.move_up_button);
-      delButton = itemView.findViewById(R.id.del_button);
-      addInsideButton = itemView.findViewById(R.id.add_step_inside_repeat_button);
-      moveUpButton.setVisibility(View.GONE);
-      delButton.setVisibility(View.GONE);
-      addInsideButton.setVisibility(View.GONE);
-      title = itemView.findViewById(R.id.repeat_title);
-      childrenHost = itemView.findViewById(R.id.repeat_children_host);
-      childrenHost.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
-      childAdapter = new PlanChildrenAdapter(this);
-      childrenHost.setAdapter(childAdapter);
-    }
-
-    void bind(RepeatStep repeat) {
-      title.setText(
-          itemView
-              .getContext()
-              .getString(org.runnerup.common.R.string.repeat_x, repeat.getRepeatCount()));
-      title.setOnClickListener(v -> outerAdapter.editRepeatCount(repeat));
-      LinearLayout.LayoutParams titleLp = (LinearLayout.LayoutParams) title.getLayoutParams();
-      if (titleLp.getMarginStart() != 0) {
-        titleLp.setMarginStart(0);
-        title.setLayoutParams(titleLp);
-      }
-      childAdapter.bind(repeat);
-    }
-  }
-
-  static class PlanChildrenAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-
-    private final List<StepListEntry> items = new ArrayList<>();
-    private final PlanRepeatViewHolder parent;
-
-    PlanChildrenAdapter(PlanRepeatViewHolder parent) {
-      this.parent = parent;
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
-    void bind(RepeatStep repeat) {
-      items.clear();
-      items.addAll(parent.outerAdapter.entriesOf(repeat));
-      notifyDataSetChanged();
-    }
-
-    @Override
-    public int getItemCount() {
-      return items.size();
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-      return items.get(position).step() instanceof RepeatStep
-          ? WorkoutPlanAdapter.VIEW_TYPE_REPEAT
-          : WorkoutPlanAdapter.VIEW_TYPE_STEP;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
-      LayoutInflater inflater = LayoutInflater.from(viewGroup.getContext());
-      if (viewType == WorkoutPlanAdapter.VIEW_TYPE_REPEAT) {
-        return new PlanRepeatViewHolder(
-            inflater.inflate(R.layout.advanced_workout_repeat_row, viewGroup, false),
-            parent.outerAdapter);
-      }
-      return new PlanStepViewHolder(
-          inflater.inflate(R.layout.advanced_workout_row, viewGroup, false),
-          parent.outerAdapter.changed);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-      StepListEntry entry = items.get(position);
-      if (viewHolder instanceof PlanStepViewHolder) {
-        ((PlanStepViewHolder) viewHolder).bind(entry.step());
-      } else {
-        ((PlanRepeatViewHolder) viewHolder).bind((RepeatStep) entry.step());
-      }
-    }
   }
 
   private final Runnable onWorkoutChanged =

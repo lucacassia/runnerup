@@ -16,7 +16,6 @@
  */
 package org.runnerup.view
 
-import android.view.View
 import androidx.appcompat.R as AppCompatR
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,12 +54,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import org.runnerup.R
 import org.runnerup.common.R as CommonR
 import org.runnerup.compose.theme.RunnerUpTheme
 import org.runnerup.compose.theme.XmlText
 import org.runnerup.compose.theme.themeAttrColor
+import org.runnerup.workout.Workout
 
 class SetupPageState {
   var sportName by mutableStateOf("")
@@ -77,6 +76,14 @@ class SetupPageState {
   var gpsPopupIndicatorRes by mutableStateOf(R.drawable.ic_gps_0)
   var gpsPopupMessage by mutableStateOf("")
   var gpsPopupSatellites by mutableStateOf<String?>(null)
+
+  /** The steps of the selected workout, expanded into rows. */
+  var stepRows by mutableStateOf<List<StepRow>>(emptyList())
+
+  fun setWorkout(workout: Workout?) {
+    stepRows = if (workout == null) emptyList() else buildStepRows(workout)
+    stepsVisible = workout != null
+  }
 }
 
 object SetupScreenHost {
@@ -84,7 +91,8 @@ object SetupScreenHost {
   fun attach(
     composeView: ComposeView,
     state: SetupPageState,
-    stepsViewFactory: () -> View,
+    onEditStep: StepEdit,
+    onEditRepeat: RepeatEdit,
     onNavigateUp: Runnable,
     onSportClick: Runnable,
     onAudioClick: Runnable,
@@ -99,7 +107,8 @@ object SetupScreenHost {
       RunnerUpTheme {
         SetupPage(
           state = state,
-          stepsViewFactory = stepsViewFactory,
+          onEditStep = onEditStep,
+          onEditRepeat = onEditRepeat,
           onNavigateUp = { onNavigateUp.run() },
           onSportClick = { onSportClick.run() },
           onAudioClick = { onAudioClick.run() },
@@ -116,7 +125,8 @@ object SetupScreenHost {
 @Composable
 fun SetupPage(
   state: SetupPageState,
-  stepsViewFactory: () -> View,
+  onEditStep: StepEdit,
+  onEditRepeat: RepeatEdit,
   onNavigateUp: () -> Unit,
   onSportClick: () -> Unit,
   onAudioClick: () -> Unit,
@@ -164,10 +174,13 @@ fun SetupPage(
           color = MaterialTheme.colorScheme.onSurfaceVariant,
           modifier = Modifier.padding(start = 16.dp, top = 8.dp),
         )
-        AndroidView(
-          factory = { stepsViewFactory() },
-          modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-        )
+        Box(modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) {
+          WorkoutStepsList(
+            rows = state.stepRows,
+            onEditStep = onEditStep,
+            onEditRepeat = onEditRepeat,
+          )
+        }
       }
       Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp))
     }
