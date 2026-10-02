@@ -24,9 +24,6 @@ import android.graphics.Paint;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
-import android.widget.LinearLayout;
-import androidx.appcompat.app.AppCompatActivity;
-import org.runnerup.R;
 
 public class HRZonesBar extends View {
 
@@ -78,10 +75,7 @@ public class HRZonesBar extends View {
     }
 
     // calculate bar height and chart offset
-    AppCompatActivity activity = (AppCompatActivity) getContext();
-    LinearLayout buttons = activity.findViewById(R.id.buttons);
-
-    int actualHeight = getHeight() - buttons.getHeight();
+    int actualHeight = getHeight();
     float calculatedBarHeight =
         (actualHeight - 2 * borderSize - (hrzData.length - 1) * separatorSize)
             / hrzData.length; // Height of the bar
@@ -91,7 +85,7 @@ public class HRZonesBar extends View {
     float totalWidth = getWidth();
     if (totalWidth <= 0 || calculatedBarHeight < 10) {
       Log.i(getClass().getName(), "Not enough space to display the heart-rate zone bar");
-      activity.findViewById(R.id.hrzonesBarLayout).setVisibility(View.GONE);
+      ((View) getParent()).setVisibility(View.GONE);
       return;
     }
 

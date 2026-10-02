@@ -14,7 +14,6 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package org.runnerup.view;
 
 import static org.runnerup.content.ActivityProvider.GPX_MIME;
@@ -26,43 +25,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.graphics.Insets;
-import androidx.core.view.OnApplyWindowInsetsListener;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.compose.ui.platform.ComposeView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,6 +64,7 @@ import org.runnerup.util.Bitfield;
 import org.runnerup.util.FileNameHelper;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.GraphWrapper;
+import org.runnerup.util.MapViewWrapper;
 import org.runnerup.util.MapWrapper;
 import org.runnerup.util.SafeParse;
 import org.runnerup.widget.MaterialTitleSpinner;
@@ -91,8 +74,7 @@ import org.runnerup.workout.Intensity;
 import org.runnerup.workout.Sport;
 
 public class DetailActivity extends AppCompatActivity implements Constants {
-
-  private long mID = 0;
+  private long mID;
   private SQLiteDatabase mDB = null;
   private final HashSet<String> pendingSynchronizers = new HashSet<>();
   private final HashSet<String> alreadySynched = new HashSet<>();
@@ -101,8 +83,6 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   private boolean lapHrPresent = false;
   private ContentValues[] laps = null;
   private final ArrayList<ContentValues> reports = new ArrayList<>();
-  private LapListAdapter lapListAdapter = null;
-  private ReportListAdapter reportListAdapter = null;
 
   private int mode; // 0 == save 1 == details
   private static final int MODE_SAVE = 0;
@@ -110,25 +90,25 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   private boolean edit = false;
   private boolean uploading = false;
 
-  private ExtendedFloatingActionButton saveButton = null;
-  private Button uploadButton = null;
-  private TextView activityTime = null;
-  private TextView activityPace = null;
-  private View activityPaceSeparator = null;
-  private TextView activityDistance = null;
-
+  private DetailPageState pageState = null;
+  private ComposeView rootView;
   private MaterialTitleSpinner sport = null;
   private MaterialTitleSpinner manualDistance = null;
   private EditText notes = null;
-  private View rootView;
-  private TabLayout.Tab mapTab;
+  private View hrZonesBarLayout;
+  private LinearLayout graphView;
 
   private MapWrapper mapWrapper = null;
   private GraphWrapper graphWrapper = null;
-  private FloatingActionButton mapLapToggle = null;
 
   private SyncManager syncManager = null;
   private Formatter formatter = null;
+
+  /** Inset of the toolbar overflow popup, it is drawn 8px from the right edge of the window. */
+  private static final int overflowPopupInset = 8;
+
+  private View overflowAnchor = null;
+  private PopupMenu overflowMenu = null;
 
   private long mStartTime = 0; // activity start time in unix timestamp
   private ContentValues headerData = new ContentValues();
@@ -147,11 +127,19 @@ public class DetailActivity extends AppCompatActivity implements Constants {
             requery();
           });
 
+  /**
+   * The platform widgets of the tab panes are hosted by Compose, they take their layout params from
+   * it instead of from a parent.
+   */
+  @SuppressLint("InflateParams")
+  private View inflateUnparented(int resId) {
+    return LayoutInflater.from(this).inflate(resId, null);
+  }
+
   /** Called when the activity is first created. */
   @Override
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
-    Window window = getWindow();
     super.onCreate(savedInstanceState);
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       // MapBox or Osmdroid, set mapWrapper.
@@ -159,12 +147,6 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     }
     setContentView(R.layout.detail);
     rootView = findViewById(R.id.detail_view);
-
-    Toolbar toolbar = findViewById(R.id.actionbar);
-    setSupportActionBar(toolbar);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
-    WidgetUtil.addLegacyOverflowButton(window);
 
     Intent intent = getIntent();
     mID = intent.getLongExtra("ID", -1);
@@ -185,14 +167,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
       }
     }
 
-    saveButton = findViewById(R.id.save_button);
-    ExtendedFloatingActionButton discardButton = findViewById(R.id.discard_button);
-    uploadButton = findViewById(R.id.upload_button);
-    activityTime = findViewById(R.id.activity_time);
-    activityDistance = findViewById(R.id.activity_distance);
-    activityPace = findViewById(R.id.activity_pace);
-    activityPaceSeparator = findViewById(R.id.activity_pace_separator);
-    sport = findViewById(R.id.summary_sport);
+    sport = (MaterialTitleSpinner) inflateUnparented(R.layout.detail_notes_sport);
     sport.setOnSetValueListener(
         new OnSetValueListener() {
           @Override
@@ -203,7 +178,6 @@ public class DetailActivity extends AppCompatActivity implements Constants {
           @Override
           public int preSetValue(int newValue) throws IllegalArgumentException {
             updateViewForSport(newValue);
-            ViewCompat.requestApplyInsets(rootView);
             headerData.put(DB.ACTIVITY.SPORT, newValue);
             return newValue;
           }
@@ -211,7 +185,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
 
     sport.setArrayEntries(Sport.getStringArray(getResources()));
 
-    manualDistance = findViewById(R.id.summary_manual_distance);
+    manualDistance = (MaterialTitleSpinner) inflateUnparented(R.layout.detail_notes_distance);
     manualDistance.setOnSetValueListener(
         new OnSetValueListener() {
           @Override
@@ -227,75 +201,19 @@ public class DetailActivity extends AppCompatActivity implements Constants {
             return newValue;
           }
         });
-    notes = findViewById(R.id.notes_text);
 
+    View notesField = inflateUnparented(R.layout.detail_notes_field);
+    notes = notesField.findViewById(R.id.notes_text);
+    hrZonesBarLayout = inflateUnparented(R.layout.detail_hrzones);
+    graphView = new LinearLayout(this);
+    graphView.setOrientation(LinearLayout.VERTICAL);
+
+    MapViewWrapper mapView = null;
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
-      Object mapView = findViewById(R.id.mapview);
+      mapView = new MapViewWrapper(this);
       mapWrapper = new MapWrapper(this, mDB, mID, formatter, mapView);
       mapWrapper.onCreate(savedInstanceState);
-
-      mapLapToggle = findViewById(R.id.map_lap_toggle);
-      mapLapToggle.setOnClickListener(
-          v -> {
-            boolean visible = !mapWrapper.areIntervalMarkersVisible();
-            mapWrapper.setIntervalMarkersVisible(visible);
-            mapLapToggle.setElevation(visible ? 6f : 2f);
-          });
     }
-
-    saveButton.setOnClickListener(saveButtonClick);
-    uploadButton.setOnClickListener(uploadButtonClick);
-
-    uploadButton.setVisibility(View.GONE);
-
-    TabLayout tabLayout = findViewById(R.id.tab_layout);
-    tabLayout.addTab(
-        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Notes)).setTag("notes"));
-    tabLayout.addTab(
-        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Laps)).setTag("laps"));
-
-    if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
-      mapTab =
-          tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Map)).setTag("map");
-      tabLayout.addTab(mapTab);
-    }
-
-    tabLayout.addTab(
-        tabLayout.newTab().setText(getString(org.runnerup.common.R.string.Graph)).setTag("graph"));
-
-    tabLayout.addTab(
-        tabLayout
-            .newTab()
-            .setText(getString(org.runnerup.common.R.string.Upload))
-            .setTag("upload"));
-
-    tabLayout.addOnTabSelectedListener(
-        new TabLayout.OnTabSelectedListener() {
-          @Override
-          public void onTabSelected(TabLayout.Tab tab) {
-            selectTab((String) tab.getTag());
-          }
-
-          @Override
-          public void onTabUnselected(TabLayout.Tab tab) {}
-
-          @Override
-          public void onTabReselected(TabLayout.Tab tab) {}
-        });
-    selectTab("notes");
-
-    fillHeaderData();
-    requery();
-
-    lapListAdapter = new LapListAdapter();
-    RecyclerView lapList = findViewById(R.id.laplist);
-    lapList.setLayoutManager(new LinearLayoutManager(this));
-    lapList.setAdapter(lapListAdapter);
-
-    reportListAdapter = new ReportListAdapter();
-    RecyclerView reportList = findViewById(R.id.report_list);
-    reportList.setLayoutManager(new LinearLayoutManager(this));
-    reportList.setAdapter(reportListAdapter);
 
     getOnBackPressedDispatcher()
         .addCallback(
@@ -315,94 +233,75 @@ public class DetailActivity extends AppCompatActivity implements Constants {
               }
             });
 
-    ViewCompat.setOnApplyWindowInsetsListener(
-        rootView,
-        new OnApplyWindowInsetsListener() {
-          @NonNull
-          @Override
-          public WindowInsetsCompat onApplyWindowInsets(
-              @NonNull View v, @NonNull WindowInsetsCompat windowInsets) {
-            Insets insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            int bottomPadding =
-                saveButton.getVisibility() == View.VISIBLE
-                        || uploadButton.getVisibility() == View.VISIBLE
-                    ? insets.bottom
-                    : 0;
-            v.setPadding(insets.left, 0, insets.right, bottomPadding);
-
-            ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) v.getLayoutParams();
-            mlp.topMargin = insets.top;
-
-            View graphScroll = findViewById(R.id.tab_graph);
-            if (graphScroll != null) {
-              graphScroll.setPadding(
-                  graphScroll.getPaddingLeft(),
-                  graphScroll.getPaddingTop(),
-                  graphScroll.getPaddingRight(),
-                  Math.max(0, insets.bottom - bottomPadding));
-            }
-            return WindowInsetsCompat.CONSUMED;
-          }
-        });
-
-    LinearLayout graphTabLayout = findViewById(R.id.graphview);
-    LinearLayout hrzonesBarLayout = findViewById(R.id.hrzonesBarLayout);
     boolean use_distance_as_x = !Sport.isWithoutGps(sport.getValueInt());
     graphWrapper =
         new GraphWrapper(
-            this, graphTabLayout, hrzonesBarLayout, formatter, mDB, mID, use_distance_as_x);
+            this,
+            graphView,
+            (LinearLayout) hrZonesBarLayout,
+            formatter,
+            mDB,
+            mID,
+            use_distance_as_x);
+
+    pageState = new DetailPageState();
+    DetailScreenHost.INSTANCE.attach(
+        rootView,
+        pageState,
+        new DetailBindings(
+            sport,
+            manualDistance,
+            notesField,
+            hrZonesBarLayout,
+            mapView,
+            graphView,
+            () -> getOnBackPressedDispatcher().onBackPressed(),
+            this::onMenuItem,
+            this::showOverflowMenu,
+            () -> discardButtonClick.onClick(null),
+            () -> saveButtonClick.onClick(null),
+            () -> uploadButtonClick.onClick(null),
+            () -> {
+              boolean visible = !mapWrapper.areIntervalMarkersVisible();
+              mapWrapper.setIntervalMarkersVisible(visible);
+              pageState.setMapLapMarkersVisible(visible);
+            },
+            (name, checked) -> onSendChecked(name, checked),
+            this::clearUploadClick,
+            this::onClickAccountName,
+            () ->
+                editAccountLauncher.launch(
+                    new Intent(DetailActivity.this, AccountListActivity.class))));
 
     if (this.mode == MODE_SAVE) {
-      discardButton.setOnClickListener(discardButtonClick);
       setEdit(true);
     } else if (this.mode == MODE_DETAILS) {
-      discardButton.setVisibility(View.GONE);
       setEdit(false);
     }
+
+    fillHeaderData();
+    requery();
   }
 
   private void setEdit(boolean value) {
     edit = value;
-    if (value) {
-      saveButton.setVisibility(View.VISIBLE);
-    } else {
-      saveButton.setVisibility(View.GONE);
-    }
+    pageState.setSaveVisible(value);
+    pageState.setDiscardVisible(mode == MODE_SAVE);
     WidgetUtil.setEditable(notes, value);
     sport.setEnabled(value);
     updateViewForSport(sport.getValueInt());
-    ViewCompat.requestApplyInsets(rootView);
-  }
-
-  private void selectTab(String tag) {
-    setTabContentVisibility(tag);
-  }
-
-  private void setTabContentVisibility(String tag) {
-    findViewById(R.id.tab_main).setVisibility("notes".equals(tag) ? View.VISIBLE : View.GONE);
-    findViewById(R.id.tab_lap).setVisibility("laps".equals(tag) ? View.VISIBLE : View.GONE);
-    View mapView = findViewById(R.id.tab_map);
-    if (mapView != null) {
-      mapView.setVisibility("map".equals(tag) ? View.VISIBLE : View.GONE);
-    }
-    findViewById(R.id.tab_graph).setVisibility("graph".equals(tag) ? View.VISIBLE : View.GONE);
-    findViewById(R.id.tab_upload).setVisibility("upload".equals(tag) ? View.VISIBLE : View.GONE);
   }
 
   private void updateViewForSport(int sportValue) {
     if (edit && Sport.hasManualDistance(sportValue)) {
-      manualDistance.setVisibility(View.VISIBLE);
+      pageState.setManualDistanceVisible(true);
       manualDistance.setEnabled(true);
     } else {
-      manualDistance.setVisibility(View.GONE);
+      pageState.setManualDistanceVisible(false);
     }
 
-    if (mapTab != null && mapTab.view != null) {
-      if (Sport.isWithoutGps(sportValue)) {
-        mapTab.view.setVisibility(View.GONE);
-      } else {
-        mapTab.view.setVisibility(View.VISIBLE);
-      }
+    if (mapWrapper != null) {
+      pageState.setMapTabVisible(!Sport.isWithoutGps(sportValue));
     }
     if (graphWrapper != null) {
       boolean use_distance_as_x = !Sport.isWithoutGps(sportValue);
@@ -411,27 +310,39 @@ public class DetailActivity extends AppCompatActivity implements Constants {
   }
 
   private void setUploadVisibility() {
-    boolean enabled = !pendingSynchronizers.isEmpty();
-    if (enabled) {
-      uploadButton.setVisibility(View.VISIBLE);
-    } else {
-      uploadButton.setVisibility(View.GONE);
+    pageState.setUploadVisible(!pendingSynchronizers.isEmpty());
+  }
+
+  /**
+   * Shows the detail overflow menu. The button itself lives in the Compose toolbar, so an invisible
+   * zero sized view is used as the anchor of the popup. A toolbar places its overflow popup at the
+   * top right of the window, overlapping the toolbar instead of dropping below the button, hence
+   * the anchor is the button corner moved up and in by the popup inset.
+   */
+  private void showOverflowMenu(int left, int top, int right, int bottom) {
+    ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+    if (overflowAnchor == null) {
+      overflowAnchor = new View(this);
+      overflowAnchor.setVisibility(View.INVISIBLE);
+      FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(0, 0);
+      params.gravity = Gravity.TOP | Gravity.START;
+      params.leftMargin = right - overflowPopupInset;
+      params.topMargin = top;
+      decor.addView(overflowAnchor, params);
+
+      overflowMenu = new PopupMenu(this, overflowAnchor, Gravity.END);
+      overflowMenu.setOnMenuItemClickListener(
+          item -> {
+            onMenuItem(item.getItemId());
+            return true;
+          });
+      overflowMenu.getMenuInflater().inflate(R.menu.detail_menu, overflowMenu.getMenu());
     }
-    ViewCompat.requestApplyInsets(rootView);
+    overflowMenu.show();
   }
 
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    getMenuInflater().inflate(R.menu.detail_menu, menu);
-    return true;
-  }
-
-  @Override
-  public boolean onOptionsItemSelected(MenuItem item) {
-    int id = item.getItemId();
-    if (id == android.R.id.home) {
-      return super.onOptionsItemSelected(item);
-    } else if (id == R.id.menu_delete_activity) {
+  private void onMenuItem(int id) {
+    if (id == R.id.menu_delete_activity) {
       deleteButtonClick.onClick(null);
     } else if (id == R.id.menu_edit_activity) {
       if (!edit) {
@@ -475,8 +386,6 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     } else if (id == R.id.menu_share_activity) {
       shareActivity();
     }
-
-    return true;
   }
 
   @Override
@@ -537,7 +446,6 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     }
   }
 
-  @SuppressLint("NotifyDataSetChanged")
   private void requery() {
     {
       /*
@@ -569,6 +477,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
           break;
         }
       }
+      updateLapRows();
     }
 
     {
@@ -587,7 +496,9 @@ public class DetailActivity extends AppCompatActivity implements Constants {
               + ("  rep." + DB.EXPORT.ACTIVITY + ", ")
               + ("  rep." + DB.EXPORT.EXTERNAL_ID + ", ")
               + ("  rep." + DB.EXPORT.STATUS)
-              + (" FROM " + DB.ACCOUNT.TABLE + " acc ")
+              + " FROM "
+              + DB.ACCOUNT.TABLE
+              + " acc "
               + (" LEFT OUTER JOIN " + DB.EXPORT.TABLE + " rep ")
               + (" ON ( acc._id = rep." + DB.EXPORT.ACCOUNT)
               + ("     AND rep." + DB.EXPORT.ACTIVITY + " = " + mID + " )");
@@ -637,12 +548,67 @@ public class DetailActivity extends AppCompatActivity implements Constants {
       setUploadVisibility();
     }
 
-    if (lapListAdapter != null) {
-      lapListAdapter.notifyDataSetChanged();
+    updateReportRows();
+  }
+
+  private void updateLapRows() {
+    ArrayList<LapRow> rows = new ArrayList<>(laps.length);
+    for (ContentValues lap : laps) {
+      int i = lap.getAsInteger(DB.LAP.INTENSITY);
+      Intensity intensity = Intensity.values()[i];
+      String type = "";
+      switch (intensity) {
+        case ACTIVE:
+          break;
+        case COOLDOWN:
+        case RESTING:
+        case RECOVERY:
+        case WARMUP:
+        case REPEAT:
+          type =
+              String.format(
+                  Locale.getDefault(), "(%s)", getResources().getString(intensity.getTextId()));
+          break;
+        default:
+          break;
+      }
+      double d = lap.containsKey(DB.LAP.DISTANCE) ? lap.getAsDouble(DB.LAP.DISTANCE) : 0;
+      long t = lap.containsKey(DB.LAP.TIME) ? lap.getAsLong(DB.LAP.TIME) : 0;
+      int hr = lap.containsKey(DB.LAP.AVG_HR) ? lap.getAsInteger(DB.LAP.AVG_HR) : 0;
+      String hrText = null;
+      boolean hrReserved = false;
+      if (hr > 0) {
+        hrText = formatter.formatHeartRate(Formatter.Format.TXT_LONG, hr);
+      } else if (lapHrPresent) {
+        hrReserved = true;
+      }
+      rows.add(
+          new LapRow(
+              type,
+              formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, t),
+              formatter.formatDistance(Formatter.Format.TXT_LONG, (long) d),
+              t != 0
+                  ? formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / t)
+                  : "",
+              hrText,
+              hrReserved));
     }
-    if (reportListAdapter != null) {
-      reportListAdapter.notifyDataSetChanged();
+    pageState.setLaps(rows);
+  }
+
+  private void updateReportRows() {
+    ArrayList<ReportRow> rows = new ArrayList<>(reports.size());
+    for (ContentValues report : reports) {
+      String name = report.getAsString(DB.ACCOUNT.NAME);
+      boolean synced = alreadySynched.contains(name);
+      rows.add(
+          new ReportRow(
+              name,
+              synced || pendingSynchronizers.contains(name),
+              synced ? org.runnerup.common.R.string.Uploaded : org.runnerup.common.R.string.Upload,
+              synced && !TextUtils.isEmpty(synchedExternalId.get(name))));
     }
+    pageState.setReports(rows);
   }
 
   private void fillHeaderData() {
@@ -665,7 +631,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     if (tmp.containsKey(DB.ACTIVITY.START_TIME)) {
       long st = tmp.getAsLong(DB.ACTIVITY.START_TIME);
       mStartTime = st;
-      setTitle(formatter.formatDateTime(st));
+      pageState.setTitle(formatter.formatDateTime(st));
     }
 
     if (tmp.containsKey(DB.ACTIVITY.COMMENT)) {
@@ -681,207 +647,35 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     if (data.containsKey(DB.ACTIVITY.DISTANCE)) {
       d = data.getAsDouble(DB.ACTIVITY.DISTANCE);
       String s = formatter.formatDistance(Formatter.Format.TXT_SHORT, (long) d);
-      activityDistance.setText(s);
+      pageState.setDistanceText(s);
       if (!fromManualDistance) {
-        /**
-         * IF !fromManualDistance (e.g. from database) update the manual distance field in case (if
-         * it might be needed) ELSE fromManualDistance=true e.g. from spinner, don't update or else
-         * it will recurse
-         */
+        /** IF !fromManualDistance (e.g. from database) update the manual distance field */
         int distance = (int) d;
         manualDistance.setValue(Long.toString(distance));
         manualDistance.setValue(distance);
       }
     } else {
-      activityDistance.setText("");
+      pageState.setDistanceText("");
     }
 
     long t = 0;
     if (data.containsKey(DB.ACTIVITY.TIME)) {
       t = data.getAsInteger(DB.ACTIVITY.TIME);
-      activityTime.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, t));
+      pageState.setTimeText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, t));
     } else {
-      activityTime.setText("");
+      pageState.setTimeText("");
     }
 
     if (t != 0) {
-      activityPace.setVisibility(View.VISIBLE);
-      activityPaceSeparator.setVisibility(View.VISIBLE);
-      activityPace.setText(
+      pageState.setPaceVisible(true);
+      pageState.setPaceText(
           formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / t));
     } else {
-      activityPace.setVisibility(View.GONE);
-      activityPaceSeparator.setVisibility(View.GONE);
+      pageState.setPaceVisible(false);
     }
 
     if (data.containsKey(DB.ACTIVITY.SPORT)) {
       sport.setValue(data.getAsInteger(DB.ACTIVITY.SPORT));
-    }
-  }
-
-  private class LapListAdapter extends RecyclerView.Adapter<LapListAdapter.LapViewHolder> {
-
-    @NonNull
-    @Override
-    public LapViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-      LayoutInflater inflater = LayoutInflater.from(DetailActivity.this);
-      return new LapViewHolder(inflater.inflate(R.layout.laplist_row, parent, false));
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull LapViewHolder viewHolder, int position) {
-      int i = laps[position].getAsInteger(DB.LAP.INTENSITY);
-      Intensity intensity = Intensity.values()[i];
-      switch (intensity) {
-        case ACTIVE:
-          viewHolder.tv0.setText("");
-          break;
-        case COOLDOWN:
-        case RESTING:
-        case RECOVERY:
-        case WARMUP:
-        case REPEAT:
-          viewHolder.tv0.setText(
-              String.format(
-                  Locale.getDefault(), "(%s)", getResources().getString(intensity.getTextId())));
-        default:
-          break;
-      }
-      viewHolder.tv1.setText(laps[position].getAsString("_id"));
-      double d =
-          laps[position].containsKey(DB.LAP.DISTANCE)
-              ? laps[position].getAsDouble(DB.LAP.DISTANCE)
-              : 0;
-      viewHolder.tv2.setText(formatter.formatDistance(Formatter.Format.TXT_LONG, (long) d));
-      long t = laps[position].containsKey(DB.LAP.TIME) ? laps[position].getAsLong(DB.LAP.TIME) : 0;
-      viewHolder.tv3.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, t));
-      if (t != 0) {
-        viewHolder.tv4.setText(
-            formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_LONG, d / t));
-      } else {
-        viewHolder.tv4.setText("");
-      }
-      int hr =
-          laps[position].containsKey(DB.LAP.AVG_HR)
-              ? laps[position].getAsInteger(DB.LAP.AVG_HR)
-              : 0;
-      if (hr > 0) {
-        viewHolder.tvHr.setVisibility(View.VISIBLE);
-        viewHolder.tvHr.setText(formatter.formatHeartRate(Formatter.Format.TXT_LONG, hr));
-      } else if (lapHrPresent) {
-        viewHolder.tvHr.setVisibility(View.INVISIBLE);
-      } else {
-        viewHolder.tvHr.setVisibility(View.GONE);
-      }
-    }
-
-    @Override
-    public int getItemCount() {
-      return laps.length;
-    }
-
-    class LapViewHolder extends RecyclerView.ViewHolder {
-      private final TextView tv0;
-      private final TextView tv1;
-      private final TextView tv2;
-      private final TextView tv3;
-      private final TextView tv4;
-      private final TextView tvHr;
-
-      LapViewHolder(@NonNull View itemView) {
-        super(itemView);
-        tv0 = itemView.findViewById(R.id.lap_list_type);
-        tv1 = itemView.findViewById(R.id.lap_list_id);
-        tv2 = itemView.findViewById(R.id.lap_list_distance);
-        tv3 = itemView.findViewById(R.id.lap_list_time);
-        tv4 = itemView.findViewById(R.id.lap_list_pace);
-        tvHr = itemView.findViewById(R.id.lap_list_hr);
-      }
-    }
-  }
-
-  private class ReportListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    private static final int TYPE_ROW = 0;
-    private static final int TYPE_CONFIGURE = 1;
-
-    @Override
-    public int getItemCount() {
-      return reports.size() + 1;
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-      return position == reports.size() ? TYPE_CONFIGURE : TYPE_ROW;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-      LayoutInflater inflater = LayoutInflater.from(DetailActivity.this);
-      if (viewType == TYPE_CONFIGURE) {
-        return new ConfigureViewHolder(
-            inflater.inflate(R.layout.reportlist_configure_row, parent, false));
-      }
-      return new RowViewHolder(inflater.inflate(R.layout.reportlist_row, parent, false));
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-      if (holder instanceof ConfigureViewHolder) {
-        return;
-      }
-
-      RowViewHolder viewHolder = (RowViewHolder) holder;
-      ContentValues tmp = reports.get(position);
-      String name = tmp.getAsString(DB.ACCOUNT.NAME);
-      viewHolder.cb.setOnCheckedChangeListener(null);
-      viewHolder.cb.setChecked(false);
-      viewHolder.cb.setEnabled(false);
-      viewHolder.cb.setTag(name);
-      viewHolder.tv1.setTag(name);
-      viewHolder.tv1.setTextColor(viewHolder.cb.getTextColors());
-      if (alreadySynched.contains(name)) {
-        viewHolder.cb.setChecked(true);
-        if (synchedExternalId.containsKey(name)) {
-          // Indicate Clickable label
-          viewHolder.tv1.setTextColor(Color.BLUE);
-        }
-        viewHolder.cb.setText(org.runnerup.common.R.string.Uploaded);
-        viewHolder.cb.setOnLongClickListener(clearUploadClick);
-      } else {
-        viewHolder.cb.setChecked(pendingSynchronizers.contains(name));
-        viewHolder.cb.setText(org.runnerup.common.R.string.Upload);
-        viewHolder.cb.setOnLongClickListener(null);
-      }
-      viewHolder.cb.setEnabled(true);
-      viewHolder.cb.setOnCheckedChangeListener(onSendChecked);
-
-      viewHolder.tv0.setText(tmp.getAsString("_id"));
-      viewHolder.tv1.setText(name);
-    }
-
-    class ConfigureViewHolder extends RecyclerView.ViewHolder {
-      ConfigureViewHolder(@NonNull View itemView) {
-        super(itemView);
-        itemView.setOnClickListener(
-            v -> {
-              Intent i = new Intent(DetailActivity.this, AccountListActivity.class);
-              editAccountLauncher.launch(i);
-            });
-      }
-    }
-
-    class RowViewHolder extends RecyclerView.ViewHolder {
-      private final TextView tv0;
-      private final CheckBox cb;
-      private final TextView tv1;
-
-      RowViewHolder(@NonNull View itemView) {
-        super(itemView);
-        tv0 = itemView.findViewById(R.id.reportlist_account_id);
-        cb = itemView.findViewById(R.id.reportlist_sent);
-        tv1 = itemView.findViewById(R.id.reportlist_account_name);
-      }
     }
   }
 
@@ -906,30 +700,25 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     }
   }
 
-  private final OnLongClickListener clearUploadClick =
-      arg0 -> {
-        final String name = (String) arg0.getTag();
-        new MaterialAlertDialogBuilder(DetailActivity.this)
-            .setTitle("Clear upload for " + name)
-            .setMessage(org.runnerup.common.R.string.Are_you_sure)
-            .setPositiveButton(
-                org.runnerup.common.R.string.Yes,
-                (dialog, which) -> {
-                  dialog.dismiss();
-                  syncManager.clearUpload(name, mID);
-                  requery();
-                })
-            .setNegativeButton(
-                org.runnerup.common.R.string.No,
-                // Do nothing but close the dialog
-                (dialog, which) -> dialog.dismiss())
-            .show();
-        return false;
-      };
+  private void clearUploadClick(String name) {
+    new MaterialAlertDialogBuilder(DetailActivity.this)
+        .setTitle("Clear upload for " + name)
+        .setMessage(org.runnerup.common.R.string.Are_you_sure)
+        .setPositiveButton(
+            org.runnerup.common.R.string.Yes,
+            (dialog, which) -> {
+              dialog.dismiss();
+              syncManager.clearUpload(name, mID);
+              requery();
+            })
+        .setNegativeButton(
+            org.runnerup.common.R.string.No,
+            // Do nothing but close the dialog
+            (dialog, which) -> dialog.dismiss())
+        .show();
+  }
 
-  // Note: onClick set in reportlist_row.xml
-  public void onClickAccountName(View arg0) {
-    final String name = (String) arg0.getTag();
+  public void onClickAccountName(String name) {
     if (synchedExternalId.containsKey(name) && !TextUtils.isEmpty(synchedExternalId.get(name))) {
       String url =
           syncManager.getSynchronizerByName(name).getActivityUrl(synchedExternalId.get(name));
@@ -940,8 +729,8 @@ public class DetailActivity extends AppCompatActivity implements Constants {
     }
   }
 
-  private final OnClickListener saveButtonClick =
-      new OnClickListener() {
+  private final View.OnClickListener saveButtonClick =
+      new View.OnClickListener() {
         public void onClick(View v) {
           saveActivity();
           if (mode == MODE_DETAILS) {
@@ -967,7 +756,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
         }
       };
 
-  private final OnClickListener discardButtonClick =
+  private final View.OnClickListener discardButtonClick =
       v ->
           new MaterialAlertDialogBuilder(DetailActivity.this)
               .setTitle(org.runnerup.common.R.string.Discard)
@@ -985,7 +774,7 @@ public class DetailActivity extends AppCompatActivity implements Constants {
                   (dialog, which) -> dialog.dismiss())
               .show();
 
-  private final OnClickListener uploadButtonClick =
+  private final View.OnClickListener uploadButtonClick =
       v -> {
         uploading = true;
         syncManager.startUploading(
@@ -997,30 +786,22 @@ public class DetailActivity extends AppCompatActivity implements Constants {
             mID);
       };
 
-  private final OnCheckedChangeListener onSendChecked =
-      new OnCheckedChangeListener() {
+  private void onSendChecked(String name, boolean checked) {
+    if (alreadySynched.contains(name)) {
+      // Only accept long clicks
+      return;
+    }
+    if (checked) {
+      pendingSynchronizers.add(name);
+    } else {
+      pendingSynchronizers.remove(name);
+    }
+    if (mode == MODE_DETAILS) {
+      setUploadVisibility();
+    }
+  }
 
-        @Override
-        public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
-          final String name = (String) arg0.getTag();
-          if (alreadySynched.contains(name)) {
-            // Only accept long clicks
-            arg0.setChecked(true);
-          } else {
-            if (arg1) {
-              pendingSynchronizers.add((String) arg0.getTag());
-            } else {
-              //noinspection SuspiciousMethodCalls
-              pendingSynchronizers.remove(arg0.getTag());
-            }
-            if (mode == MODE_DETAILS) {
-              setUploadVisibility();
-            }
-          }
-        }
-      };
-
-  private final OnClickListener deleteButtonClick =
+  private final View.OnClickListener deleteButtonClick =
       v ->
           new MaterialAlertDialogBuilder(DetailActivity.this)
               .setTitle(org.runnerup.common.R.string.Delete_activity)
@@ -1086,8 +867,8 @@ public class DetailActivity extends AppCompatActivity implements Constants {
             })
         .setNegativeButton(
             org.runnerup.common.R.string.Cancel,
+            // Do nothing but close the dialog
             (dialog, which1) -> {
-              // Do nothing but close the dialog
               dialog.dismiss();
             })
         .setSingleChoiceItems(items, which[0], (dialog, w) -> which[0] = w)

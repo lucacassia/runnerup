@@ -18,6 +18,7 @@ package org.runnerup.compose.theme
 
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
@@ -39,4 +40,24 @@ object XmlText {
   /** `textAppearanceTitleLarge`, used for the toolbar titles. */
   val title =
     TextStyle(fontSize = 22.sp, platformStyle = PlatformTextStyle(includeFontPadding = true))
+
+  /** `textAppearanceTitleMedium`, used for the statistics below a toolbar. */
+  val titleMedium =
+    TextStyle(
+      fontSize = 16.sp,
+      fontWeight = FontWeight.Medium,
+      platformStyle = PlatformTextStyle(includeFontPadding = true),
+    )
+
+  /** `textAppearanceTitleSmall`, used for the tab labels. */
+  val titleSmall =
+    TextStyle(
+      fontSize = 14.sp,
+      fontWeight = FontWeight.Medium,
+      platformStyle = PlatformTextStyle(includeFontPadding = true),
+    )
+
+  /** `textAppearanceBodyLarge`, used for list item titles. */
+  val bodyLarge =
+    TextStyle(fontSize = 16.sp, platformStyle = PlatformTextStyle(includeFontPadding = true))
 }
