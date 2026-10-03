@@ -17,30 +17,19 @@
 
 package org.runnerup.view;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.ImageView;
-import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.appbar.MaterialToolbar;
+import androidx.compose.ui.platform.ComposeView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -54,7 +43,6 @@ import org.runnerup.export.Synchronizer;
 import org.runnerup.export.Synchronizer.Status;
 import org.runnerup.util.Formatter;
 import org.runnerup.util.SyncActivityItem;
-import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.Sport;
 
 public class UploadActivity extends AppCompatActivity implements Constants {
@@ -62,14 +50,13 @@ public class UploadActivity extends AppCompatActivity implements Constants {
   private String mSynchronizerName = null;
   private SyncManager.SyncMode syncMode = SyncManager.SyncMode.UPLOAD;
   private SyncManager syncManager = null;
-  private RecyclerView recyclerView = null;
 
   private SQLiteDatabase mDB = null;
   private Formatter formatter = null;
   private final List<SyncActivityItem> allSyncActivities = new ArrayList<>();
 
   private int syncCount = 0;
-  private Button actionButton = null;
+  private final UploadPageState pageState = new UploadPageState();
   private CharSequence actionButtonText = null;
 
   private boolean fetching = false;
@@ -90,67 +77,60 @@ public class UploadActivity extends AppCompatActivity implements Constants {
     mSynchronizerName = intent.getStringExtra("synchronizer");
     syncMode = SyncManager.SyncMode.valueOf(intent.getStringExtra("mode"));
 
-    MaterialToolbar toolbar = findViewById(R.id.actionbar);
-    setSupportActionBar(toolbar);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-    getSupportActionBar()
-        .setTitle(
-            getString(
-                syncMode.equals(SyncManager.SyncMode.DOWNLOAD)
-                    ? org.runnerup.common.R.string.Download
-                    : org.runnerup.common.R.string.Upload));
-
     mDB = DBHelper.getReadableDatabase(this);
     formatter = new Formatter(this);
     syncManager = new SyncManager(this);
 
-    recyclerView = findViewById(R.id.upload_view);
-    recyclerView.setLayoutManager(new LinearLayoutManager(this));
-    recyclerView.setAdapter(new UploadListAdapter(this));
-
-    {
-      Button btn = findViewById(R.id.upload_account_set_all);
-      btn.setOnClickListener(setAllButtonClick);
+    if (syncMode.equals(SyncManager.SyncMode.DOWNLOAD)) {
+      actionButtonText = getText(org.runnerup.common.R.string.Download);
+      pageState.setActionLabel(actionButtonText.toString());
+    } else {
+      actionButtonText = getText(org.runnerup.common.R.string.Upload);
+      pageState.setActionLabel(actionButtonText.toString());
     }
-
-    {
-      Button btn = findViewById(R.id.upload_account_clear_all);
-      btn.setOnClickListener(clearAllButtonClick);
-    }
-
-    {
-      Button dwbtn = findViewById(R.id.upload_account_download_button);
-      Button upbtn = findViewById(R.id.upload_account_button);
-      if (syncMode.equals(SyncManager.SyncMode.DOWNLOAD)) {
-        dwbtn.setOnClickListener(downloadButtonClick);
-        actionButton = dwbtn;
-        actionButtonText = dwbtn.getText();
-        upbtn.setVisibility(View.GONE);
-      } else {
-        upbtn.setOnClickListener(uploadButtonClick);
-        actionButton = upbtn;
-        actionButtonText = upbtn.getText();
-        dwbtn.setVisibility(View.GONE);
-      }
-    }
-
-    ViewUtil.Insets(findViewById(R.id.upload_rootview), true);
+    pageState.setTitle(actionButtonText.toString());
+    UploadScreenHost.INSTANCE.attach(
+        (ComposeView) findViewById(R.id.upload_root),
+        pageState,
+        new UploadBindings(
+            this::finish,
+            id -> {
+              Intent detailIntent = new Intent(UploadActivity.this, DetailActivity.class);
+              detailIntent.putExtra("ID", id);
+              detailIntent.putExtra("mode", "details");
+              detailLauncher.launch(detailIntent);
+            },
+            (id, checked) -> {
+              for (SyncActivityItem item : allSyncActivities) {
+                if (item.getId() == id) {
+                  item.setSkipFlag(!checked);
+                  break;
+                }
+              }
+              updateSyncCount();
+              requery();
+            },
+            () -> setAllButtonClick.onClick(null),
+            () -> clearAllButtonClick.onClick(null),
+            () -> {
+              if (syncMode.equals(SyncManager.SyncMode.DOWNLOAD)) {
+                downloadButtonClick.onClick(null);
+              } else {
+                uploadButtonClick.onClick(null);
+              }
+            }));
 
     fillData();
     {
       // synchronizer initialized in fillData() for DOWNLOAD only
       Synchronizer synchronizer = syncManager.getSynchronizerByName(mSynchronizerName);
 
-      TextView tv = findViewById(R.id.upload_account_list_name);
-      ImageView im = findViewById(R.id.upload_account_list_icon);
       if (synchronizer == null || synchronizer.getIconId() == 0) {
-        im.setVisibility(View.GONE);
-        tv.setText(mSynchronizerName);
-        tv.setVisibility(View.VISIBLE);
+        pageState.setAccountName(mSynchronizerName);
+        pageState.setAccountIcon(0);
       } else {
-        im.setVisibility(View.VISIBLE);
-        tv.setVisibility(View.GONE);
-        im.setImageDrawable(AppCompatResources.getDrawable(this, synchronizer.getIconId()));
+        pageState.setAccountName(null);
+        pageState.setAccountIcon(synchronizer.getIconId());
       }
     }
 
@@ -297,93 +277,30 @@ public class UploadActivity extends AppCompatActivity implements Constants {
     }
   }
 
-  @SuppressLint("NotifyDataSetChanged")
   private void requery() {
-    if (recyclerView != null) recyclerView.getAdapter().notifyDataSetChanged();
+    List<UploadRowItem> rows = new ArrayList<>(allSyncActivities.size());
+    for (SyncActivityItem ai : allSyncActivities) {
+      String startTime =
+          ai.getStartTime() == null ? "" : formatter.formatDateTime(ai.getStartTime());
+      int sport =
+          ai.getSport() == null
+              ? DB.ACTIVITY.SPORT_RUNNING
+              : Sport.valueOf(ai.getSport()).getDbValue();
+      rows.add(
+          new UploadRowItem(
+              ai.getId(),
+              startTime,
+              Sport.textOf(getResources(), sport),
+              !ai.skipActivity(),
+              ai.isRelevantForSynch(syncMode)));
+    }
+    pageState.setRows(rows);
+    pageState.setActionEnabled(syncCount > 0);
     if (syncCount > 0) {
-      actionButton.setText(
+      pageState.setActionLabel(
           String.format(Locale.getDefault(), "%s (%d)", actionButtonText, syncCount));
-      actionButton.setEnabled(true);
     } else {
-      actionButton.setText(actionButtonText);
-      actionButton.setEnabled(false);
-    }
-  }
-
-  class UploadListAdapter extends RecyclerView.Adapter<UploadListAdapter.UploadViewHolder> {
-
-    final LayoutInflater inflater;
-
-    public UploadListAdapter(Context context) {
-      inflater = LayoutInflater.from(context);
-    }
-
-    static class UploadViewHolder extends RecyclerView.ViewHolder {
-      private final TextView tvStartTime;
-      private final TextView tvSport;
-      private final CheckBox cb;
-      // metadata when clicking activities
-      private long activityID;
-
-      UploadViewHolder(View view) {
-        super(view);
-        tvStartTime = view.findViewById(R.id.upload_list_start_time);
-        tvSport = view.findViewById(R.id.upload_list_sport);
-        cb = view.findViewById(R.id.upload_list_check);
-      }
-    }
-
-    @Override
-    public UploadViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-      return new UploadViewHolder(inflater.inflate(R.layout.upload_row, parent, false));
-    }
-
-    @Override
-    public void onBindViewHolder(UploadViewHolder viewHolder, int position) {
-      viewHolder.activityID = allSyncActivities.get(position).getId();
-      SyncActivityItem ai = allSyncActivities.get(position);
-
-      if (ai.getStartTime() != null) {
-        viewHolder.tvStartTime.setText(formatter.formatDateTime(ai.getStartTime()));
-      } else {
-        viewHolder.tvStartTime.setText("");
-      }
-
-      if (ai.getSport() == null) {
-        viewHolder.tvSport.setText(Sport.textOf(getResources(), DB.ACTIVITY.SPORT_RUNNING));
-      } else {
-        int sport = Sport.valueOf(ai.getSport()).getDbValue();
-        viewHolder.tvSport.setText(Sport.textOf(getResources(), sport));
-      }
-
-      viewHolder.cb.setEnabled(ai.isRelevantForSynch(syncMode));
-      viewHolder.cb.setOnCheckedChangeListener(null);
-      viewHolder.cb.setChecked(!ai.skipActivity());
-      final int pos = position;
-      viewHolder.cb.setOnCheckedChangeListener(
-          (button, checked) -> {
-            SyncActivityItem tmp = allSyncActivities.get(pos);
-            tmp.setSkipFlag(!checked);
-            updateSyncCount();
-            requery();
-          });
-
-      if (syncMode.equals(SyncManager.SyncMode.UPLOAD)) {
-        viewHolder.itemView.setOnClickListener(
-            v -> {
-              Intent intent = new Intent(UploadActivity.this, DetailActivity.class);
-              intent.putExtra("ID", viewHolder.activityID);
-              intent.putExtra("mode", "details");
-              detailLauncher.launch(intent);
-            });
-      } else {
-        viewHolder.itemView.setOnClickListener(null);
-      }
-    }
-
-    @Override
-    public int getItemCount() {
-      return allSyncActivities.size();
+      pageState.setActionLabel(actionButtonText.toString());
     }
   }
 
