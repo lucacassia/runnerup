@@ -90,8 +90,7 @@ public class HistoryFragment extends Fragment implements Constants {
   private HistoryViewModel historyViewModel;
   private ProgressViewModel progressViewModel;
   private boolean historyListEmpty = true;
-  View fab = null;
-  View emptyView = null;
+  private HistoryOverlayState overlayState = null;
 
   private static final int TAB_HISTORY_INDEX = 0;
   private static final int TAB_STATISTICS_INDEX = 1;
@@ -127,22 +126,13 @@ public class HistoryFragment extends Fragment implements Constants {
     super.onViewCreated(view, savedInstanceState);
 
     ComposeView listView = view.findViewById(R.id.history_list);
-    fab = view.findViewById(R.id.history_add);
-    emptyView = view.findViewById(R.id.history_empty);
 
     Context context = requireContext();
-    fab.setOnClickListener(
-        v -> {
-          Intent i = new Intent(context, ManualActivity.class);
-          reloadLauncher.launch(i);
-        });
-
-    View emptyButton = view.findViewById(R.id.history_empty_button);
-    emptyButton.setOnClickListener(
-        v -> {
-          Intent i = new Intent(context, ManualActivity.class);
-          reloadLauncher.launch(i);
-        });
+    overlayState = new HistoryOverlayState();
+    HistoryOverlayHost.INSTANCE.attach(
+        (ComposeView) view.findViewById(R.id.history_overlay_root),
+        overlayState,
+        () -> reloadLauncher.launch(new Intent(context, ManualActivity.class)));
 
     mDB = DBHelper.getReadableDatabase(context);
     formatter = new Formatter(context);
@@ -244,7 +234,9 @@ public class HistoryFragment extends Fragment implements Constants {
     view.findViewById(R.id.history_list_content)
         .setVisibility(index == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
     statisticsContent.setVisibility(index == TAB_STATISTICS_INDEX ? View.VISIBLE : View.GONE);
-    fab.setVisibility(index == TAB_HISTORY_INDEX && !historyListEmpty ? View.VISIBLE : View.GONE);
+    if (overlayState != null) {
+      overlayState.setFabVisible(index == TAB_HISTORY_INDEX && !historyListEmpty);
+    }
     if (index == TAB_STATISTICS_INDEX) {
       progressViewModel.load(currentSport);
     }
@@ -253,12 +245,9 @@ public class HistoryFragment extends Fragment implements Constants {
 
   private void onHistoryStateChanged(HistoryUiState state) {
     historyListEmpty = state.getRows().isEmpty();
-    if (emptyView != null) {
-      emptyView.setVisibility(state.getLoaded() && historyListEmpty ? View.VISIBLE : View.GONE);
-    }
-    if (fab != null) {
-      fab.setVisibility(
-          !historyListEmpty && currentTab == TAB_HISTORY_INDEX ? View.VISIBLE : View.GONE);
+    if (overlayState != null) {
+      overlayState.setEmptyVisible(state.getLoaded() && historyListEmpty);
+      overlayState.setFabVisible(!historyListEmpty && currentTab == TAB_HISTORY_INDEX);
     }
     refreshSportBadges();
   }

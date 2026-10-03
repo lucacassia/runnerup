@@ -70,4 +70,13 @@ object XmlText {
       letterSpacing = 0.00714286.em,
       platformStyle = PlatformTextStyle(includeFontPadding = true),
     )
+
+  /** `textAppearanceBodyMedium`, used for the description of the history empty state. */
+  val bodyMedium =
+    TextStyle(
+      fontSize = 14.sp,
+      lineHeight = 20.sp,
+      letterSpacing = 0.017857142.em,
+      platformStyle = PlatformTextStyle(includeFontPadding = true),
+    )
 }
