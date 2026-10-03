@@ -19,6 +19,7 @@ package org.runnerup.compose.theme
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
 /**
@@ -60,4 +61,13 @@ object XmlText {
   /** `textAppearanceBodyLarge`, used for list item titles. */
   val bodyLarge =
     TextStyle(fontSize = 16.sp, platformStyle = PlatformTextStyle(includeFontPadding = true))
+
+  /** `textAppearanceLabelLarge`, used for the labels of the sport filter chips. */
+  val labelLarge =
+    TextStyle(
+      fontSize = 14.sp,
+      fontWeight = FontWeight.Medium,
+      letterSpacing = 0.00714286.em,
+      platformStyle = PlatformTextStyle(includeFontPadding = true),
+    )
 }

@@ -40,28 +40,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/history_toolbar" />
 
-    <org.runnerup.view.HistoryChipScroller
-        android:id="@+id/history_sport_filter"
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/history_sport_filter_root"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:clipToPadding="false"
-        android:paddingStart="16dp"
-        android:paddingEnd="24dp"
-        android:paddingBottom="8dp"
-        android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/history_tabs">
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/history_sport_chips"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:chipSpacingHorizontal="8dp"
-            app:selectionRequired="true"
-            app:singleLine="true"
-            app:singleSelection="true" />
-    </org.runnerup.view.HistoryChipScroller>
+        app:layout_constraintTop_toBottomOf="@id/history_tabs" />
 
     <FrameLayout
         android:id="@+id/history_list_content"
@@ -70,7 +55,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/history_sport_filter">
+        app:layout_constraintTop_toBottomOf="@id/history_sport_filter_root">
 
         <androidx.compose.ui.platform.ComposeView
             android:id="@+id/history_list"
@@ -143,6 +128,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/history_sport_filter" />
+        app:layout_constraintTop_toBottomOf="@id/history_sport_filter_root" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
