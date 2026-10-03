@@ -41,7 +41,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.tabs.TabLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -104,6 +103,7 @@ public class HistoryFragment extends Fragment implements Constants {
   private ComposeView statisticsContent;
   private Integer currentSport = null; // null = all sports
   private HistorySportFilterState sportFilterState = null;
+  private HistoryChromeState chromeState = null;
 
   private long recordsFingerprint = -1L;
   private List<ProgressRecord> recordsCache = null;
@@ -195,27 +195,24 @@ public class HistoryFragment extends Fragment implements Constants {
     progressViewModel.load(currentSport);
     historyViewModel.load(currentSport);
 
-    TabLayout historyTabs = view.findViewById(R.id.history_tabs);
-    historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Activities));
-    historyTabs.addTab(historyTabs.newTab().setText(org.runnerup.common.R.string.Progress));
-    historyTabs.addOnTabSelectedListener(
-        new TabLayout.OnTabSelectedListener() {
-          @Override
-          public void onTabSelected(TabLayout.Tab tab) {
-            selectTab(tab.getPosition());
-          }
+    chromeState = new HistoryChromeState();
+    chromeState.select(currentTab);
+    HistoryChromeHost.INSTANCE.attach(
+        (ComposeView) view.findViewById(R.id.history_chrome_root),
+        chromeState,
+        this::onTabSelected);
+  }
 
-          @Override
-          public void onTabUnselected(TabLayout.Tab tab) {}
-
-          @Override
-          public void onTabReselected(TabLayout.Tab tab) {
-            if (tab.getPosition() == TAB_STATISTICS_INDEX) {
-              progressViewModel.load(currentSport);
-            }
-            loadRecords();
-          }
-        });
+  private void onTabSelected(int index) {
+    if (index == currentTab) {
+      if (index == TAB_STATISTICS_INDEX) {
+        progressViewModel.load(currentSport);
+      }
+      loadRecords();
+      return;
+    }
+    chromeState.select(index);
+    selectTab(index);
   }
 
   @Override
@@ -237,6 +234,9 @@ public class HistoryFragment extends Fragment implements Constants {
 
   private void selectTab(int index) {
     currentTab = index;
+    if (chromeState != null) {
+      chromeState.select(index);
+    }
     View view = getView();
     if (view == null) {
       return;
