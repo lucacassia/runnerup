@@ -54,7 +54,9 @@ object XmlText {
   val titleSmall =
     TextStyle(
       fontSize = 14.sp,
+      lineHeight = 20.sp,
       fontWeight = FontWeight.Medium,
+      letterSpacing = 0.1.sp,
       platformStyle = PlatformTextStyle(includeFontPadding = true),
     )
 

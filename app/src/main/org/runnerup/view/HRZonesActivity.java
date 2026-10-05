@@ -17,24 +17,25 @@
 
 package org.runnerup.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.util.Pair;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.FrameLayout;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.compose.ui.platform.ComposeView;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.Locale;
 import java.util.Vector;
@@ -55,18 +56,26 @@ public class HRZonesActivity extends AppCompatActivity implements Constants {
   private HRZoneCalculator hrZoneCalculator;
 
   private final Vector<EditText> zones = new Vector<>();
+  private final Vector<String> zoneLabels = new Vector<>();
+  private final Vector<View> zoneLoInputs = new Vector<>();
+  private final Vector<View> zoneHiInputs = new Vector<>();
+  private final HRZonesPageState pageState = new HRZonesPageState();
+  private View overflowAnchor = null;
+  private PopupMenu overflowMenu = null;
   private boolean skipSave = false;
 
-  private View addZoneRow(LayoutInflater inflator, ViewGroup root, int zone) {
-    View row = inflator.inflate(R.layout.heartratezonerow, root, false);
-    TextView tv = row.findViewById(R.id.zonetext);
-    EditText lo = row.findViewById(R.id.zonelo);
-    EditText hi = row.findViewById(R.id.zonehi);
+  // The inflated views are handed to compose, which attaches them with its own layout params.
+  @SuppressLint("InflateParams")
+  private void addZoneRow(LayoutInflater inflator, int zone) {
+    View loInput = inflator.inflate(R.layout.hrzonerow_lo, null, false);
+    View hiInput = inflator.inflate(R.layout.hrzonerow_hi, null, false);
+    EditText lo = loInput.findViewById(R.id.zonelo);
+    EditText hi = hiInput.findViewById(R.id.zonehi);
     // disable setting the hi value
     hi.setKeyListener(null);
     hi.setEnabled(false);
     Pair<Integer, Integer> lim = hrZoneCalculator.getZoneLimits(zone);
-    tv.setText(
+    zoneLabels.add(
         String.format(
             Locale.getDefault(),
             "%s %d %d%% - %d%%",
@@ -157,8 +166,8 @@ public class HRZonesActivity extends AppCompatActivity implements Constants {
 
     zones.add(lo);
     zones.add(hi);
-
-    return row;
+    zoneLoInputs.add(loInput);
+    zoneHiInputs.add(hiInput);
   }
 
   @Override
@@ -167,25 +176,31 @@ public class HRZonesActivity extends AppCompatActivity implements Constants {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.heartratezones);
 
-    Toolbar toolbar = findViewById(R.id.actionbar);
-    setSupportActionBar(toolbar);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
     hrZones = new HRZones(this);
     hrZoneCalculator = new HRZoneCalculator(this);
-    ageSpinner = findViewById(R.id.hrz_age);
-    sexSpinner = findViewById(R.id.hrz_sex);
-    maxHRSpinner = findViewById(R.id.hrz_mhr);
-    LinearLayout zonesTable = findViewById(R.id.zones_table);
-    {
-      int zoneCount = hrZoneCalculator.getZoneCount();
-      LayoutInflater inflator = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-      zones.clear();
-      for (int i = 0; i < zoneCount; i++) {
-        View row = addZoneRow(inflator, zonesTable, i + 1);
-        zonesTable.addView(row);
-      }
+
+    LayoutInflater inflator = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    View spinners = inflateWithoutParent(inflator, R.layout.hrzones_inputs);
+    ageSpinner = spinners.findViewById(R.id.hrz_age);
+    sexSpinner = spinners.findViewById(R.id.hrz_sex);
+    maxHRSpinner = spinners.findViewById(R.id.hrz_mhr);
+
+    int zoneCount = hrZoneCalculator.getZoneCount();
+    zones.clear();
+    zoneLabels.clear();
+    zoneLoInputs.clear();
+    zoneHiInputs.clear();
+    for (int i = 0; i < zoneCount; i++) {
+      addZoneRow(inflator, i + 1);
     }
+
+    pageState.setTitle(getString(org.runnerup.common.R.string.Heart_Rate_Zones));
+    pageState.setSpinnerInputs(spinners);
+    publishZones();
+    HRZonesScreenHost.INSTANCE.attach(
+        (ComposeView) findViewById(R.id.hrzones_root),
+        pageState,
+        new HRZonesBindings(this::finish, this::showOverflowMenu));
     ageSpinner.setOnCloseDialogListener(
         (spinner, ok) -> {
           if (ok) {
@@ -210,10 +225,39 @@ public class HRZonesActivity extends AppCompatActivity implements Constants {
     ViewUtil.Insets(findViewById(R.id.heartratezone_view), true);
   }
 
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    getMenuInflater().inflate(R.menu.hrzonessettings_menu, menu);
-    return true;
+  @SuppressLint("InflateParams")
+  private View inflateWithoutParent(LayoutInflater inflator, int layoutId) {
+    return inflator.inflate(layoutId, null, false);
+  }
+
+  private void publishZones() {
+    java.util.List<HRZoneItem> items = new java.util.ArrayList<>();
+    for (int i = 0; i < zoneLoInputs.size(); i++) {
+      items.add(new HRZoneItem(zoneLabels.get(i), zoneLoInputs.get(i), zoneHiInputs.get(i)));
+    }
+    pageState.setZones(items);
+  }
+
+  private void showOverflowMenu(int left, int top, int right, int bottom) {
+    ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+    if (overflowAnchor == null) {
+      overflowAnchor = new View(this);
+      overflowAnchor.setVisibility(View.INVISIBLE);
+      FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(0, 0);
+      params.gravity = Gravity.TOP | Gravity.START;
+      params.leftMargin = right - 8;
+      params.topMargin = top;
+      decor.addView(overflowAnchor, params);
+
+      overflowMenu = new PopupMenu(this, overflowAnchor, Gravity.END);
+      overflowMenu.setOnMenuItemClickListener(
+          item -> {
+            onOptionsItemSelected(item);
+            return true;
+          });
+      overflowMenu.getMenuInflater().inflate(R.menu.hrzonessettings_menu, overflowMenu.getMenu());
+    }
+    overflowMenu.show();
   }
 
   @Override

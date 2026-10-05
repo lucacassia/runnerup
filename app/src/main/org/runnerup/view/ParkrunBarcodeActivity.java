@@ -20,26 +20,19 @@ package org.runnerup.view;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.compose.ui.platform.ComposeView;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import org.runnerup.R;
-import org.runnerup.util.Code128Barcode;
 import org.runnerup.util.ViewUtil;
 
 public class ParkrunBarcodeActivity extends AppCompatActivity {
   private SharedPreferences prefs;
-  private View emptyState;
-  private View storedState;
-  private ImageView barcodeView;
-  private TextView valueView;
+  private final ParkrunBarcodePageState pageState = new ParkrunBarcodePageState();
 
   private final ActivityResultLauncher<Intent> scanLauncher =
       registerForActivityResult(
@@ -61,18 +54,13 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.parkrun_barcode);
 
-    Toolbar toolbar = findViewById(R.id.actionbar);
-    setSupportActionBar(toolbar);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
     prefs = PreferenceManager.getDefaultSharedPreferences(this);
-    emptyState = findViewById(R.id.empty_state);
-    storedState = findViewById(R.id.stored_state);
-    barcodeView = findViewById(R.id.barcode_view);
-    valueView = findViewById(R.id.barcode_value);
 
-    findViewById(R.id.empty_scan_button).setOnClickListener(v -> launchScanner());
-    findViewById(R.id.delete_button).setOnClickListener(v -> confirmDelete());
+    pageState.setTitle(getString(org.runnerup.common.R.string.Parkrun_barcode));
+    ParkrunBarcodeScreenHost.INSTANCE.attach(
+        (ComposeView) findViewById(R.id.parkrun_barcode_compose),
+        pageState,
+        new ParkrunBarcodeBindings(this::finish, () -> launchScanner(), this::confirmDelete));
 
     refresh();
 
@@ -110,28 +98,6 @@ public class ParkrunBarcodeActivity extends AppCompatActivity {
 
   private void refresh() {
     String barcode = prefs.getString(getString(R.string.pref_parkrun_barcode), null);
-    if (barcode == null || barcode.isEmpty()) {
-      storedState.setVisibility(View.GONE);
-      emptyState.setVisibility(View.VISIBLE);
-    } else {
-      emptyState.setVisibility(View.GONE);
-      storedState.setVisibility(View.VISIBLE);
-      if (barcodeView.getWidth() <= 0) {
-        barcodeView.post(() -> renderBarcode(barcode));
-      } else {
-        renderBarcode(barcode);
-      }
-      valueView.setText(barcode);
-    }
-  }
-
-  private void renderBarcode(String barcode) {
-    int heightPx = (int) getResources().getDimension(R.dimen.barcode_height);
-    int widthPx = barcodeView.getWidth();
-    if (widthPx <= 0) {
-      return;
-    }
-    barcodeView.setImageBitmap(
-        Code128Barcode.renderToBitmap(Code128Barcode.encode(barcode), widthPx, heightPx));
+    pageState.setBarcode(barcode == null || barcode.isEmpty() ? null : barcode);
   }
 }
