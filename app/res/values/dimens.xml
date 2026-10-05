@@ -5,6 +5,8 @@
     <dimen name="run_sheet_peek_height">48dp</dimen>
     <dimen name="run_recenter_bottom_margin">98dp</dimen>
     <dimen name="run_north_bottom_margin">162dp</dimen>
+    <!-- Room the compose overlay leaves below the statistics card so its shadow is not clipped. -->
+    <dimen name="run_overlay_shadow_room">8dp</dimen>
 
     <dimen name="history_row_corner">12dp</dimen>
 

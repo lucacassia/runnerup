@@ -17,9 +17,6 @@
 
 package org.runnerup.view;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.content.ComponentName;
@@ -33,7 +30,6 @@ import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Typeface;
-import android.graphics.drawable.GradientDrawable;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -48,11 +44,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -61,6 +55,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.compose.ui.platform.ComposeView;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.OnApplyWindowInsetsListener;
@@ -72,7 +67,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
@@ -112,8 +106,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private boolean startDeferred;
   private boolean runStarted;
   private boolean sportWithoutGps;
-  private View waitBanner;
-  private MaterialButton waitEnableGps;
+  private final RunPageState runPageState = new RunPageState();
 
   private final ActivityResultLauncher<Intent> saveLauncher =
       registerForActivityResult(
@@ -124,36 +117,11 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private ExtendedFloatingActionButton nextLapButton = null;
   private StopProgressDrawable stopProgressDrawable = null;
   private HoldToStopListener holdToStopListener = null;
-  private TextView activityTime = null;
-  private TextView activityDistance = null;
-  private TextView activityPace = null;
-  private TextView activityTimeExpanded = null;
-  private TextView activityDistanceExpanded = null;
-  private TextView activityPaceExpanded = null;
-  private TextView distanceLabel = null;
-  private TextView timeLabel = null;
-  private TextView paceLabel = null;
-  private View statsCard = null;
-  private ImageView statsExpandIndicator = null;
-  private View stats3Horizontal = null;
-  private View stats3Vertical = null;
-  private ViewGroup stats3Area = null;
-  private boolean statsExpanded = false;
-  private boolean statsAnimating = false;
-  private boolean statsClipChildrenSaved = false;
-  private int statsCardNaturalHeight = 0;
-  private int stats3AreaNaturalHeight = 0;
-  private int statsDelta = 0;
-  private TextView lapTime = null;
-  private TextView lapDistance = null;
-  private TextView lapPace = null;
-  private TextView currentPace = null;
   private RecyclerView workoutList = null;
   private org.runnerup.workout.Step currentStep = null;
   private Formatter formatter = null;
-  private TextView currentHr;
   private TextView hrDebug;
-  private TextView hrZonePill = null;
+  private HRZones hrZones = null;
   private TextView activeStepTitle = null;
   private TextView activeStepTargetText = null;
   private TextView stepIntensityBadge = null;
@@ -225,10 +193,14 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     startDeferred = getIntent().getBooleanExtra(EXTRA_DEFERRED_START, false);
     runStarted = !startDeferred;
 
-    waitBanner = findViewById(R.id.wait_banner);
-    waitEnableGps = findViewById(R.id.wait_enable_gps_button);
-    findViewById(R.id.cancel_wait_button).setOnClickListener(v -> onCancelWaitClick());
-    waitEnableGps.setOnClickListener(v -> onWaitEnableGpsClick());
+    hrZones = new HRZones(this);
+    runPageState.setShadowRoomPx(
+        getResources().getDimensionPixelSize(R.dimen.run_overlay_shadow_room));
+    RunScreenHost.attach(
+        (ComposeView) findViewById(R.id.run_overlay_content),
+        runPageState,
+        new RunBindings(
+            this::toggleStatsExpanded, this::onCancelWaitClick, this::onWaitEnableGpsClick));
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       runMapview = findViewById(R.id.run_mapview);
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -277,32 +249,8 @@ public class RunActivity extends AppCompatActivity implements TickListener {
             this::doStop,
             this::showPressHoldToStopHint);
     nextLapButton.setOnTouchListener(holdToStopListener);
-    activityTime = findViewById(R.id.run_activity_time);
-    activityDistance = findViewById(R.id.run_activity_distance);
-    activityPace = findViewById(R.id.run_activity_pace);
-    activityTimeExpanded = findViewById(R.id.run_activity_time_expanded);
-    activityDistanceExpanded = findViewById(R.id.run_activity_distance_expanded);
-    activityPaceExpanded = findViewById(R.id.run_activity_pace_expanded);
-    activityTimeExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-    activityDistanceExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-    activityPaceExpanded.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-    distanceLabel = findViewById(R.id.distance_label);
-    timeLabel = findViewById(R.id.time_label);
-    paceLabel = findViewById(R.id.pace_label);
-    statsCard = findViewById(R.id.table_layout1);
-    statsExpandIndicator = findViewById(R.id.stats_expand_indicator);
-    stats3Horizontal = findViewById(R.id.stats_3_horizontal);
-    stats3Vertical = findViewById(R.id.stats_3_vertical);
-    stats3Area = findViewById(R.id.stats_3_area);
-    statsCard.setOnClickListener(v -> toggleStatsExpanded());
-    lapTime = findViewById(R.id.lap_time);
-    lapDistance = findViewById(R.id.lap_distance);
-    lapPace = findViewById(R.id.lap_pace);
-    currentPace = findViewById(R.id.current_pace);
-    currentHr = findViewById(R.id.current_hr);
     workoutList = findViewById(R.id.workout_list);
     hrDebug = findViewById(R.id.hr_debug);
-    hrZonePill = findViewById(R.id.hr_zone_pill);
     activeStepTitle = findViewById(R.id.active_step_title);
     activeStepTargetText = findViewById(R.id.active_step_target_text);
     stepIntensityBadge = findViewById(R.id.step_intensity_badge);
@@ -313,14 +261,15 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     workoutList.setVisibility(View.VISIBLE);
     runBottomSheetBehavior = BottomSheetBehavior.from(findViewById(R.id.run_bottom_sheet));
     runBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
-    statsCard
+    final View sheetHost = findViewById(R.id.run_sheet_host);
+    sheetHost
         .getViewTreeObserver()
         .addOnGlobalLayoutListener(
             new ViewTreeObserver.OnGlobalLayoutListener() {
               @Override
               public void onGlobalLayout() {
-                if (statsCardNaturalHeight > 0) {
-                  statsCard.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                if (runPageState.getStatsDelta() > 0) {
+                  sheetHost.getViewTreeObserver().removeOnGlobalLayoutListener(this);
                   return;
                 }
                 measureStatsExpansion();
@@ -518,212 +467,19 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
   private void measureStatsExpansion() {
     View sheetHost = findViewById(R.id.run_sheet_host);
-    statsCardNaturalHeight = statsCard.getHeight();
-    stats3AreaNaturalHeight = stats3Area.getHeight();
     int hostHeight = sheetHost.getHeight();
     int peek = runBottomSheetBehavior.getPeekHeight();
-    statsDelta = Math.max(0, hostHeight - peek);
+    // The compose overlay reserves room below the card for its shadow, which takes that much off
+    // the height of the sheet host, so it is added back here to keep the expanded card the same
+    // size as the platform grows it.
+    runPageState.setStatsDelta(Math.max(0, hostHeight + runPageState.getShadowRoomPx() - peek));
   }
 
   private void toggleStatsExpanded() {
-    if (statsAnimating || statsDelta <= 0 || statsCardNaturalHeight <= 0) {
+    if (runPageState.getStatsDelta() <= 0 || runPageState.getCardNaturalHeight() <= 0) {
       return;
     }
-    statsAnimating = true;
-    statsExpanded = !statsExpanded;
-
-    final ViewGroup.LayoutParams cardLp = statsCard.getLayoutParams();
-    final ViewGroup.LayoutParams areaLp = stats3Area.getLayoutParams();
-    final int cardNatural = statsCardNaturalHeight;
-    final int areaNatural = stats3AreaNaturalHeight;
-    final int delta = statsDelta;
-
-    final int cardStart = statsExpanded ? cardNatural : cardNatural + delta;
-    final int cardEnd = statsExpanded ? cardNatural + delta : cardNatural;
-    final int areaStart = statsExpanded ? areaNatural : areaNatural + delta;
-    final int areaEnd = statsExpanded ? areaNatural + delta : areaNatural;
-
-    cardLp.height = cardStart;
-    ((ViewGroup.MarginLayoutParams) cardLp).bottomMargin = -(cardStart - cardNatural);
-    statsCard.setLayoutParams(cardLp);
-    areaLp.height = areaStart;
-    stats3Area.setLayoutParams(areaLp);
-
-    stats3Horizontal.setVisibility(View.VISIBLE);
-    stats3Vertical.setVisibility(View.VISIBLE);
-    stats3Horizontal.setAlpha(1f);
-    stats3Vertical.setAlpha(1f);
-
-    final boolean expanding = statsExpanded;
-    final View[] compactValueViews = {activityDistance, activityTime, activityPace};
-    final TextView[] compactLabelViews = {distanceLabel, timeLabel, paceLabel};
-    final View[] expandedValueViews = {
-      activityDistanceExpanded, activityTimeExpanded, activityPaceExpanded
-    };
-
-    for (View v : compactValueViews) {
-      v.setPivotX(0f);
-      v.setPivotY(0f);
-    }
-    for (TextView v : compactLabelViews) {
-      v.setPivotX(0f);
-      v.setPivotY(0f);
-    }
-
-    if (!expanding) {
-      for (View v : expandedValueViews) {
-        v.setAlpha(1f);
-      }
-    }
-
-    if (!statsClipChildrenSaved) {
-      stats3Area.setClipChildren(false);
-      ViewParent parent = stats3Area.getParent();
-      if (parent instanceof ViewGroup) {
-        ((ViewGroup) parent).setClipChildren(false);
-      }
-      statsClipChildrenSaved = true;
-    }
-
-    for (View v : compactValueViews) {
-      v.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-    }
-
-    final float[] finalExpandedRowTops = new float[3];
-    final float[] finalExpandedValueScaleX = new float[3];
-    final float[] finalExpandedValueScaleY = new float[3];
-    final float[] finalExpandedLabelTops = new float[3];
-    final float[] finalExpandedLabelScaleX = new float[3];
-    final float[] finalExpandedLabelScaleY = new float[3];
-
-    Runnable startMorphAnimator =
-        () -> {
-          float rowH = (float) (areaNatural + delta) / 3f;
-          for (int i = 0; i < 3; i++) {
-            finalExpandedRowTops[i] = rowH * i;
-            finalExpandedValueScaleX[i] =
-                (float) expandedValueViews[i].getWidth() / compactValueViews[i].getWidth();
-            finalExpandedValueScaleY[i] =
-                (float) expandedValueViews[i].getHeight() / compactValueViews[i].getHeight();
-
-            float expandedLabelTop =
-                finalExpandedRowTops[i]
-                    + expandedValueViews[i].getHeight()
-                    + 4f * (areaNatural + delta) / (3f * 560f);
-            finalExpandedLabelTops[i] = expandedLabelTop;
-            finalExpandedLabelScaleX[i] =
-                (float) (areaNatural + delta) / (3f * compactLabelViews[i].getWidth());
-            finalExpandedLabelScaleY[i] = (float) (rowH * 0.35f) / compactLabelViews[i].getHeight();
-          }
-
-          if (expanding) {
-            for (View v : expandedValueViews) {
-              v.setAlpha(0f);
-            }
-          }
-
-          ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
-          animator.setDuration(250);
-          animator.addUpdateListener(
-              a -> {
-                float f = a.getAnimatedFraction();
-                int cardH = Math.round(cardStart + (cardEnd - cardStart) * f);
-                int areaH = Math.round(areaStart + (areaEnd - areaStart) * f);
-                cardLp.height = cardH;
-                ((ViewGroup.MarginLayoutParams) cardLp).bottomMargin = -(cardH - cardNatural);
-                statsCard.setLayoutParams(cardLp);
-                areaLp.height = areaH;
-                stats3Area.setLayoutParams(areaLp);
-
-                for (int i = 0; i < 3; i++) {
-                  float targetTx = 0f;
-                  float targetTyValue = finalExpandedRowTops[i];
-                  float targetTyLabel = finalExpandedLabelTops[i];
-                  float targetSxValue = finalExpandedValueScaleX[i];
-                  float targetSyValue = finalExpandedValueScaleY[i];
-                  float targetSxLabel = finalExpandedLabelScaleX[i];
-                  float targetSyLabel = finalExpandedLabelScaleY[i];
-
-                  if (expanding) {
-                    compactValueViews[i].setTranslationX(targetTx * f);
-                    compactValueViews[i].setTranslationY(targetTyValue * f);
-                    compactValueViews[i].setScaleX(1f + (targetSxValue - 1f) * f);
-                    compactValueViews[i].setScaleY(1f + (targetSyValue - 1f) * f);
-                    compactValueViews[i].setAlpha(1f - f);
-
-                    compactLabelViews[i].setTranslationX(targetTx * f);
-                    compactLabelViews[i].setTranslationY(targetTyLabel * f);
-                    compactLabelViews[i].setScaleX(1f + (targetSxLabel - 1f) * f);
-                    compactLabelViews[i].setScaleY(1f + (targetSyLabel - 1f) * f);
-                    compactLabelViews[i].setAlpha(1f - f);
-
-                    expandedValueViews[i].setAlpha(f);
-                  } else {
-                    compactValueViews[i].setTranslationX(targetTx * (1f - f));
-                    compactValueViews[i].setTranslationY(targetTyValue * (1f - f));
-                    compactValueViews[i].setScaleX(targetSxValue - (targetSxValue - 1f) * f);
-                    compactValueViews[i].setScaleY(targetSyValue - (targetSyValue - 1f) * f);
-                    compactValueViews[i].setAlpha(f);
-
-                    compactLabelViews[i].setTranslationX(targetTx * (1f - f));
-                    compactLabelViews[i].setTranslationY(targetTyLabel * (1f - f));
-                    compactLabelViews[i].setScaleX(targetSxLabel - (targetSxLabel - 1f) * f);
-                    compactLabelViews[i].setScaleY(targetSyLabel - (targetSyLabel - 1f) * f);
-                    compactLabelViews[i].setAlpha(f);
-
-                    expandedValueViews[i].setAlpha(1f - f);
-                  }
-                }
-              });
-          animator.addListener(
-              new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                  statsAnimating = false;
-                  for (View v : compactValueViews) {
-                    v.setLayerType(View.LAYER_TYPE_NONE, null);
-                  }
-                  if (expanding) {
-                    stats3Horizontal.setVisibility(View.GONE);
-                    for (View v : compactValueViews) {
-                      v.setTranslationX(0f);
-                      v.setTranslationY(0f);
-                      v.setScaleX(1f);
-                      v.setScaleY(1f);
-                      v.setAlpha(0f);
-                    }
-                    for (TextView v : compactLabelViews) {
-                      v.setTranslationX(0f);
-                      v.setTranslationY(0f);
-                      v.setScaleX(1f);
-                      v.setScaleY(1f);
-                      v.setAlpha(0f);
-                    }
-                  } else {
-                    stats3Vertical.setVisibility(View.GONE);
-                    for (View v : expandedValueViews) {
-                      v.setAlpha(0f);
-                    }
-                    for (View v : compactValueViews) {
-                      v.setAlpha(1f);
-                    }
-                  }
-                  stats3Vertical.requestLayout();
-                  stats3Vertical.invalidate();
-                  statsCard.requestLayout();
-                  statsCard.invalidate();
-                }
-              });
-          animator.start();
-        };
-
-    if (expanding) {
-      stats3Area.post(startMorphAnimator);
-    } else {
-      stats3Area.post(startMorphAnimator);
-    }
-
-    statsExpandIndicator.animate().rotation(statsExpanded ? 180f : 0f).setDuration(250).start();
+    runPageState.setExpanded(!runPageState.getExpanded());
   }
 
   private void onWorkoutResult(int resultCode, Intent data) {
@@ -829,14 +585,18 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   }
 
   private void updateWaitBanner() {
-    boolean show = startDeferred || isWaitingForGps();
-    waitBanner.setVisibility(show ? View.VISIBLE : View.GONE);
+    RunWaitBanner banner = runPageState.getWaitBanner();
+    banner.setVisible(startDeferred || isWaitingForGps());
+    if (banner.getVisible()) {
+      banner.setGpsIcon(R.drawable.ic_gps_1);
+      banner.setTitle(getString(org.runnerup.common.R.string.Waiting_for_GPS));
+      banner.setSubtitle(getString(org.runnerup.common.R.string.Gps_wait_subtitle));
+    }
     // The Enable button is only meaningful when the GPS provider is actually off;
     // while merely connecting (or initializing), GPS is fine and there is nothing to enable.
     LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     boolean gpsEnabled = lm != null && lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
-    waitEnableGps.setVisibility(
-        startDeferred && !sportWithoutGps && !gpsEnabled ? View.VISIBLE : View.GONE);
+    banner.setEnableGpsVisible(startDeferred && !sportWithoutGps && !gpsEnabled);
   }
 
   private boolean isWaitingForGps() {
@@ -963,42 +723,35 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       double ad = workout.getDistance(Scope.ACTIVITY);
       double at = workout.getTime(Scope.ACTIVITY);
       double ap = workout.getSpeed(Scope.ACTIVITY);
-      if (!statsAnimating) {
-        activityTime.setText(
-            formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(at)));
-        activityDistance.setText(
-            formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(ad)));
-        activityPace.setText(
-            formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, ap));
-      }
-      activityTimeExpanded.setText(
-          formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(at)));
-      activityDistanceExpanded.setText(
+      runPageState.setTime(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(at)));
+      runPageState.setDistance(
           formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(ad)));
-      activityPaceExpanded.setText(
-          formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, ap));
+      runPageState.setPace(formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, ap));
 
       double ld = workout.getDistance(Scope.LAP);
       double lt = workout.getTime(Scope.LAP);
       double lp = workout.getSpeed(Scope.LAP);
-      lapTime.setText(formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(lt)));
-      lapDistance.setText(formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(ld)));
-      lapPace.setText(formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, lp));
+      runPageState.setLapTime(
+          formatter.formatElapsedTime(Formatter.Format.TXT_SHORT, Math.round(lt)));
+      runPageState.setLapDistance(
+          formatter.formatDistance(Formatter.Format.TXT_SHORT, Math.round(ld)));
+      runPageState.setLapPace(
+          formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, lp));
 
       double cp = workout.getSpeed(Scope.CURRENT);
-      currentPace.setText(formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, cp));
+      runPageState.setCurrentPace(
+          formatter.formatVelocityByPreferredUnit(Formatter.Format.TXT_SHORT, cp));
 
       if (mTracker.isComponentConnected(TrackerHRM.NAME)) {
         double chr = workout.getHeartRate(Scope.CURRENT);
-        currentHr.setText(formatter.formatHeartRate(Formatter.Format.TXT_SHORT, chr));
-        currentHr.setVisibility(View.VISIBLE);
+        runPageState.setCurrentHr(formatter.formatHeartRate(Formatter.Format.TXT_SHORT, chr));
         updateHrZonePill(chr);
         if (hrDebug != null) {
           hrDebug.setVisibility(View.VISIBLE);
           mTracker.setHrDebug(hrDebug);
         }
       } else {
-        currentHr.setVisibility(View.GONE);
+        runPageState.setCurrentHr("");
         updateHrZonePill(0);
       }
 
@@ -1019,14 +772,8 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
   @SuppressLint("SetTextI18n")
   private void updateHrZonePill(double currentBpm) {
-    if (hrZonePill == null) return;
-    if (currentBpm <= 0) {
-      hrZonePill.setVisibility(View.GONE);
-      return;
-    }
-    HRZones hrZones = new HRZones(this);
-    if (!hrZones.isConfigured()) {
-      hrZonePill.setVisibility(View.GONE);
+    if (currentBpm <= 0 || !hrZones.isConfigured()) {
+      runPageState.setHrZonePillVisible(false);
       return;
     }
     int zoneIdx = Math.min(Math.max(hrZones.getZoneInt(currentBpm), 0), 4);
@@ -1048,13 +795,10 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         zoneColorId = R.color.hrZone1;
         break;
     }
-    hrZonePill.setText("Z" + (zoneIdx + 1));
-    GradientDrawable bg = new GradientDrawable();
-    bg.setShape(GradientDrawable.RECTANGLE);
-    bg.setCornerRadius(6 * getResources().getDisplayMetrics().density);
-    bg.setColor(ContextCompat.getColor(this, zoneColorId));
-    hrZonePill.setBackground(bg);
-    hrZonePill.setVisibility(View.VISIBLE);
+    runPageState.setHrZonePill("Z" + (zoneIdx + 1));
+    runPageState.setHrZonePillTextColor(0xFF0A0A0A);
+    runPageState.setHrZonePillBgColor(ContextCompat.getColor(this, zoneColorId));
+    runPageState.setHrZonePillVisible(true);
   }
 
   @SuppressLint("SetTextI18n")
