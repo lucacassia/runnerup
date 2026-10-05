@@ -40,7 +40,6 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
@@ -61,7 +60,6 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -93,8 +91,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private Tracker mTracker = null;
   private final Handler handler = new Handler();
 
-  private static final long HOLD_TO_STOP_MILLIS = 750L;
-
   public static final String EXTRA_DEFERRED_START = "org.runnerup.deferred_start";
 
   private boolean startDeferred;
@@ -107,15 +103,12 @@ public class RunActivity extends AppCompatActivity implements TickListener {
           new ActivityResultContracts.StartActivityForResult(),
           result -> onWorkoutResult(result.getResultCode(), result.getData()));
 
-  private ExtendedFloatingActionButton pauseButton = null;
-  private ExtendedFloatingActionButton nextLapButton = null;
-  private StopProgressDrawable stopProgressDrawable = null;
-  private HoldToStopListener holdToStopListener = null;
   private org.runnerup.workout.Step currentStep = null;
   private Formatter formatter = null;
   private TextView hrDebug;
   private HRZones hrZones = null;
   private final RunSheetState runSheetState = new RunSheetState();
+  private final RunDockState runDockState = new RunDockState();
   private BottomSheetBehavior<?> runBottomSheetBehavior = null;
   private MapViewWrapper runMapview = null;
   private LiveMap liveMap = null;
@@ -191,6 +184,11 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         new RunBindings(
             this::toggleStatsExpanded, this::onCancelWaitClick, this::onWaitEnableGpsClick));
     RunSheetHost.attach((ComposeView) findViewById(R.id.run_sheet_content), runSheetState);
+    RunDockHost.attach(
+        (ComposeView) findViewById(R.id.run_dock_content),
+        runDockState,
+        new RunDockBindings(
+            this::togglePause, this::newLap, this::doStop, this::showPressHoldToStopHint));
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       runMapview = findViewById(R.id.run_mapview);
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -226,19 +224,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         });
     formatter = new Formatter(this);
 
-    pauseButton = findViewById(R.id.pause_button);
-    pauseButton.setOnClickListener(pauseButtonClick);
-    nextLapButton = findViewById(R.id.next_lap_button);
-    stopProgressDrawable = new StopProgressDrawable();
-    holdToStopListener =
-        new HoldToStopListener(
-            nextLapButton,
-            stopProgressDrawable,
-            HOLD_TO_STOP_MILLIS,
-            () -> workout != null && workout.isPaused(),
-            this::doStop,
-            this::showPressHoldToStopHint);
-    nextLapButton.setOnTouchListener(holdToStopListener);
     runBottomSheetBehavior = BottomSheetBehavior.from(findViewById(R.id.run_bottom_sheet));
     runBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     final View sheetHost = findViewById(R.id.run_sheet_host);
@@ -310,9 +295,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   @Override
   public void onPause() {
     super.onPause();
-    if (holdToStopListener != null) {
-      holdToStopListener.cancel();
-    }
     if (liveMap != null) {
       liveMap.onPause();
     }
@@ -335,9 +317,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   @Override
   public void onDestroy() {
     super.onDestroy();
-    if (holdToStopListener != null) {
-      holdToStopListener.cancel();
-    }
     unbindGpsTracker();
     stopTimer();
     if (liveMap != null) {
@@ -363,7 +342,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
 
     populateWorkoutList();
-    nextLapButton.setOnClickListener(nextLapButtonClick);
     updateButtons();
     mTracker.displayNotificationState();
   }
@@ -522,19 +500,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
       return;
     }
     buttonsPaused = paused;
-    ButtonState s = buttonState(paused);
-    pauseButton.setIconResource(s.leftIcon);
-    pauseButton.setText(s.leftText);
-    if (paused) {
-      stopProgressDrawable.setProgress(0f);
-      nextLapButton.setIcon(stopProgressDrawable);
-    } else {
-      nextLapButton.setIconResource(s.rightIcon);
-    }
-    nextLapButton.setText(s.rightText);
-    nextLapButton.setBackgroundTintList(themeColor(s.rightBg));
-    nextLapButton.setIconTint(themeColor(s.rightFg));
-    nextLapButton.setTextColor(themeColor(s.rightFg));
+    runDockState.setPaused(paused);
   }
 
   private void togglePause() {
@@ -633,14 +599,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
     updateView();
   }
-
-  private final OnClickListener pauseButtonClick = v -> togglePause();
-  private final OnClickListener nextLapButtonClick =
-      v -> {
-        if (workout != null && !workout.isPaused()) {
-          newLap();
-        }
-      };
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {

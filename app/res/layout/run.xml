@@ -90,45 +90,10 @@
             </LinearLayout>
         </androidx.coordinatorlayout.widget.CoordinatorLayout>
         <!-- Bottom Action Dock -->
-        <LinearLayout
-            android:id="@+id/run_table_row1"
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/run_dock_content"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="?attr/colorSurface"
-            android:clipToPadding="false"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingStart="16dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="16dp">
-
-            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/next_lap_button"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="@string/NextLap"
-                android:textColor="?attr/colorOnSurface"
-                app:backgroundTint="?attr/colorSurfaceContainerHigh"
-                app:icon="@drawable/ic_skip_next"
-                app:iconTint="?attr/colorOnSurface"
-                app:strokeColor="?attr/colorOutline"
-                app:strokeWidth="1dp" />
-
-            <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-                android:id="@+id/pause_button"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="@string/Pause"
-                android:textColor="?attr/colorOnPrimary"
-                app:backgroundTint="?attr/colorPrimary"
-                app:icon="@drawable/ic_pause"
-                app:iconTint="?attr/colorOnPrimary" />
-        </LinearLayout>
+            android:layout_height="wrap_content" />
     </LinearLayout>
 
 </FrameLayout>
