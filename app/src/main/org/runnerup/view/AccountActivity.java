@@ -28,27 +28,25 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
+import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TableLayout;
-import android.widget.TableRow;
-import android.widget.TextView;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.content.res.AppCompatResources;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.compose.ui.platform.ComposeView;
 import androidx.preference.PreferenceManager;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.util.ArrayList;
+import java.util.List;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
 import org.runnerup.db.DBHelper;
@@ -57,7 +55,6 @@ import org.runnerup.export.RunnerUpLiveSynchronizer;
 import org.runnerup.export.SyncManager;
 import org.runnerup.export.Synchronizer;
 import org.runnerup.util.Bitfield;
-import org.runnerup.util.ViewUtil;
 import org.runnerup.workout.FileFormats;
 
 public class AccountActivity extends AppCompatActivity implements Constants {
@@ -68,7 +65,7 @@ public class AccountActivity extends AppCompatActivity implements Constants {
   private long flags;
   private FileFormats format;
   private SyncManager syncManager = null;
-  private EditText mRunnerUpLiveApiAddress = null;
+  private String mRunnerUpLiveApiAddress = null;
 
   /** Called when the activity is first created. */
   @Override
@@ -80,46 +77,56 @@ public class AccountActivity extends AppCompatActivity implements Constants {
     Intent intent = getIntent();
     mSynchronizerName = intent.getStringExtra("synchronizer");
 
-    MaterialToolbar toolbar = findViewById(R.id.actionbar);
-    setSupportActionBar(toolbar);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-    getSupportActionBar().setTitle(mSynchronizerName);
+    checkboxProxy = new CheckBox(this);
 
     mDB = DBHelper.getReadableDatabase(this);
     syncManager = new SyncManager(this);
+
+    pageState.setTitle(mSynchronizerName);
+    AccountScreenHost.INSTANCE.attach(
+        (ComposeView) findViewById(R.id.account_root),
+        pageState,
+        new AccountBindings(
+            this::finish,
+            () -> {
+              if (headerClickable) {
+                urlButtonClick.onClick(null);
+              }
+            },
+            this::showOverflowMenu,
+            () -> disconnectButtonClick.onClick(null),
+            () -> uploadButtonClick.onClick(null),
+            () -> downloadButtonClick.onClick(null),
+            () -> okButtonClick.onClick(null)));
+
     fillData();
 
     Synchronizer synchronizer = syncManager.getSynchronizerByName(mSynchronizerName);
     if (synchronizer == null) {
       return;
     }
+  }
 
-    {
-      Button btn = findViewById(R.id.ok_account_button);
-      btn.setOnClickListener(okButtonClick);
+  private void showOverflowMenu(int left, int top, int right, int bottom) {
+    ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+    if (overflowAnchor == null) {
+      overflowAnchor = new View(this);
+      overflowAnchor.setVisibility(View.INVISIBLE);
+      FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(0, 0);
+      params.gravity = Gravity.TOP | Gravity.START;
+      params.leftMargin = right - 8;
+      params.topMargin = top;
+      decor.addView(overflowAnchor, params);
+
+      overflowMenu = new PopupMenu(this, overflowAnchor, Gravity.END);
+      overflowMenu.setOnMenuItemClickListener(
+          item -> {
+            onOptionsItemSelected(item);
+            return true;
+          });
+      overflowMenu.getMenuInflater().inflate(R.menu.account_menu, overflowMenu.getMenu());
     }
-
-    {
-      Button btn = findViewById(R.id.account_upload_button);
-      btn.setOnClickListener(uploadButtonClick);
-    }
-
-    {
-      Button btn = findViewById(R.id.account_download_button);
-      if (synchronizer.checkSupport(Synchronizer.Feature.ACTIVITY_LIST)
-          && synchronizer.checkSupport(Synchronizer.Feature.GET_ACTIVITY)) {
-        btn.setOnClickListener(downloadButtonClick);
-      } else {
-        btn.setVisibility(View.GONE);
-      }
-    }
-
-    {
-      Button btn = findViewById(R.id.disconnect_account_button);
-      btn.setOnClickListener(disconnectButtonClick);
-    }
-
-    ViewUtil.Insets(findViewById(R.id.account_rootview), false);
+    overflowMenu.show();
   }
 
   @Override
@@ -156,33 +163,27 @@ public class AccountActivity extends AppCompatActivity implements Constants {
         }
       }
 
-      {
-        ImageView im = findViewById(R.id.account_icon);
-        TextView tv = findViewById(R.id.account_name);
-        if (synchronizer.getIconId() == 0 || mSynchronizerName.equals(FileSynchronizer.NAME)) {
-          if (!TextUtils.isEmpty(synchronizer.getPublicUrl())) {
-            tv.setText(synchronizer.getPublicUrl());
-            tv.setTag(synchronizer.getPublicUrl());
-            // FileSynchronizer: SDK 24 requires the file URI to be handled as FileProvider
-            // Something like OI File Manager is needed too
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N
-                || !synchronizer.getName().equals(FileSynchronizer.NAME)) {
-              tv.setOnClickListener(urlButtonClick);
-            }
-          } else {
-            tv.setText(synchronizer.getName());
-          }
-          im.setVisibility(View.GONE);
-          tv.setVisibility(View.VISIBLE);
+      headerClickable = true;
+      if (synchronizer.getIconId() == 0 || mSynchronizerName.equals(FileSynchronizer.NAME)) {
+        String publicUrl = synchronizer.getPublicUrl();
+        pageState.setHeaderText(TextUtils.isEmpty(publicUrl) ? synchronizer.getName() : publicUrl);
+        pageState.setHeaderUrl(TextUtils.isEmpty(publicUrl) ? null : publicUrl);
+        pageState.setHeaderIcon(0);
+        // FileSynchronizer: SDK 24 requires the file URI to be handled as FileProvider
+        // Something like OI File Manager is needed too
+        if (!TextUtils.isEmpty(publicUrl)
+            && (Build.VERSION.SDK_INT < Build.VERSION_CODES.N
+                || !synchronizer.getName().equals(FileSynchronizer.NAME))) {
+          headerClickable = true;
         } else {
-          im.setImageDrawable(AppCompatResources.getDrawable(this, synchronizer.getIconId()));
-          if (!TextUtils.isEmpty(synchronizer.getPublicUrl())) {
-            im.setTag(synchronizer.getPublicUrl());
-            im.setOnClickListener(urlButtonClick);
-          }
-          im.setVisibility(View.VISIBLE);
-          tv.setVisibility(View.GONE);
+          headerClickable = false;
         }
+      } else {
+        pageState.setHeaderText(null);
+        pageState.setHeaderUrl(
+            TextUtils.isEmpty(synchronizer.getPublicUrl()) ? null : synchronizer.getPublicUrl());
+        pageState.setHeaderIcon(synchronizer.getIconId());
+        headerClickable = !TextUtils.isEmpty(synchronizer.getPublicUrl());
       }
 
       if (synchronizer.getName().equals(RunnerUpLiveSynchronizer.NAME)) {
@@ -193,62 +194,70 @@ public class AccountActivity extends AppCompatActivity implements Constants {
         String postUrl =
             prefs.getString(res.getString(R.string.pref_runneruplive_serveradress), POST_URL);
 
-        mRunnerUpLiveApiAddress = new EditText(this.getApplicationContext());
-        mRunnerUpLiveApiAddress.setSingleLine();
-        mRunnerUpLiveApiAddress.setText(postUrl, TextView.BufferType.EDITABLE);
+        mRunnerUpLiveApiAddress = postUrl;
         addRow(
             getResources().getString(org.runnerup.common.R.string.RunnerUp_live_address) + ":",
-            mRunnerUpLiveApiAddress);
+            new AccountControl.Text(postUrl, value -> mRunnerUpLiveApiAddress = value));
       }
 
       if (synchronizer.checkSupport(Synchronizer.Feature.UPLOAD)) {
-        CheckBox cb = new CheckBox(this);
-        cb.setTag(DB.ACCOUNT.FLAG_UPLOAD);
-        cb.setChecked(Bitfield.test(flags, DB.ACCOUNT.FLAG_UPLOAD));
-        cb.setOnCheckedChangeListener(sendCBChecked);
-        cb.setMinimumHeight(48);
-        cb.setMinimumWidth(48);
-        addRow(getResources().getString(org.runnerup.common.R.string.Automatic_upload), cb);
+        pageState.setUploadVisible(true);
+        addRow(
+            getResources().getString(org.runnerup.common.R.string.Automatic_upload),
+            new AccountControl.Check(
+                DB.ACCOUNT.FLAG_UPLOAD,
+                Bitfield.test(flags, DB.ACCOUNT.FLAG_UPLOAD),
+                this::onCheckboxChanged));
       } else {
-        Button btn = findViewById(R.id.account_upload_button);
-        btn.setVisibility(View.GONE);
+        pageState.setUploadVisible(false);
       }
 
       if (synchronizer.checkSupport(Synchronizer.Feature.FILE_FORMAT)) {
         // Add file format checkboxes
         addRow(getResources().getString(org.runnerup.common.R.string.File_format), null);
         for (FileFormats.Format f : FileFormats.ALL_FORMATS) {
-          CheckBox cb = new CheckBox(this);
-          cb.setChecked(format.contains(f));
-          cb.setTag(f);
-          cb.setOnCheckedChangeListener(sendCBChecked);
-          cb.setMinimumHeight(48);
-          cb.setMinimumWidth(48);
-          addRow(f.getName(), cb);
+          addRow(
+              f.getName(),
+              new AccountControl.Check(f, format.contains(f), this::onCheckboxChanged));
         }
       }
 
       if (synchronizer.checkSupport(Synchronizer.Feature.LIVE)) {
-        CheckBox cb = new CheckBox(this);
-        cb.setTag(DB.ACCOUNT.FLAG_LIVE);
-        cb.setChecked(Bitfield.test(flags, DB.ACCOUNT.FLAG_LIVE));
-        cb.setOnCheckedChangeListener(sendCBChecked);
-        addRow(getResources().getString(org.runnerup.common.R.string.Live), cb);
+        addRow(
+            getResources().getString(org.runnerup.common.R.string.Live),
+            new AccountControl.Check(
+                DB.ACCOUNT.FLAG_LIVE,
+                Bitfield.test(flags, DB.ACCOUNT.FLAG_LIVE),
+                this::onCheckboxChanged));
       }
+
+      pageState.setDownloadVisible(
+          synchronizer.checkSupport(Synchronizer.Feature.ACTIVITY_LIST)
+              && synchronizer.checkSupport(Synchronizer.Feature.GET_ACTIVITY));
     }
+    publishRows();
     mCursors.add(c);
   }
 
-  private void addRow(String string, View btn) {
-    TableLayout table = findViewById(R.id.account_table);
-    TableRow row = new TableRow(this);
-    row.setMinimumHeight(48);
-    row.setMinimumWidth(48);
-    TextView title = new TextView(this);
-    title.setText(string);
-    row.addView(title);
-    if (btn != null) row.addView(btn);
-    table.addView(row);
+  private void publishRows() {
+    pageState.setRows(tableRows);
+  }
+
+  private CheckBox checkboxProxy = null;
+
+  private void onCheckboxChanged(AccountControl.Check item, boolean checked) {
+    checkboxProxy.setTag(item.getTag());
+    checkboxProxy.setChecked(checked);
+    sendCBChecked.onCheckedChanged(checkboxProxy, checked);
+    if (checkboxProxy.isChecked() != checked) {
+      // The platform restores the check box when the last file format is removed.
+      sendCBChecked.onCheckedChanged(checkboxProxy, checkboxProxy.isChecked());
+    }
+    item.setChecked(checkboxProxy.isChecked());
+  }
+
+  private void addRow(String string, AccountControl control) {
+    tableRows.add(new AccountTableRowItem(string, control));
   }
 
   @Override
@@ -321,6 +330,13 @@ public class AccountActivity extends AppCompatActivity implements Constants {
         }
       };
 
+  private final List<AccountTableRowItem> tableRows = new ArrayList<>();
+
+  private final AccountPageState pageState = new AccountPageState();
+  private View overflowAnchor = null;
+  private PopupMenu overflowMenu = null;
+  private boolean headerClickable = false;
+
   private final OnCheckedChangeListener sendCBChecked =
       new OnCheckedChangeListener() {
         @Override
@@ -369,8 +385,7 @@ public class AccountActivity extends AppCompatActivity implements Constants {
           prefs
               .edit()
               .putString(
-                  res.getString(R.string.pref_runneruplive_serveradress),
-                  mRunnerUpLiveApiAddress.getText().toString())
+                  res.getString(R.string.pref_runneruplive_serveradress), mRunnerUpLiveApiAddress)
               .apply();
           mRunnerUpLiveApiAddress = null;
         }
