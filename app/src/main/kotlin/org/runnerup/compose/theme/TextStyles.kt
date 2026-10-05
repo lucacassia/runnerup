@@ -60,7 +60,12 @@ object XmlText {
 
   /** `textAppearanceBodyLarge`, used for list item titles. */
   val bodyLarge =
-    TextStyle(fontSize = 16.sp, platformStyle = PlatformTextStyle(includeFontPadding = true))
+    TextStyle(
+      fontSize = 16.sp,
+      lineHeight = 24.sp,
+      letterSpacing = 0.035714286.em,
+      platformStyle = PlatformTextStyle(includeFontPadding = true),
+    )
 
   /** `textAppearanceLabelLarge`, used for the labels of the sport filter chips. */
   val labelLarge =
