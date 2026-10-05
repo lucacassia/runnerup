@@ -82,38 +82,45 @@ public class StepButton extends LinearLayout {
     mOnChangedListener = runnable;
   }
 
-  public static void styleIntensityBadge(TextView badge, Intensity intensity, Context context) {
-    int badgeTextColorId;
-    int badgeBgColorId;
+  /** The text colour of an intensity badge, shared by every place that shows one. */
+  public static int intensityTextColorId(Intensity intensity) {
     switch (intensity) {
       case ACTIVE:
-        badgeTextColorId = R.color.stepActive;
-        badgeBgColorId = R.color.stepActiveBg;
-        break;
+        return R.color.stepActive;
       case RESTING:
-        badgeTextColorId = R.color.stepResting;
-        badgeBgColorId = R.color.stepRestingBg;
-        break;
+        return R.color.stepResting;
       case REPEAT:
-        badgeTextColorId = R.color.stepRepeat;
-        badgeBgColorId = R.color.stepRestingBg;
-        break;
+        return R.color.stepRepeat;
       case WARMUP:
-        badgeTextColorId = R.color.stepWarmup;
-        badgeBgColorId = R.color.stepWarmupBg;
-        break;
+        return R.color.stepWarmup;
       case COOLDOWN:
-        badgeTextColorId = R.color.stepCooldown;
-        badgeBgColorId = R.color.stepCooldownBg;
-        break;
+        return R.color.stepCooldown;
       case RECOVERY:
-        badgeTextColorId = R.color.stepRecovery;
-        badgeBgColorId = R.color.stepRecoveryBg;
-        break;
+        return R.color.stepRecovery;
       default:
-        badgeTextColorId = R.color.stepResting;
-        badgeBgColorId = R.color.stepRestingBg;
+        return R.color.stepResting;
     }
+  }
+
+  /** The background colour of an intensity badge, shared by every place that shows one. */
+  public static int intensityBgColorId(Intensity intensity) {
+    switch (intensity) {
+      case ACTIVE:
+        return R.color.stepActiveBg;
+      case WARMUP:
+        return R.color.stepWarmupBg;
+      case COOLDOWN:
+        return R.color.stepCooldownBg;
+      case RECOVERY:
+        return R.color.stepRecoveryBg;
+      default:
+        return R.color.stepRestingBg;
+    }
+  }
+
+  public static void styleIntensityBadge(TextView badge, Intensity intensity, Context context) {
+    int badgeTextColorId = intensityTextColorId(intensity);
+    int badgeBgColorId = intensityBgColorId(intensity);
     badge.setTextColor(ContextCompat.getColor(context, badgeTextColorId));
     GradientDrawable badgeBg = new GradientDrawable();
     badgeBg.setShape(GradientDrawable.RECTANGLE);

@@ -29,7 +29,6 @@ import android.content.pm.ActivityInfo;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Build;
@@ -40,10 +39,8 @@ import android.provider.Settings;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
@@ -63,9 +60,6 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.LinearSmoothScroller;
-import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
 import java.util.ArrayList;
@@ -117,16 +111,11 @@ public class RunActivity extends AppCompatActivity implements TickListener {
   private ExtendedFloatingActionButton nextLapButton = null;
   private StopProgressDrawable stopProgressDrawable = null;
   private HoldToStopListener holdToStopListener = null;
-  private RecyclerView workoutList = null;
   private org.runnerup.workout.Step currentStep = null;
   private Formatter formatter = null;
   private TextView hrDebug;
   private HRZones hrZones = null;
-  private TextView activeStepTitle = null;
-  private TextView activeStepTargetText = null;
-  private TextView stepIntensityBadge = null;
-  private com.google.android.material.progressindicator.LinearProgressIndicator
-      activeStepProgressBar = null;
+  private final RunSheetState runSheetState = new RunSheetState();
   private BottomSheetBehavior<?> runBottomSheetBehavior = null;
   private MapViewWrapper runMapview = null;
   private LiveMap liveMap = null;
@@ -201,6 +190,7 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         runPageState,
         new RunBindings(
             this::toggleStatsExpanded, this::onCancelWaitClick, this::onWaitEnableGpsClick));
+    RunSheetHost.attach((ComposeView) findViewById(R.id.run_sheet_content), runSheetState);
     if (BuildConfig.OSMDROID_ENABLED || BuildConfig.MAPBOX_ENABLED) {
       runMapview = findViewById(R.id.run_mapview);
       SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -249,16 +239,6 @@ public class RunActivity extends AppCompatActivity implements TickListener {
             this::doStop,
             this::showPressHoldToStopHint);
     nextLapButton.setOnTouchListener(holdToStopListener);
-    workoutList = findViewById(R.id.workout_list);
-    hrDebug = findViewById(R.id.hr_debug);
-    activeStepTitle = findViewById(R.id.active_step_title);
-    activeStepTargetText = findViewById(R.id.active_step_target_text);
-    stepIntensityBadge = findViewById(R.id.step_intensity_badge);
-    activeStepProgressBar = findViewById(R.id.active_step_progress_bar);
-    workoutList.setLayoutManager(new LinearLayoutManager(this));
-    WorkoutAdapter adapter = new WorkoutAdapter(workoutRows);
-    workoutList.setAdapter(adapter);
-    workoutList.setVisibility(View.VISIBLE);
     runBottomSheetBehavior = BottomSheetBehavior.from(findViewById(R.id.run_bottom_sheet));
     runBottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
     final View sheetHost = findViewById(R.id.run_sheet_host);
@@ -286,6 +266,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
     if (!prefs.getBoolean(res.getString(R.string.pref_bt_debug), false)) {
       hrDebug = null;
+    } else {
+      hrDebug = new TextView(this);
+      runSheetState.setHrDebug(hrDebug);
     }
 
     bindGpsTracker();
@@ -757,16 +740,10 @@ public class RunActivity extends AppCompatActivity implements TickListener {
 
       Step curr = workout.getCurrentStep();
       updateActiveStepBanner(curr);
-      if (curr != currentStep) {
-        ((WorkoutAdapter) workoutList.getAdapter()).notifyDataSetChanged();
-        currentStep = curr;
-        if (workoutList.getLayoutManager() instanceof LinearLayoutManager) {
-          LinearLayoutManager lm = (LinearLayoutManager) workoutList.getLayoutManager();
-          RecyclerView.SmoothScroller scroller = new LinearSmoothScroller(this);
-          scroller.setTargetPosition(getPosition(workoutRows, currentStep));
-          lm.startSmoothScroll(scroller);
-        }
-      }
+      // The repeat counter of the active step moves without the step changing, so the rows are
+      // rebuilt on every tick, which is what the adapter's notifyDataSetChanged did.
+      currentStep = curr;
+      updateWorkoutRows();
     }
   }
 
@@ -801,12 +778,15 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     runPageState.setHrZonePillVisible(true);
   }
 
-  @SuppressLint("SetTextI18n")
   private void updateActiveStepBanner(Step curr) {
     if (curr == null) return;
-    if (curr.getIntensity() != null && stepIntensityBadge != null) {
-      stepIntensityBadge.setText(curr.getIntensity().getTextId());
-      StepButton.styleIntensityBadge(stepIntensityBadge, curr.getIntensity(), RunActivity.this);
+    if (curr.getIntensity() != null) {
+      runSheetState.setBadgeText(getString(curr.getIntensity().getTextId()));
+      runSheetState.setBadgeTextColor(
+          ContextCompat.getColor(this, StepButton.intensityTextColorId(curr.getIntensity())));
+      runSheetState.setBadgeBgColor(
+          ContextCompat.getColor(this, StepButton.intensityBgColorId(curr.getIntensity())));
+      runSheetState.setBadgeVisible(true);
     }
     double stepTime = workout.getTime(Scope.STEP);
     double stepDist = workout.getDistance(Scope.STEP);
@@ -829,28 +809,12 @@ public class RunActivity extends AppCompatActivity implements TickListener {
         if (targetVal > 0) progressPct = Math.min(100, (stepTime / targetVal) * 100.0);
       }
     }
-    if (activeStepTitle != null) activeStepTitle.setText(titleText);
-    if (activeStepProgressBar != null) {
-      activeStepProgressBar.setProgress((int) progressPct);
-    }
-    if (activeStepTargetText != null) {
-      if (curr.getTargetType() == null) {
-        activeStepTargetText.setText("");
-      } else {
-        double minVal = curr.getTargetValue().minValue;
-        double maxVal = curr.getTargetValue().maxValue;
-        if (minVal == maxVal) {
-          activeStepTargetText.setText(
-              formatter.format(Formatter.Format.TXT_SHORT, curr.getTargetType(), minVal));
-        } else {
-          activeStepTargetText.setText(
-              String.format(
-                  Locale.getDefault(),
-                  "%s-%s",
-                  formatter.format(Formatter.Format.TXT_SHORT, curr.getTargetType(), minVal),
-                  formatter.format(Formatter.Format.TXT_SHORT, curr.getTargetType(), maxVal)));
-        }
-      }
+    runSheetState.setStepTitle(titleText);
+    runSheetState.setStepProgress((int) progressPct);
+    if (curr.getTargetType() == null) {
+      runSheetState.setStepTarget("");
+    } else {
+      runSheetState.setStepTarget(stepTargetValue(curr));
     }
   }
 
@@ -907,123 +871,61 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     }
   }
 
-  class WorkoutAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-
-    private static final int TYPE_STEP = 0;
-    private static final int TYPE_LAP = 1;
-
-    final ArrayList<WorkoutRow> rows;
-
-    WorkoutAdapter(ArrayList<WorkoutRow> workoutRows) {
-      this.rows = workoutRows;
-    }
-
-    @Override
-    public int getItemCount() {
-      return rows.size();
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-      return rows.get(position).step != null ? TYPE_STEP : TYPE_LAP;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-      LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-      if (viewType == TYPE_LAP) {
-        return new LapRowViewHolder(inflater.inflate(R.layout.laplist_row, parent, false));
-      }
-      return new WorkoutRowViewHolder(inflater.inflate(R.layout.workout_row, parent, false));
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-      WorkoutRow tmp = rows.get(position);
-      if (holder instanceof WorkoutRowViewHolder) {
-        bindWorkoutRow((WorkoutRowViewHolder) holder, tmp.step, tmp.level);
-      }
-    }
-
-    private void bindWorkoutRow(WorkoutRowViewHolder holder, Step step, int level) {
-      TextView intensity = holder.intensity;
-      TextView durationType = holder.durationType;
-      TextView durationValue = holder.durationValue;
-      TextView targetPace = holder.targetPace;
-      intensity.setPadding(level * 10, 0, 0, 0);
-      intensity.setText(getResources().getText(step.getIntensity().getTextId()));
+  /** Flattens the workout steps into the rows the compose list draws. */
+  private void updateWorkoutRows() {
+    List<RunStepRow> rows = new ArrayList<>(workoutRows.size());
+    int current = -1;
+    for (int i = 0; i < workoutRows.size(); i++) {
+      WorkoutRow row = workoutRows.get(i);
+      Step step = row.step;
       boolean isCurrent = currentStep == step;
       if (isCurrent) {
-        holder.itemView.setBackgroundResource(R.drawable.workout_row_active_bg);
-        intensity.setTextColor(ContextCompat.getColor(RunActivity.this, R.color.colorPrimary));
-        intensity.setTypeface(Typeface.DEFAULT_BOLD);
-      } else {
-        holder.itemView.setBackgroundResource(android.R.color.transparent);
-        intensity.setTextColor(ContextCompat.getColor(RunActivity.this, R.color.colorText));
-        intensity.setTypeface(Typeface.DEFAULT);
+        current = i;
       }
-      if (step.getDurationType() != null) {
-        durationType.setText(getResources().getText(step.getDurationType().getTextId()));
-        durationValue.setText(
-            formatter.format(
-                Formatter.Format.TXT_LONG, step.getDurationType(), step.getDurationValue()));
-      } else {
-        durationType.setText("");
-        durationValue.setText("");
-      }
-
-      if (step.getTargetType() == null) {
-        targetPace.setText("");
-      } else {
-        double minValue = step.getTargetValue().minValue;
-        double maxValue = step.getTargetValue().maxValue;
-        if (minValue == maxValue) {
-          targetPace.setText(
-              formatter.format(Formatter.Format.TXT_SHORT, step.getTargetType(), minValue));
-        } else {
-          targetPace.setText(
-              String.format(
-                  Locale.getDefault(),
-                  "%s-%s",
-                  formatter.format(Formatter.Format.TXT_SHORT, step.getTargetType(), minValue),
-                  formatter.format(Formatter.Format.TXT_SHORT, step.getTargetType(), maxValue)));
-        }
-      }
-      if (step.getIntensity() == Intensity.REPEAT) {
-        if (step.getCurrentRepeat() >= step.getRepeatCount()) {
-          durationValue.setText(org.runnerup.common.R.string.Finished);
-        } else {
-          durationValue.setText(
-              String.format(
-                  Locale.getDefault(),
-                  "%d/%d",
-                  (step.getCurrentRepeat() + 1),
-                  step.getRepeatCount()));
-        }
-      }
+      Intensity intensity = step.getIntensity();
+      rows.add(
+          new RunStepRow(
+              row.level,
+              getResources().getText(intensity.getTextId()).toString(),
+              step.getDurationType() != null
+                  ? getResources().getText(step.getDurationType().getTextId()).toString()
+                  : "",
+              stepDurationValue(step),
+              stepTargetValue(step),
+              isCurrent));
     }
+    runSheetState.setRows(rows);
+    runSheetState.setCurrentIndex(current);
   }
 
-  class WorkoutRowViewHolder extends RecyclerView.ViewHolder {
-    final TextView intensity;
-    final TextView durationType;
-    final TextView durationValue;
-    final TextView targetPace;
-
-    WorkoutRowViewHolder(@NonNull View itemView) {
-      super(itemView);
-      intensity = itemView.findViewById(R.id.workout_step_intensity);
-      durationType = itemView.findViewById(R.id.workout_step_duration_type);
-      durationValue = itemView.findViewById(R.id.workout_step_duration_value);
-      targetPace = itemView.findViewById(R.id.workout_step_pace);
+  private String stepDurationValue(Step step) {
+    if (step.getIntensity() == Intensity.REPEAT) {
+      if (step.getCurrentRepeat() >= step.getRepeatCount()) {
+        return getString(org.runnerup.common.R.string.Finished);
+      }
+      return String.format(
+          Locale.getDefault(), "%d/%d", step.getCurrentRepeat() + 1, step.getRepeatCount());
     }
+    if (step.getDurationType() == null) {
+      return "";
+    }
+    return formatter.format(
+        Formatter.Format.TXT_LONG, step.getDurationType(), step.getDurationValue());
   }
 
-  class LapRowViewHolder extends RecyclerView.ViewHolder {
-
-    LapRowViewHolder(@NonNull View itemView) {
-      super(itemView);
+  private String stepTargetValue(Step step) {
+    if (step.getTargetType() == null) {
+      return "";
     }
+    double minValue = step.getTargetValue().minValue;
+    double maxValue = step.getTargetValue().maxValue;
+    if (minValue == maxValue) {
+      return formatter.format(Formatter.Format.TXT_SHORT, step.getTargetType(), minValue);
+    }
+    return String.format(
+        Locale.getDefault(),
+        "%s-%s",
+        formatter.format(Formatter.Format.TXT_SHORT, step.getTargetType(), minValue),
+        formatter.format(Formatter.Format.TXT_SHORT, step.getTargetType(), maxValue));
   }
 }
