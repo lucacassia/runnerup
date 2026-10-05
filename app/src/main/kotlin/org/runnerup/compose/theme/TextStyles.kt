@@ -76,6 +76,15 @@ object XmlText {
       platformStyle = PlatformTextStyle(includeFontPadding = true),
     )
 
+  /** `textAppearanceBodySmall`, used for the second line of a workout step. */
+  val bodySmall =
+    TextStyle(
+      fontSize = 12.sp,
+      lineHeight = 16.sp,
+      letterSpacing = 0.033333336.em,
+      platformStyle = PlatformTextStyle(includeFontPadding = true),
+    )
+
   /** `textAppearanceBodyMedium`, used for the description of the history empty state. */
   val bodyMedium =
     TextStyle(

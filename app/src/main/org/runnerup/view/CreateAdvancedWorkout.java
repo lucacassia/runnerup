@@ -1,50 +1,46 @@
 package org.runnerup.view;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.ColorStateList;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
-import android.util.TypedValue;
-import android.view.LayoutInflater;
-import android.view.Menu;
+import android.view.Gravity;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.ImageButton;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.widget.PopupMenu;
+import androidx.compose.ui.platform.ComposeView;
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
-import androidx.recyclerview.widget.ItemTouchHelper;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.android.material.button.MaterialButton;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import org.json.JSONException;
 import org.runnerup.R;
 import org.runnerup.content.WorkoutFileProvider;
+import org.runnerup.util.Formatter;
 import org.runnerup.util.ViewUtil;
 import org.runnerup.widget.NumberPicker;
+import org.runnerup.workout.Dimension;
+import org.runnerup.workout.Intensity;
 import org.runnerup.workout.RepeatStep;
 import org.runnerup.workout.Step;
 import org.runnerup.workout.Workout;
@@ -56,7 +52,12 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   private Workout advancedWorkout = null;
   private String currentWorkoutName = null;
   private final WorkoutStepsAdapter advancedWorkoutStepsAdapter = new WorkoutStepsAdapter();
-  private ItemTouchHelper itemTouchHelper;
+  private Formatter formatter = null;
+  private final WorkoutEditorPageState pageState = new WorkoutEditorPageState();
+  private final Map<String, Step> stepsByKey = new HashMap<>();
+  private final Map<Step, String> keysByStep = new IdentityHashMap<>();
+  private View overflowAnchor = null;
+  private PopupMenu overflowMenu = null;
   private boolean reorderDirty = false;
   private boolean dontAskAgain = false;
   private boolean workoutEditMode = false;
@@ -120,69 +121,24 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
 
     dontAskAgain = false;
 
-    MaterialToolbar toolbar = findViewById(R.id.actionbar);
-    setSupportActionBar(toolbar);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-    toolbar.setTitle(advWorkoutName);
+    formatter = new Formatter(this);
 
-    RecyclerView advancedStepList = findViewById(R.id.new_advnced_workout_steps);
-    advancedStepList.setLayoutManager(new LinearLayoutManager(this));
-    advancedStepList.setAdapter(advancedWorkoutStepsAdapter);
-
-    itemTouchHelper =
-        new ItemTouchHelper(
-            new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
-              @Override
-              public boolean onMove(
-                  @NonNull RecyclerView recyclerView,
-                  @NonNull RecyclerView.ViewHolder viewHolder,
-                  @NonNull RecyclerView.ViewHolder target) {
-                int fromPos = viewHolder.getBindingAdapterPosition();
-                int toPos = target.getBindingAdapterPosition();
-                if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION) {
-                  return false;
-                }
-                if (fromPos == toPos) {
-                  return true;
-                }
-                Workout.StepListEntry fromEntry = advancedWorkoutStepsAdapter.items.get(fromPos);
-                Workout.StepListEntry toEntry = advancedWorkoutStepsAdapter.items.get(toPos);
-                List<Step> list = advancedWorkout.getSteps();
-                int fromIndex = list.indexOf(fromEntry.step());
-                int toIndex = list.indexOf(toEntry.step());
-                if (fromIndex >= 0
-                    && toIndex >= 0
-                    && StepReorder.swapIndex(list, fromIndex, toIndex)) {
-                  Collections.swap(advancedWorkoutStepsAdapter.items, fromPos, toPos);
-                  advancedWorkoutStepsAdapter.notifyItemMoved(fromPos, toPos);
-                  reorderDirty = true;
-                  return true;
-                }
-                return false;
-              }
-
-              @Override
-              public void clearView(
-                  @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-                super.clearView(recyclerView, viewHolder);
-                if (reorderDirty) {
-                  reorderDirty = false;
-                  onWorkoutChanged.run();
-                }
-              }
-
-              @Override
-              public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
-
-              @Override
-              public boolean isLongPressDragEnabled() {
-                return false;
-              }
-            });
-    itemTouchHelper.attachToRecyclerView(advancedStepList);
-
-    FloatingActionButton addWorkoutFab = findViewById(R.id.add_workout_fab);
-    addWorkoutFab.setOnClickListener(addWorkoutFabClick);
+    pageState.setTitle(advWorkoutName);
+    WorkoutEditorScreenHost.INSTANCE.attach(
+        (ComposeView) findViewById(R.id.create_advanced_workout_root),
+        pageState,
+        new WorkoutEditorBindings(
+            this::showBackPressDialog,
+            () -> saveWorkoutButtonClick.onClick(null),
+            this::showOverflowMenu,
+            this::openStepEditor,
+            this::confirmDeleteEntry,
+            this::editRepeatCount,
+            this::addStepInsideRepeat,
+            this::onDragStart,
+            this::onDrag,
+            this::onDragEnd,
+            () -> addWorkoutFabClick.onClick(null)));
 
     try {
       createAdvancedWorkout(advWorkoutName, workoutEditMode);
@@ -204,21 +160,33 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     ViewUtil.Insets(findViewById(R.id.create_advanced_workout_view), true);
   }
 
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
-    getMenuInflater().inflate(R.menu.workout_editor_menu, menu);
-    TypedValue colorOnSurface = new TypedValue();
-    if (getTheme()
-        .resolveAttribute(
-            com.google.android.material.R.attr.colorOnSurface, colorOnSurface, true)) {
-      menu.findItem(R.id.menu_save_workout)
-          .setIconTintList(ColorStateList.valueOf(colorOnSurface.data));
+  private void showOverflowMenu(int left, int top, int right, int bottom) {
+    ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+    if (overflowAnchor == null) {
+      overflowAnchor = new View(this);
+      overflowAnchor.setVisibility(View.INVISIBLE);
+      FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(0, 0);
+      params.gravity = Gravity.TOP | Gravity.START;
+      params.leftMargin = right - 8;
+      params.topMargin = top;
+      decor.addView(overflowAnchor, params);
+
+      overflowMenu = new PopupMenu(this, overflowAnchor, Gravity.END);
+      overflowMenu.setOnMenuItemClickListener(
+          item -> {
+            onOptionsItemSelected(item);
+            return true;
+          });
+      overflowMenu.getMenuInflater().inflate(R.menu.workout_editor_menu, overflowMenu.getMenu());
+      // `menu_save_workout` is `showAsAction="always"`, so the platform keeps it in the
+      // toolbar rather than the overflow popup.
+      overflowMenu.getMenu().removeItem(R.id.menu_save_workout);
     }
-    menu.findItem(R.id.menu_share_workout).setVisible(workoutEditMode);
-    menu.findItem(R.id.menu_rename_workout).setVisible(workoutEditMode);
-    menu.findItem(R.id.menu_delete_workout).setVisible(workoutEditMode);
-    menu.findItem(R.id.menu_discard_workout).setVisible(!workoutEditMode);
-    return true;
+    overflowMenu.getMenu().findItem(R.id.menu_share_workout).setVisible(workoutEditMode);
+    overflowMenu.getMenu().findItem(R.id.menu_rename_workout).setVisible(workoutEditMode);
+    overflowMenu.getMenu().findItem(R.id.menu_delete_workout).setVisible(workoutEditMode);
+    overflowMenu.getMenu().findItem(R.id.menu_discard_workout).setVisible(!workoutEditMode);
+    overflowMenu.show();
   }
 
   @Override
@@ -323,260 +291,212 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
     advancedWorkoutStepsAdapter.refreshSteps();
   }
 
-  private static final int VIEW_TYPE_STEP = 0;
-  private static final int VIEW_TYPE_REPEAT = 1;
+  final class WorkoutStepsAdapter {
 
-  final class WorkoutStepsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-
-    final List<Workout.StepListEntry> items = new ArrayList<>();
-
-    @SuppressLint("NotifyDataSetChanged")
     void refreshSteps() {
-      items.clear();
-      items.addAll(advancedWorkout.entriesAtLevel(null));
-      updateEmptyState();
-      notifyDataSetChanged();
+      stepsByKey.clear();
+      keysByStep.clear();
+      pageState.setItems(buildEntries(null));
     }
 
-    private void updateEmptyState() {
-      View empty = findViewById(R.id.empty_state_layout);
-      if (empty != null) {
-        empty.setVisibility(items.isEmpty() ? View.VISIBLE : View.GONE);
+    /** Builds the compose rows of one nesting level, keyed by the identity of each step. */
+    private java.util.List<WorkoutEntryItem> buildEntries(Step parent) {
+      java.util.List<WorkoutEntryItem> out = new java.util.ArrayList<>();
+      java.util.List<Workout.StepListEntry> entries = advancedWorkout.entriesAtLevel(parent);
+      for (Workout.StepListEntry entry : entries) {
+        Step step = entry.step();
+        // The key has to survive a reorder, so it is derived from the step object itself.
+        String key = "s" + System.identityHashCode(step);
+        stepsByKey.put(key, step);
+        keysByStep.put(step, key);
+        if (step instanceof RepeatStep) {
+          RepeatStep repeat = (RepeatStep) step;
+          out.add(
+              new WorkoutEntryItem.Repeat(
+                  key,
+                  getString(org.runnerup.common.R.string.repeat_x, repeat.getRepeatCount()),
+                  buildEntries(repeat)));
+        } else {
+          out.add(buildStep(key, step));
+        }
       }
+      return out;
     }
 
-    @Override
-    public int getItemCount() {
-      return items.size();
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-      Workout.StepListEntry entry = items.get(position);
-      return entry.step() instanceof RepeatStep ? VIEW_TYPE_REPEAT : VIEW_TYPE_STEP;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-      LayoutInflater inflater = getLayoutInflater();
-      if (viewType == VIEW_TYPE_REPEAT) {
-        return new RepeatGroupViewHolder(
-            inflater.inflate(R.layout.advanced_workout_repeat_row, parent, false), itemTouchHelper);
-      }
-      return new StepRowViewHolder(
-          inflater.inflate(R.layout.advanced_workout_row, parent, false), itemTouchHelper);
-    }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-      Workout.StepListEntry entry = items.get(position);
-      if (viewHolder instanceof StepRowViewHolder) {
-        StepRowViewHolder holder = (StepRowViewHolder) viewHolder;
-        holder.stepEntry = entry;
-        holder.button.setStep(entry.step());
-        View buttonLayout = holder.button.findViewById(R.id.step_button_layout);
-        buttonLayout.setBackground(null);
-        buttonLayout.setPadding(0, 0, 0, 0);
+    private WorkoutEntryItem.Step buildStep(String key, Step step) {
+      String duration;
+      if (step.getDurationType() == null) {
+        duration = getString(org.runnerup.common.R.string.Until_press);
       } else {
-        RepeatGroupViewHolder holder = (RepeatGroupViewHolder) viewHolder;
-        holder.bind((RepeatStep) entry.step());
+        duration =
+            formatter.format(
+                Formatter.Format.TXT_LONG, step.getDurationType(), step.getDurationValue());
+      }
+      String goal = null;
+      Dimension goalType = step.getTargetType();
+      if (goalType != null) {
+        String prefix = (goalType == Dimension.HR || goalType == Dimension.HRZ) ? "HR " : "";
+        goal =
+            String.format(
+                Locale.getDefault(),
+                "%s%s-%s",
+                prefix,
+                formatter.format(
+                    Formatter.Format.TXT_SHORT, goalType, step.getTargetValue().minValue),
+                formatter.format(
+                    Formatter.Format.TXT_LONG, goalType, step.getTargetValue().maxValue));
+      }
+      Intensity intensity = step.getIntensity();
+      return new WorkoutEntryItem.Step(
+          key,
+          duration,
+          goal,
+          // The platform badge is `textAllCaps`, so it uppercases the intensity name.
+          getString(intensity.getTextId()).toUpperCase(Locale.getDefault()),
+          ContextCompat.getColor(CreateAdvancedWorkout.this, badgeTextColor(intensity)),
+          ContextCompat.getColor(CreateAdvancedWorkout.this, badgeBgColor(intensity)));
+    }
+
+    private int badgeTextColor(Intensity intensity) {
+      switch (intensity) {
+        case ACTIVE:
+          return R.color.stepActive;
+        case REPEAT:
+          return R.color.stepRepeat;
+        case WARMUP:
+          return R.color.stepWarmup;
+        case COOLDOWN:
+          return R.color.stepCooldown;
+        case RECOVERY:
+          return R.color.stepRecovery;
+        default:
+          return R.color.stepResting;
+      }
+    }
+
+    private int badgeBgColor(Intensity intensity) {
+      switch (intensity) {
+        case ACTIVE:
+          return R.color.stepActiveBg;
+        case WARMUP:
+          return R.color.stepWarmupBg;
+        case COOLDOWN:
+          return R.color.stepCooldownBg;
+        case RECOVERY:
+          return R.color.stepRecoveryBg;
+        default:
+          return R.color.stepRestingBg;
       }
     }
   }
 
-  class StepRowViewHolder extends RecyclerView.ViewHolder {
-    final StepButton button;
-    final ImageButton moveUp;
-    final ImageButton del;
-    Workout.StepListEntry stepEntry;
-
-    StepRowViewHolder(@NonNull View itemView, @NonNull ItemTouchHelper itemTouchHelper) {
-      super(itemView);
-      button = itemView.findViewById(R.id.workout_step_button);
-      button.setOnChangedListener(onWorkoutChanged);
-      moveUp = itemView.findViewById(R.id.move_up_button);
-      moveUp.setOnTouchListener(
-          (v, event) -> {
-            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-              itemTouchHelper.startDrag(this);
-            }
-            return false;
-          });
-      del = itemView.findViewById(R.id.del_button);
-      del.setOnClickListener(v -> confirmDeleteStep(stepEntry.step()));
+  private void openStepEditor(String key) {
+    Step step = stepsByKey.get(key);
+    if (step != null) {
+      StepEditor.showStepDialog(this, step, onWorkoutChanged);
     }
   }
 
-  class RepeatGroupViewHolder extends RecyclerView.ViewHolder {
-    final ImageButton moveUp;
-    final TextView title;
-    final ImageButton del;
-    final RecyclerView childrenHost;
-    final MaterialButton addInside;
-    final ItemTouchHelper innerTouchHelper;
-    RepeatStep repeatStep;
-
-    RepeatGroupViewHolder(@NonNull View itemView, @NonNull ItemTouchHelper itemTouchHelper) {
-      super(itemView);
-      moveUp = itemView.findViewById(R.id.move_up_button);
-      moveUp.setOnTouchListener(
-          (v, event) -> {
-            if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
-              itemTouchHelper.startDrag(this);
-            }
-            return false;
-          });
-      title = itemView.findViewById(R.id.repeat_title);
-      title.setOnClickListener(v -> editRepeatCount(repeatStep));
-      del = itemView.findViewById(R.id.del_button);
-      del.setOnClickListener(v -> confirmDeleteStep(repeatStep));
-      addInside = itemView.findViewById(R.id.add_step_inside_repeat_button);
-      addInside.setOnClickListener(v -> addStepInsideRepeat(repeatStep));
-
-      childrenHost = itemView.findViewById(R.id.repeat_children_host);
-      childrenHost.setLayoutManager(new LinearLayoutManager(CreateAdvancedWorkout.this));
-      childrenHost.setNestedScrollingEnabled(false);
-      innerTouchHelper =
-          new ItemTouchHelper(
-              new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
-                @Override
-                public boolean onMove(
-                    @NonNull RecyclerView recyclerView,
-                    @NonNull RecyclerView.ViewHolder viewHolder,
-                    @NonNull RecyclerView.ViewHolder target) {
-                  int fromPos = viewHolder.getBindingAdapterPosition();
-                  int toPos = target.getBindingAdapterPosition();
-                  if (fromPos == RecyclerView.NO_POSITION || toPos == RecyclerView.NO_POSITION) {
-                    return false;
-                  }
-                  if (fromPos == toPos) {
-                    return true;
-                  }
-                  if (!(recyclerView.getAdapter() instanceof RepeatChildrenAdapter)) {
-                    return false;
-                  }
-                  RepeatChildrenAdapter childAdapter =
-                      (RepeatChildrenAdapter) recyclerView.getAdapter();
-                  if (fromPos >= childAdapter.items.size() || toPos >= childAdapter.items.size()) {
-                    return false;
-                  }
-                  Workout.StepListEntry fromEntry = childAdapter.items.get(fromPos);
-                  Workout.StepListEntry toEntry = childAdapter.items.get(toPos);
-                  List<Step> list = repeatStep.getSteps();
-                  int fromIndex = list.indexOf(fromEntry.step());
-                  int toIndex = list.indexOf(toEntry.step());
-                  if (fromIndex >= 0
-                      && toIndex >= 0
-                      && StepReorder.swapIndex(list, fromIndex, toIndex)) {
-                    Collections.swap(childAdapter.items, fromPos, toPos);
-                    childAdapter.notifyItemMoved(fromPos, toPos);
-                    reorderDirty = true;
-                    return true;
-                  }
-                  return false;
-                }
-
-                @Override
-                public void clearView(
-                    @NonNull RecyclerView recyclerView,
-                    @NonNull RecyclerView.ViewHolder viewHolder) {
-                  super.clearView(recyclerView, viewHolder);
-                  if (reorderDirty) {
-                    reorderDirty = false;
-                    onWorkoutChanged.run();
-                  }
-                }
-
-                @Override
-                public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {}
-
-                @Override
-                public boolean isLongPressDragEnabled() {
-                  return false;
-                }
-              });
-      innerTouchHelper.attachToRecyclerView(childrenHost);
-    }
-
-    void bind(RepeatStep repeat) {
-      repeatStep = repeat;
-      title.setText(getString(org.runnerup.common.R.string.repeat_x, repeat.getRepeatCount()));
-      RecyclerView.Adapter<?> adapter = childrenHost.getAdapter();
-      RepeatChildrenAdapter childAdapter;
-      if (adapter == null) {
-        childAdapter = new RepeatChildrenAdapter(innerTouchHelper);
-        childrenHost.setAdapter(childAdapter);
-      } else {
-        childAdapter = (RepeatChildrenAdapter) adapter;
-      }
-      childAdapter.bind(repeat);
+  private void confirmDeleteEntry(String key) {
+    Step step = stepsByKey.get(key);
+    if (step != null) {
+      confirmDeleteStep(step);
     }
   }
 
-  final class RepeatChildrenAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-    final List<Workout.StepListEntry> items = new ArrayList<>();
-    final ItemTouchHelper innerItemTouchHelper;
+  private void onDragStart(String key) {
+    pageState.setDraggedKey(key);
+    pageState.setDragOffset(0f);
+  }
 
-    RepeatChildrenAdapter(ItemTouchHelper innerItemTouchHelper) {
-      this.innerItemTouchHelper = innerItemTouchHelper;
+  private void onDrag(String key, float dy) {
+    Step step = stepsByKey.get(key);
+    if (step == null) {
+      return;
     }
-
-    @SuppressLint("NotifyDataSetChanged")
-    void bind(RepeatStep repeat) {
-      items.clear();
-      items.addAll(advancedWorkout.entriesAtLevel(repeat));
-      notifyDataSetChanged();
+    List<Step> siblings = siblingList(step);
+    if (siblings == null) {
+      return;
     }
-
-    @Override
-    public int getItemCount() {
-      return items.size();
-    }
-
-    @Override
-    public int getItemViewType(int position) {
-      Workout.StepListEntry entry = items.get(position);
-      return entry.step() instanceof RepeatStep ? VIEW_TYPE_REPEAT : VIEW_TYPE_STEP;
-    }
-
-    @NonNull
-    @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-      LayoutInflater inflater = getLayoutInflater();
-      if (viewType == VIEW_TYPE_REPEAT) {
-        return new RepeatGroupViewHolder(
-            inflater.inflate(R.layout.advanced_workout_repeat_row, parent, false),
-            innerItemTouchHelper);
+    int index = siblings.indexOf(step);
+    float offset = pageState.getDragOffset() + dy;
+    // Swap once the dragged row has travelled past the middle of its neighbour.
+    while (index + 1 < siblings.size()) {
+      int threshold = dragThreshold(key, keysByStep.get(siblings.get(index + 1)));
+      if (offset <= threshold) {
+        break;
       }
-      return new StepRowViewHolder(
-          inflater.inflate(R.layout.advanced_workout_row, parent, false), innerItemTouchHelper);
+      StepReorder.swapIndex(siblings, index, index + 1);
+      index++;
+      offset -= threshold;
+      reorderDirty = true;
+      advancedWorkoutStepsAdapter.refreshSteps();
     }
-
-    @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-      Workout.StepListEntry entry = items.get(position);
-      if (viewHolder instanceof StepRowViewHolder) {
-        StepRowViewHolder holder = (StepRowViewHolder) viewHolder;
-        holder.stepEntry = entry;
-        holder.button.setStep(entry.step());
-        View buttonLayout = holder.button.findViewById(R.id.step_button_layout);
-        buttonLayout.setBackground(null);
-        buttonLayout.setPadding(0, 0, 0, 0);
-      } else {
-        RepeatGroupViewHolder holder = (RepeatGroupViewHolder) viewHolder;
-        holder.bind((RepeatStep) entry.step());
+    while (index - 1 >= 0) {
+      int threshold = dragThreshold(key, keysByStep.get(siblings.get(index - 1)));
+      if (offset >= -threshold) {
+        break;
       }
+      StepReorder.swapIndex(siblings, index, index - 1);
+      index--;
+      offset += threshold;
+      reorderDirty = true;
+      advancedWorkoutStepsAdapter.refreshSteps();
+    }
+    pageState.setDragOffset(offset);
+  }
+
+  private int dragThreshold(String draggedKey, String neighbourKey) {
+    Integer draggedHeight = pageState.getItemHeights().get(draggedKey);
+    Integer neighbourHeight =
+        neighbourKey == null ? null : pageState.getItemHeights().get(neighbourKey);
+    if (draggedHeight == null || neighbourHeight == null) {
+      return Math.round(getResources().getDisplayMetrics().density * 72f);
+    }
+    return (draggedHeight + neighbourHeight) / 2;
+  }
+
+  private void onDragEnd() {
+    pageState.setDraggedKey(null);
+    pageState.setDragOffset(0f);
+    if (reorderDirty) {
+      reorderDirty = false;
+      onWorkoutChanged.run();
     }
   }
 
-  private void addStepInsideRepeat(RepeatStep repeat) {
+  /** The step list the given step lives in, which is where a reorder applies. */
+  private List<Step> siblingList(Step step) {
+    for (Step candidate : advancedWorkout.getSteps()) {
+      if (candidate == step) {
+        return advancedWorkout.getSteps();
+      }
+      if (candidate instanceof RepeatStep) {
+        if (((RepeatStep) candidate).getSteps().contains(step)) {
+          return ((RepeatStep) candidate).getSteps();
+        }
+      }
+    }
+    return null;
+  }
+
+  private void addStepInsideRepeat(String key) {
+    Step step = stepsByKey.get(key);
+    if (!(step instanceof RepeatStep)) {
+      return;
+    }
+    RepeatStep repeat = (RepeatStep) step;
     repeat.getSteps().add(new Step());
     advancedWorkoutStepsAdapter.refreshSteps();
     onWorkoutChanged.run();
   }
 
-  private void editRepeatCount(RepeatStep repeat) {
+  private void editRepeatCount(String key) {
+    Step step = stepsByKey.get(key);
+    if (!(step instanceof RepeatStep)) {
+      return;
+    }
+    RepeatStep repeat = (RepeatStep) step;
     final NumberPicker numberPicker = new NumberPicker(this, null);
     numberPicker.setOrientation(LinearLayout.VERTICAL);
     numberPicker.setDigits(4);
