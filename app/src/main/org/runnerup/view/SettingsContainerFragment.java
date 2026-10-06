@@ -19,15 +19,14 @@ package org.runnerup.view;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.util.TypedValue;
 import android.view.View;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.compose.ui.platform.ComposeView;
 import androidx.fragment.app.Fragment;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
-import com.google.android.material.appbar.MaterialToolbar;
 import org.runnerup.R;
 
 /**
@@ -55,9 +54,10 @@ public class SettingsContainerFragment extends Fragment
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
-    toolbar = view.findViewById(R.id.settings_actionbar);
-    toolbar.setNavigationOnClickListener(
-        v -> {
+    toolbar = new SettingsToolbarHolder();
+    toolbar.bind((ComposeView) view.findViewById(R.id.settings_actionbar));
+    toolbar.setOnBackClickListener(
+        () -> {
           if (hasBackStackEntries()) {
             getChildFragmentManager().popBackStackImmediate();
             updateToolbarState();
@@ -157,19 +157,10 @@ public class SettingsContainerFragment extends Fragment
       return;
     }
     boolean subScreen = hasBackStackEntries();
-    toolbar.setTitle(
-        subScreen && subTitle != null
-            ? subTitle
-            : getString(org.runnerup.common.R.string.Settings));
-    if (subScreen) {
-      TypedValue typedValue = new TypedValue();
-      if (requireActivity()
-          .getTheme()
-          .resolveAttribute(androidx.appcompat.R.attr.homeAsUpIndicator, typedValue, true)) {
-        toolbar.setNavigationIcon(typedValue.resourceId);
-      }
+    if (subScreen && subTitle != null) {
+      toolbar.setSubScreen(subTitle);
     } else {
-      toolbar.setNavigationIcon(null);
+      toolbar.setRoot();
     }
   }
 
@@ -196,6 +187,6 @@ public class SettingsContainerFragment extends Fragment
         }
       };
 
-  private MaterialToolbar toolbar;
+  private SettingsToolbarHolder toolbar;
   private CharSequence subTitle;
 }
