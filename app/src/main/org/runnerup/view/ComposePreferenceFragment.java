@@ -16,6 +16,7 @@
  */
 package org.runnerup.view;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -105,11 +106,15 @@ public abstract class ComposePreferenceFragment extends PreferenceFragmentCompat
   }
 
   /**
-   * Handles a tap the way the library would: the click listener, the fragment or the intent the
-   * preference names, or its dialog. {@link PreferenceFragmentCompat#onPreferenceTreeClick} covers
-   * all of those, so none of the behaviour has to be repeated here.
+   * Handles a tap the way the library's own row does.
+   *
+   * <p>{@link Preference#performClick()} is what the row's view calls, and it is what dispatches a
+   * click listener, an intent, the fragment a preference names and its dialog. Going through {@link
+   * PreferenceFragmentCompat#onPreferenceTreeClick} directly would only ever navigate, because that
+   * is all the fragment's half of the dispatch does.
    */
+  @SuppressLint("RestrictedApi") // the row this replaces is the library's own caller of it
   private void onPreferenceChosen(Preference preference) {
-    onPreferenceTreeClick(preference);
+    preference.performClick();
   }
 }
