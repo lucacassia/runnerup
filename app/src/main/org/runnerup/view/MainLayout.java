@@ -44,16 +44,17 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.compose.ui.platform.ComposeView;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.lifecycle.Lifecycle;
 import androidx.preference.PreferenceManager;
 import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
-import com.google.android.material.navigation.NavigationBarView;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants.DB;
@@ -78,6 +79,14 @@ public class MainLayout extends AppCompatActivity {
   private static final String STATE_PAGE = "state_page";
 
   private ViewPager2 pager;
+  private final BottomNavHolder bottomNav =
+      new BottomNavHolder(
+          Arrays.asList(
+              new BottomNavItem(org.runnerup.common.R.string.Record, R.drawable.ic_tab_record_24dp),
+              new BottomNavItem(
+                  org.runnerup.common.R.string.History, R.drawable.ic_tab_history_24dp),
+              new BottomNavItem(
+                  org.runnerup.common.R.string.Settings, R.drawable.ic_tab_settings_24dp)));
   private boolean startFlowActive = false;
 
   public void setStartFlowActive(boolean active) {
@@ -87,8 +96,7 @@ public class MainLayout extends AppCompatActivity {
 
   private void applyStartFlowConstraints() {
     pager.setUserInputEnabled(!startFlowActive || pager.getCurrentItem() != 0);
-    findViewById(R.id.bottom_navigation)
-        .setVisibility(startFlowActive && pager.getCurrentItem() == 0 ? View.GONE : View.VISIBLE);
+    bottomNav.setVisible(!(startFlowActive && pager.getCurrentItem() == 0));
   }
 
   @Override
@@ -178,26 +186,18 @@ public class MainLayout extends AppCompatActivity {
     // Allows swiping between tabs
     pager.setUserInputEnabled(true);
 
-    // Attach the NavigationBarView to the ViewPager2. The NavigationBarView mirrors the
-    // currently displayed page and selecting an item switches the pager to that page.
-    NavigationBarView bottomNavigation = findViewById(R.id.bottom_navigation);
-    bottomNavigation.setOnItemSelectedListener(
-        item -> {
-          int position =
-              item.getItemId() == R.id.tab_history
-                  ? 1
-                  : item.getItemId() == R.id.tab_settings ? 2 : 0;
+    // The navigation bar mirrors the page the pager is on, and picking a tab switches the pager.
+    bottomNav.bind(
+        (ComposeView) findViewById(R.id.bottom_navigation),
+        position -> {
           pager.setCurrentItem(position);
-          return true;
+          return null;
         });
     pager.registerOnPageChangeCallback(
         new ViewPager2.OnPageChangeCallback() {
           @Override
           public void onPageSelected(int position) {
-            bottomNavigation.setSelectedItemId(
-                position == 1
-                    ? R.id.tab_history
-                    : position == 2 ? R.id.tab_settings : R.id.tab_start);
+            bottomNav.setSelected(position);
             applyStartFlowConstraints();
           }
         });
