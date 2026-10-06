@@ -1,10 +1,9 @@
 package org.runnerup.view;
 
 import android.os.Bundle;
-import androidx.preference.PreferenceFragmentCompat;
 import org.runnerup.R;
 
-public class SettingsUnitsFragment extends PreferenceFragmentCompat {
+public class SettingsUnitsFragment extends ComposePreferenceFragment {
 
   @Override
   public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {

@@ -3,12 +3,11 @@ package org.runnerup.view;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.preference.Preference;
-import androidx.preference.PreferenceFragmentCompat;
 import org.runnerup.BuildConfig;
 import org.runnerup.R;
 import org.runnerup.widget.AboutPreference;
 
-public class SettingsFragment extends PreferenceFragmentCompat {
+public class SettingsFragment extends ComposePreferenceFragment {
 
   @Override
   public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {

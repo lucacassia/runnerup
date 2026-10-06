@@ -4,11 +4,10 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
-import androidx.preference.PreferenceFragmentCompat;
 import org.runnerup.R;
 import org.runnerup.util.ThemeUtil;
 
-public class SettingsUserInterfaceFragment extends PreferenceFragmentCompat {
+public class SettingsUserInterfaceFragment extends ComposePreferenceFragment {
 
   @Override
   public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {

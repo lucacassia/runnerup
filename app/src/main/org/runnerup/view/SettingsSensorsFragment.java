@@ -6,14 +6,13 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.Preference;
-import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 import org.runnerup.R;
 import org.runnerup.tracker.component.TrackerCadence;
 import org.runnerup.tracker.component.TrackerPressure;
 import org.runnerup.tracker.component.TrackerTemperature;
 
-public class SettingsSensorsFragment extends PreferenceFragmentCompat {
+public class SettingsSensorsFragment extends ComposePreferenceFragment {
 
   @Override
   public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {

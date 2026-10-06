@@ -17,7 +17,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.preference.Preference;
-import androidx.preference.PreferenceFragmentCompat;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.BufferedOutputStream;
 import java.io.OutputStream;
@@ -39,7 +38,7 @@ import org.runnerup.export.format.TCX;
 import org.runnerup.util.FileNameHelper;
 import org.runnerup.workout.Sport;
 
-public class SettingsMaintenanceFragment extends PreferenceFragmentCompat {
+public class SettingsMaintenanceFragment extends ComposePreferenceFragment {
 
   private static final String TAG = "SettingsMaintenance";
 

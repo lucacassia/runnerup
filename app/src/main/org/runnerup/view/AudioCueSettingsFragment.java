@@ -23,7 +23,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.preference.Preference;
 import androidx.preference.Preference.OnPreferenceClickListener;
-import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceGroup;
 import androidx.preference.PreferenceManager;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -42,7 +41,7 @@ import org.runnerup.workout.Workout;
 import org.runnerup.workout.WorkoutBuilder;
 import org.runnerup.workout.feedback.RUTextToSpeech;
 
-public class AudioCueSettingsFragment extends PreferenceFragmentCompat {
+public class AudioCueSettingsFragment extends ComposePreferenceFragment {
   private boolean started = false;
   private String settingsName = null;
   private AudioSchemeListAdapter adapter = null;
