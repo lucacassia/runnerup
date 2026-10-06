@@ -159,6 +159,46 @@ object WorkoutEditorScreenHost {
   }
 }
 
+object WorkoutAddSheetHost {
+  fun attach(composeView: ComposeView, onAddStep: Runnable, onAddRepeat: Runnable) {
+    composeView.setViewCompositionStrategy(
+      ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+    )
+    composeView.setContent {
+      RunnerUpTheme { WorkoutAddSheet(onAddStep = onAddStep, onAddRepeat = onAddRepeat) }
+    }
+  }
+}
+
+/**
+ * The two choices the add sheet offers, drawn inside the platform bottom sheet dialog, which still
+ * owns the sheet's own background, rounded corners and scrim.
+ */
+@Composable
+fun WorkoutAddSheet(onAddStep: Runnable, onAddRepeat: Runnable) {
+  Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+    AddSheetRow(CommonR.string.Add_step, onAddStep)
+    AddSheetRow(CommonR.string.Add_repeat, onAddRepeat)
+  }
+}
+
+/** One full width text button, the platform's `Widget.Material3.Button.TextButton` metrics. */
+@Composable
+private fun AddSheetRow(labelRes: Int, onClick: Runnable) {
+  Box(
+    modifier = Modifier.fillMaxWidth().height(48.dp).clickable { onClick.run() },
+    contentAlignment = Alignment.CenterStart,
+  ) {
+    Text(
+      text = stringResource(labelRes),
+      style = XmlText.labelLarge,
+      color = MaterialTheme.colorScheme.primary,
+      maxLines = 1,
+      modifier = Modifier.padding(start = 24.dp),
+    )
+  }
+}
+
 @Composable
 fun WorkoutEditorPage(state: WorkoutEditorPageState, bindings: WorkoutEditorBindings) {
   Column(

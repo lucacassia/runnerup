@@ -82,28 +82,23 @@ public class CreateAdvancedWorkout extends AppCompatActivity {
   private final View.OnClickListener addWorkoutFabClick =
       v -> {
         BottomSheetDialog sheet = new BottomSheetDialog(this);
-        sheet.setContentView(R.layout.workout_add_sheet);
-        View sheetView = sheet.findViewById(android.R.id.content);
-        sheetView
-            .findViewById(R.id.add_step_sheet_row)
-            .setOnClickListener(
-                view -> {
-                  advancedWorkout.addStep(new Step());
-                  advancedWorkoutStepsAdapter.refreshSteps();
-                  onWorkoutChanged.run();
-                  sheet.dismiss();
-                });
-        sheetView
-            .findViewById(R.id.add_repeat_sheet_row)
-            .setOnClickListener(
-                view -> {
-                  advancedWorkout.addStep(new RepeatStep());
-                  advancedWorkoutStepsAdapter.refreshSteps();
-                  onWorkoutChanged.run();
-                  sheet.dismiss();
-                });
+        // The dialog itself stays platform: it owns the sheet's background, rounded corners and
+        // scrim. Only the two rows inside it are drawn here.
+        ComposeView sheetContent = new ComposeView(this);
+        sheet.setContentView(sheetContent);
+        WorkoutAddSheetHost.INSTANCE.attach(
+            sheetContent,
+            () -> addEntry(new Step(), sheet),
+            () -> addEntry(new RepeatStep(), sheet));
         sheet.show();
       };
+
+  private void addEntry(Step step, BottomSheetDialog sheet) {
+    advancedWorkout.addStep(step);
+    advancedWorkoutStepsAdapter.refreshSteps();
+    onWorkoutChanged.run();
+    sheet.dismiss();
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
