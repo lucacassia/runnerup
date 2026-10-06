@@ -14,7 +14,6 @@ import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,7 +55,6 @@ public class AudioCueSettingsFragment extends ComposePreferenceFragment {
     super.onCreate(savedInstanceState);
     mDB = DBHelper.getWritableDatabase(requireContext());
     DEFAULT = getString(org.runnerup.common.R.string.Default);
-    setHasOptionsMenu(true); // this fragment has menu items
   }
 
   private String sanitizeSettingsName(String name) {
@@ -165,6 +163,22 @@ public class AudioCueSettingsFragment extends ComposePreferenceFragment {
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
+    if (getActivity() instanceof AudioCueSettingsActivity activity) {
+      activity
+          .getToolbar()
+          .setOverflowMenuListener(
+              (left, top, right, bottom) ->
+                  activity
+                      .getOverflowMenu()
+                      .show(
+                          left,
+                          top,
+                          right,
+                          bottom,
+                          this::buildOverflowMenu,
+                          this::onOptionsItemSelected));
+    }
+
     {
       MaterialTitleSpinner spinner = view.findViewById(R.id.settings_spinner);
       spinner.setVisibility(View.VISIBLE);
@@ -197,8 +211,8 @@ public class AudioCueSettingsFragment extends ComposePreferenceFragment {
     DBHelper.closeDB(mDB);
   }
 
-  @Override
-  public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+  /** Adds this fragment's items to the toolbar's overflow menu, which the popup then shows. */
+  private void buildOverflowMenu(Menu menu) {
     newSettings = menu.add("New settings");
     MenuItem deleteMenuItem = menu.add("Delete settings");
     if (settingsName == null) deleteMenuItem.setEnabled(false);

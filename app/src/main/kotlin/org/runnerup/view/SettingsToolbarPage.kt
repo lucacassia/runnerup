@@ -35,12 +35,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import org.runnerup.R
 import org.runnerup.common.R as CommonR
 import org.runnerup.compose.theme.RunnerUpTheme
 import org.runnerup.compose.theme.XmlText
@@ -59,15 +63,39 @@ private val toolbarIconGap = 20.dp
 private val toolbarIconSize = 24.dp
 
 /**
+ * Where the overflow button ended up, in window coordinates.
+ *
+ * <p>Deliberately not compose state: nothing needs recomposing when it changes, and only the click
+ * handler reads it, so writing to it during layout stays cheap.
+ */
+class OverflowButtonBounds {
+  var bounds: Rect = Rect.Zero
+}
+
+/**
+ * Told where the overflow button ended up, in window coordinates, so the platform popup menu can be
+ * anchored to it.
+ */
+fun interface OverflowMenuListener {
+  fun onOverflowMenu(left: Int, top: Int, right: Int, bottom: Int)
+}
+
+/**
  * Holds the state of the settings toolbar.
  *
  * <p>The fragment decides which settings level is showing, so it pushes the title and whether the
  * up affordance is there in rather than compose working it out.
  */
-class SettingsToolbarHolder {
+class SettingsToolbarHolder(
+  private val rootTitleRes: Int = CommonR.string.Settings,
+  private val rootShowsBack: Boolean = false,
+) {
   private val titleState = mutableStateOf("")
-  private val showBackState = mutableStateOf(false)
+  private val showBackState = mutableStateOf(rootShowsBack)
+  private val showOverflowState = mutableStateOf(false)
+  private val overflowButton = OverflowButtonBounds()
   private var backClick: Runnable = Runnable {}
+  private var overflowClick: OverflowMenuListener? = null
 
   /** The title of the settings level currently showing, or empty when nothing is showing yet. */
   val title: String
@@ -75,7 +103,7 @@ class SettingsToolbarHolder {
 
   fun setRoot() {
     titleState.value = ""
-    showBackState.value = false
+    showBackState.value = rootShowsBack
   }
 
   fun setSubScreen(title: CharSequence) {
@@ -87,6 +115,12 @@ class SettingsToolbarHolder {
     backClick = listener
   }
 
+  /** Shows the overflow button, which anchors the platform popup menu the listener builds. */
+  fun setOverflowMenuListener(listener: OverflowMenuListener) {
+    overflowClick = listener
+    showOverflowState.value = true
+  }
+
   fun bind(composeView: ComposeView) {
     composeView.setViewCompositionStrategy(
       ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
@@ -94,9 +128,14 @@ class SettingsToolbarHolder {
     composeView.setContent {
       RunnerUpTheme {
         SettingsToolbar(
-          title = titleState.value.ifEmpty { stringResource(CommonR.string.Settings) },
+          title = titleState.value.ifEmpty { stringResource(rootTitleRes) },
           showBack = showBackState.value,
           onBack = { backClick.run() },
+          showOverflow = showOverflowState.value,
+          onOverflow = { left, top, right, bottom ->
+            overflowClick?.onOverflowMenu(left, top, right, bottom)
+          },
+          overflowButton = overflowButton,
         )
       }
     }
@@ -110,7 +149,14 @@ class SettingsToolbarHolder {
  * stays, because the preference screens are still fragments.
  */
 @Composable
-fun SettingsToolbar(title: String, showBack: Boolean, onBack: () -> Unit) {
+fun SettingsToolbar(
+  title: String,
+  showBack: Boolean,
+  onBack: () -> Unit,
+  showOverflow: Boolean = false,
+  onOverflow: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+  overflowButton: OverflowButtonBounds = OverflowButtonBounds(),
+) {
   Row(
     verticalAlignment = Alignment.CenterVertically,
     modifier =
@@ -144,6 +190,31 @@ fun SettingsToolbar(title: String, showBack: Boolean, onBack: () -> Unit) {
         // than the middle of the line box compose centers.
         modifier = Modifier.offset(y = (-0.5).dp),
       )
+    }
+    if (showOverflow) {
+      Box(
+        modifier =
+          Modifier.size(width = 40.dp, height = 48.dp)
+            .onGloballyPositioned { overflowButton.bounds = it.boundsInWindow() }
+            .clickable {
+              onOverflow(
+                overflowButton.bounds.left.toInt(),
+                overflowButton.bounds.top.toInt(),
+                overflowButton.bounds.right.toInt(),
+                overflowButton.bounds.bottom.toInt(),
+              )
+            },
+        contentAlignment = Alignment.Center,
+      ) {
+        Icon(
+          painter = painterResource(R.drawable.ic_more_vert),
+          contentDescription = null,
+          // The toolbar tints its overflow with `colorControlNormal`, not the
+          // `colorOnSurfaceVariant` the vector tints itself with.
+          tint = themeAttrColor(android.R.attr.colorControlNormal),
+          modifier = Modifier.size(toolbarIconSize).offset(x = (-2).dp),
+        )
+      }
     }
   }
 }

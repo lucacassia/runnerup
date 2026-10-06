@@ -21,21 +21,37 @@ import android.content.Intent;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.compose.ui.platform.ComposeView;
 import org.runnerup.R;
 import org.runnerup.util.ViewUtil;
 
 public class AudioCueSettingsActivity extends AppCompatActivity {
   public static final String SUFFIX = "_audio_cues";
 
+  private final ComposeOverflowMenu overflow = new ComposeOverflowMenu(this);
+  private SettingsToolbarHolder toolbar;
+
+  /**
+   * The overflow menu the fragment contributes its items to. Compose draws the button that opens
+   * it, but the menu is still the platform popup.
+   */
+  public ComposeOverflowMenu getOverflowMenu() {
+    return overflow;
+  }
+
+  /** The app bar, so the fragment can add its items to the overflow. */
+  public SettingsToolbarHolder getToolbar() {
+    return toolbar;
+  }
+
   public void onCreate(Bundle savedInstanceState) {
     EdgeToEdge.enable(this);
     super.onCreate(savedInstanceState);
     setContentView(R.layout.settings_activity);
 
-    Toolbar toolbar = findViewById(R.id.actionbar);
-    setSupportActionBar(toolbar);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    toolbar = new SettingsToolbarHolder(org.runnerup.common.R.string.Audio_cue_settings, true);
+    toolbar.bind((ComposeView) findViewById(R.id.actionbar));
+    toolbar.setOnBackClickListener(() -> getOnBackPressedDispatcher().onBackPressed());
 
     Intent intent = getIntent();
     String settingsName = intent.getStringExtra("name");
