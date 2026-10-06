@@ -71,6 +71,42 @@ public enum Intensity {
     return cueId;
   }
 
+  /** The text colour of the badge that shows this intensity. */
+  public int getBadgeTextColorId() {
+    switch (this) {
+      case ACTIVE:
+        return R.color.stepActive;
+      case RESTING:
+        return R.color.stepResting;
+      case REPEAT:
+        return R.color.stepRepeat;
+      case WARMUP:
+        return R.color.stepWarmup;
+      case COOLDOWN:
+        return R.color.stepCooldown;
+      case RECOVERY:
+        return R.color.stepRecovery;
+      default:
+        return R.color.stepResting;
+    }
+  }
+
+  /** The background colour of the badge that shows this intensity. */
+  public int getBadgeBgColorId() {
+    switch (this) {
+      case ACTIVE:
+        return R.color.stepActiveBg;
+      case WARMUP:
+        return R.color.stepWarmupBg;
+      case COOLDOWN:
+        return R.color.stepCooldownBg;
+      case RECOVERY:
+        return R.color.stepRecoveryBg;
+      default:
+        return R.color.stepRestingBg;
+    }
+  }
+
   public static Intensity valueOf(int valueInt) {
     switch (valueInt) {
       case INTENSITY.ACTIVE:

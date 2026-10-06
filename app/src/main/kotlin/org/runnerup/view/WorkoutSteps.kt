@@ -50,7 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.ConfigurationCompat
 import java.util.Locale
-import org.runnerup.R
 import org.runnerup.common.R as CommonR
 import org.runnerup.util.Formatter
 import org.runnerup.workout.Dimension
@@ -224,23 +223,8 @@ private fun RepeatGroupCard(
 
 @Composable
 private fun IntensityBadge(intensity: Intensity) {
-  val textColorId =
-    when (intensity) {
-      Intensity.ACTIVE -> R.color.stepActive
-      Intensity.WARMUP -> R.color.stepWarmup
-      Intensity.COOLDOWN -> R.color.stepCooldown
-      Intensity.RECOVERY -> R.color.stepRecovery
-      Intensity.REPEAT -> R.color.stepRepeat
-      else -> R.color.stepResting
-    }
-  val bgColorId =
-    when (intensity) {
-      Intensity.ACTIVE -> R.color.stepActiveBg
-      Intensity.WARMUP -> R.color.stepWarmupBg
-      Intensity.COOLDOWN -> R.color.stepCooldownBg
-      Intensity.RECOVERY -> R.color.stepRecoveryBg
-      else -> R.color.stepRestingBg
-    }
+  val textColorId = intensity.badgeTextColorId
+  val bgColorId = intensity.badgeBgColorId
   Text(
     text = stringResource(intensity.textId).uppercase(locale()),
     style = TextStyle(fontSize = 11.sp).withFontPadding().copy(fontWeight = FontWeight.Bold),

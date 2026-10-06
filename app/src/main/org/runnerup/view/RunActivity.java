@@ -741,9 +741,9 @@ public class RunActivity extends AppCompatActivity implements TickListener {
     if (curr.getIntensity() != null) {
       runSheetState.setBadgeText(getString(curr.getIntensity().getTextId()));
       runSheetState.setBadgeTextColor(
-          ContextCompat.getColor(this, StepButton.intensityTextColorId(curr.getIntensity())));
+          ContextCompat.getColor(this, curr.getIntensity().getBadgeTextColorId()));
       runSheetState.setBadgeBgColor(
-          ContextCompat.getColor(this, StepButton.intensityBgColorId(curr.getIntensity())));
+          ContextCompat.getColor(this, curr.getIntensity().getBadgeBgColorId()));
       runSheetState.setBadgeVisible(true);
     }
     double stepTime = workout.getTime(Scope.STEP);
