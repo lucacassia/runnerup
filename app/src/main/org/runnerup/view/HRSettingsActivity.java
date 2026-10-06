@@ -31,7 +31,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
-import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -40,15 +39,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
+import androidx.compose.ui.platform.ComposeView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
@@ -79,12 +76,9 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   private String btProviderName;
   private HRProvider hrProvider = null;
 
-  private Button connectButton = null;
-  private Button scanButton = null;
-  private TextView tvBTName = null;
-  private TextView tvHR = null;
-  private TextView tvLog = null;
-  private TextView tvBatteryLevel = null;
+  private final HrSettingsPageState pageState = new HrSettingsPageState();
+  private final ComposeOverflowMenu overflowMenu = new ComposeOverflowMenu(this);
+  private final OverflowButtonBounds overflowButton = new OverflowButtonBounds();
 
   private Formatter formatter = null;
   private RunnerUpGraphView graphView = null;
@@ -101,8 +95,8 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
           result -> {
             if (!hrProvider.isEnabled()) {
               log("Bluetooth not enabled!");
-              scanButton.setEnabled(false);
-              connectButton.setEnabled(false);
+              pageState.setScanEnabled(false);
+              pageState.setConnectEnabled(false);
               return;
             }
             load();
@@ -115,8 +109,8 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
   private final OnClickListener hrZonesClick =
       arg0 -> startActivity(new Intent(HRSettingsActivity.this, HRZonesActivity.class));
 
-  private final OnClickListener scanButtonClick =
-      v -> {
+  private final Runnable scanButtonClick =
+      () -> {
         clear();
         stopTimer();
 
@@ -132,28 +126,12 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.hr_settings);
 
-    Toolbar toolbar = findViewById(R.id.actionbar);
-    setSupportActionBar(toolbar);
-    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
     providers = HRManager.getHRProviderList(this);
     deviceAdapter = new DeviceAdapter(this);
 
     if (providers.isEmpty()) {
       notSupported();
     }
-
-    tvLog = findViewById(R.id.hr_log);
-    tvLog.setMovementMethod(new ScrollingMovementMethod());
-    tvBTName = findViewById(R.id.hr_device);
-    tvHR = findViewById(R.id.hr_value);
-    tvBatteryLevel = findViewById(R.id.hr_battery);
-    tvBatteryLevel.setVisibility(View.GONE);
-    scanButton = findViewById(R.id.scan_button);
-    scanButton.setOnClickListener(scanButtonClick);
-    connectButton = findViewById(R.id.connect_button);
-    connectButton.setOnClickListener(arg0 -> connect());
-    ViewUtil.Insets(findViewById(R.id.hr_settings_view), true);
 
     formatter = new Formatter(this);
     {
@@ -168,10 +146,22 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
                   : formatter.formatHeartRate(Formatter.Format.TXT_SHORT, value));
       graphView.setManualYBounds(40, 200);
       graphView.setXWindow(0, xInterval);
-
-      LinearLayout graphLayout = findViewById(R.id.hr_graph_layout);
-      graphLayout.addView(graphView);
     }
+
+    HrSettingsHost.INSTANCE.attach(
+        (ComposeView) findViewById(R.id.hr_settings_root),
+        pageState,
+        new HrSettingsBindings(
+            graphView,
+            scanButtonClick,
+            this::connect,
+            (left, top, right, bottom) ->
+                overflowMenu.show(
+                    left, top, right, bottom, this::buildMenu, item -> onOptionsItemSelected(item)),
+            overflowButton,
+            () -> getOnBackPressedDispatcher().onBackPressed(),
+            org.runnerup.common.R.string.Heart_Rate_Monitor));
+    ViewUtil.Insets(findViewById(R.id.hr_settings_view), true);
 
     load();
     open();
@@ -195,8 +185,8 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
         }
       };
 
-  @Override
-  public boolean onCreateOptionsMenu(Menu menu) {
+  /** Fills the toolbar's overflow menu, which the platform popup then shows. */
+  private void buildMenu(Menu menu) {
     getMenuInflater().inflate(R.menu.hrsettings_menu, menu);
     SharedPreferences prefs =
         PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
@@ -207,8 +197,6 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
       boolean isChecked = prefs.getBoolean(res.getString(e.getValue()), false);
       item.setChecked(isChecked);
     }
-
-    return true;
   }
 
   @Override
@@ -244,7 +232,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
     if (logBuffer.length() > 5000) {
       logBuffer.setLength(5000);
     }
-    tvLog.setText(logBuffer.toString());
+    pageState.setLog(logBuffer.toString());
   }
 
   private void clearHRSettings() {
@@ -328,30 +316,30 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
 
   private void updateView() {
     if (hrProvider == null) {
-      scanButton.setEnabled(true);
-      connectButton.setEnabled(false);
-      connectButton.setText(org.runnerup.common.R.string.Connect);
-      tvBTName.setText("");
-      tvHR.setText("");
+      pageState.setScanEnabled(true);
+      pageState.setConnectEnabled(false);
+      pageState.setConnectLabelRes(org.runnerup.common.R.string.Connect);
+      pageState.setDeviceName("");
+      pageState.setHeartRate("");
       return;
     }
 
     if (btName != null) {
-      tvBTName.setText(btName);
+      pageState.setDeviceName(btName);
     } else {
-      tvBTName.setText("");
-      tvHR.setText("");
+      pageState.setDeviceName("");
+      pageState.setHeartRate("");
     }
 
     if (hrProvider.isConnected()) {
-      connectButton.setText(org.runnerup.common.R.string.Disconnect);
-      connectButton.setEnabled(true);
+      pageState.setConnectLabelRes(org.runnerup.common.R.string.Disconnect);
+      pageState.setConnectEnabled(true);
     } else if (hrProvider.isConnecting()) {
-      connectButton.setEnabled(false);
-      connectButton.setText(org.runnerup.common.R.string.Connecting);
+      pageState.setConnectEnabled(false);
+      pageState.setConnectLabelRes(org.runnerup.common.R.string.Connecting);
     } else {
-      connectButton.setEnabled(btName != null);
-      connectButton.setText(org.runnerup.common.R.string.Connect);
+      pageState.setConnectEnabled(btName != null);
+      pageState.setConnectLabelRes(org.runnerup.common.R.string.Connect);
     }
   }
 
@@ -542,8 +530,8 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
       return;
     }
 
-    tvBTName.setText(getName());
-    tvHR.setText("?");
+    pageState.setDeviceName(String.valueOf(getName()));
+    pageState.setHeartRate("?");
     String name = btName;
     if (name == null || name.isEmpty()) {
       name = btAddress;
@@ -625,7 +613,7 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
       graphView.clearLiveData();
     }
 
-    tvHR.setText(String.format(Locale.getDefault(), "%d", hrValue));
+    pageState.setHeartRate(String.format(Locale.getDefault(), "%d", hrValue));
     if (age != lastTimestamp) {
       double x = (age - timerStartTime) / 1000.0;
       graphView.appendPoint(x, hrValue, GRAPH_HISTORY_SIZE);
@@ -665,13 +653,13 @@ public class HRSettingsActivity extends AppCompatActivity implements HRClient {
     if (connectOK) {
       save();
       if (hrProvider.getBatteryLevel() > 0) {
-        tvBatteryLevel.setVisibility(View.VISIBLE);
-        tvBatteryLevel.setText(
+        pageState.setBattery(
             String.format(
                 Locale.getDefault(),
                 "%s: %d%%",
                 getResources().getText(org.runnerup.common.R.string.Battery_level),
                 hrProvider.getBatteryLevel()));
+        pageState.setBatteryVisible(true);
       }
       startTimer();
     }

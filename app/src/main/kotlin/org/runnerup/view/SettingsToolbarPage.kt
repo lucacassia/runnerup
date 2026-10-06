@@ -132,9 +132,10 @@ class SettingsToolbarHolder(
           showBack = showBackState.value,
           onBack = { backClick.run() },
           showOverflow = showOverflowState.value,
-          onOverflow = { left, top, right, bottom ->
-            overflowClick?.onOverflowMenu(left, top, right, bottom)
-          },
+          onOverflow =
+            OverflowMenuListener { left, top, right, bottom ->
+              overflowClick?.onOverflowMenu(left, top, right, bottom)
+            },
           overflowButton = overflowButton,
         )
       }
@@ -154,8 +155,9 @@ fun SettingsToolbar(
   showBack: Boolean,
   onBack: () -> Unit,
   showOverflow: Boolean = false,
-  onOverflow: (Int, Int, Int, Int) -> Unit = { _, _, _, _ -> },
+  onOverflow: OverflowMenuListener = OverflowMenuListener { _, _, _, _ -> },
   overflowButton: OverflowButtonBounds = OverflowButtonBounds(),
+  rootTitle: Int = CommonR.string.Settings,
 ) {
   Row(
     verticalAlignment = Alignment.CenterVertically,
@@ -181,7 +183,7 @@ fun SettingsToolbar(
       contentAlignment = Alignment.CenterStart,
     ) {
       Text(
-        text = title,
+        text = title.ifEmpty { stringResource(rootTitle) },
         style = XmlText.title,
         color = MaterialTheme.colorScheme.onSurface,
         maxLines = 1,
@@ -197,11 +199,12 @@ fun SettingsToolbar(
           Modifier.size(width = 40.dp, height = 48.dp)
             .onGloballyPositioned { overflowButton.bounds = it.boundsInWindow() }
             .clickable {
-              onOverflow(
-                overflowButton.bounds.left.toInt(),
-                overflowButton.bounds.top.toInt(),
-                overflowButton.bounds.right.toInt(),
-                overflowButton.bounds.bottom.toInt(),
+              val bounds = overflowButton.bounds
+              onOverflow.onOverflowMenu(
+                bounds.left.toInt(),
+                bounds.top.toInt(),
+                bounds.right.toInt(),
+                bounds.bottom.toInt(),
               )
             },
         contentAlignment = Alignment.Center,

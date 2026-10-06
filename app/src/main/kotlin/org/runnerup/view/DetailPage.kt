@@ -522,7 +522,9 @@ private fun GraphPane(state: DetailPageState, bindings: DetailBindings) {
   Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
     AndroidView(
       factory = { bindings.graphView },
-      modifier = Modifier.fillMaxWidth().padding(16.dp),
+      // The graph clips its own drawing, which compose would not do on its own: the last x axis
+      // label is wider than the plot and the platform cuts it off.
+      modifier = Modifier.fillMaxWidth().padding(16.dp).clipToBounds(),
     )
   }
 }

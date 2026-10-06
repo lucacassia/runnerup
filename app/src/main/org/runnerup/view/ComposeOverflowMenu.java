@@ -61,22 +61,23 @@ public class ComposeOverflowMenu {
       int left, int top, int right, int bottom, MenuBuilder builder, OnItemSelected listener) {
     if (popup == null) {
       // The popup needs a view to anchor against. Compose cannot hand it one, so an invisible
-      // view is placed over the button it drew. It has to have a real size: the popup works out
-      // where to put itself from the anchor's rectangle, and a zero sized one leaves it guessing.
+      // zero sized view marks the spot instead. Zero height is deliberate: the popup drops below
+      // its anchor's top edge only when the anchor is that tall, and this is where the platform's
+      // own overflow button puts the top of the menu.
       anchor = new View(activity);
       anchor.setVisibility(View.INVISIBLE);
-      // The popup keeps its right edge 8px inside the anchor's, matching where the toolbar's own
-      // overflow button lands.
-      FrameLayout.LayoutParams params =
-          new FrameLayout.LayoutParams(right - left - 8, Math.max(bottom - top, 1));
+      FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(0, 0);
       params.gravity = Gravity.TOP | Gravity.START;
-      params.leftMargin = left;
+      // 8px in from the button's right edge, which is where the platform lands the menu's edge.
+      int anchorLeft = right - 8;
+      params.leftMargin = anchorLeft;
       params.topMargin = top;
       ViewGroup decor = (ViewGroup) activity.getWindow().getDecorView();
       decor.addView(anchor, params);
-      // The popup reads the anchor's rectangle the moment it is shown, and adding a view does not
-      // lay it out until the next pass, so the rectangle is filled in here rather than left empty.
-      anchor.layout(left, top, right, bottom);
+      // Adding a view does not lay it out until the next pass and the popup reads the anchor's
+      // rectangle the moment it is shown, so the rectangle is filled in here rather than left
+      // empty for it to give up on.
+      anchor.layout(anchorLeft, top, anchorLeft, top);
 
       popup = new PopupMenu(activity, anchor, Gravity.END);
     }
