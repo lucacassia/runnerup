@@ -38,7 +38,7 @@ import java.util.function.Consumer;
  */
 public abstract class ComposePreferenceFragment extends PreferenceFragmentCompat {
 
-  private ComposeView composeView = null;
+  private final PreferenceScreenHolder holder = new PreferenceScreenHolder();
 
   @Override
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -57,7 +57,7 @@ public abstract class ComposePreferenceFragment extends PreferenceFragmentCompat
         new ViewGroup.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     parent.addView(compose, parent.indexOfChild(recyclerView) + 1);
-    composeView = compose;
+    holder.bind(compose, (Consumer<Preference>) this::onPreferenceChosen);
     bindPreferences();
   }
 
@@ -70,18 +70,18 @@ public abstract class ComposePreferenceFragment extends PreferenceFragmentCompat
 
   @Override
   public void onDestroyView() {
-    composeView = null;
+    holder.setRows(java.util.Collections.emptyList());
     super.onDestroyView();
   }
 
   private void bindPreferences() {
     androidx.preference.PreferenceScreen screen = getPreferenceScreen();
-    if (composeView == null || screen == null) {
+    if (screen == null) {
       return;
     }
     java.util.List<Preference> rows = new java.util.ArrayList<>();
     collect(screen, rows);
-    PreferenceScreenHost.attach(composeView, rows, (Consumer<Preference>) this::onPreferenceChosen);
+    holder.setRows(rows);
   }
 
   /**
@@ -116,5 +116,8 @@ public abstract class ComposePreferenceFragment extends PreferenceFragmentCompat
   @SuppressLint("RestrictedApi") // the row this replaces is the library's own caller of it
   private void onPreferenceChosen(Preference preference) {
     preference.performClick();
+    // A tap changes the preference, and the rows read their state straight off the preference
+    // objects, so they have to be handed over again for the change to show.
+    bindPreferences();
   }
 }

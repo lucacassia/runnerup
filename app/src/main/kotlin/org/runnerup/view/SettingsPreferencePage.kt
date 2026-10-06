@@ -28,12 +28,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.preference.Preference
@@ -68,8 +70,17 @@ private val preferenceTitleStyle =
     platformStyle = PlatformTextStyle(includeFontPadding = true),
   )
 
-/** `?android:attr/textAppearanceSmall`, which the preference summary uses. */
-private val preferenceSummaryStyle = XmlText.bodyMedium
+/**
+ * `?android:attr/textAppearanceSmall`, which the preference summary uses. It resolves to a 14sp
+ * style with no line height, which measures 38px rather than the 40px a 20sp line height would
+ * force, and every row with a summary is that much shorter in the platform.
+ */
+private val preferenceSummaryStyle =
+  TextStyle(
+    fontSize = 14.sp,
+    letterSpacing = 0.017857142.em,
+    platformStyle = PlatformTextStyle(includeFontPadding = true),
+  )
 
 /** The row height `?android:attr/listPreferredItemHeightSmall` resolves to. */
 private val rowMinHeight = 48.dp
@@ -80,18 +91,30 @@ private val dividerThickness = 1.dp
 /** The divider colour, measured from what the library draws. */
 private val dividerColor = Color(0xFFE0E0E0)
 
-object PreferenceScreenHost {
-  @JvmStatic
-  fun attach(
-    composeView: ComposeView,
-    preferences: List<Preference>,
-    onClick: Consumer<Preference>,
-  ) {
+/**
+ * Holds the rows of a settings screen.
+ *
+ * <p>The rows are handed over rather than read from the fragment on every composition, because a
+ * tap changes a preference without replacing any of the row objects. Assigning the same list again
+ * still has to invalidate the composition, hence the never equal policy.
+ */
+class PreferenceScreenHolder {
+  private val state = mutableStateOf<List<Preference>>(emptyList(), neverEqualPolicy())
+
+  /** The preferences to draw, in the order the library draws them. */
+  val rows: List<Preference>
+    get() = state.value
+
+  fun setRows(rows: List<Preference>) {
+    state.value = rows
+  }
+
+  fun bind(composeView: ComposeView, onClick: Consumer<Preference>) {
     composeView.setViewCompositionStrategy(
       ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
     )
     composeView.setContent {
-      RunnerUpTheme { PreferenceList(preferences = preferences, onClick = onClick::accept) }
+      RunnerUpTheme { PreferenceList(preferences = rows, onClick = onClick::accept) }
     }
   }
 }
@@ -100,11 +123,9 @@ object PreferenceScreenHost {
 private sealed interface Entry {
   val preference: Preference
 
-  data class Divider(override val preference: Preference) : Entry
-
   data class Category(override val preference: Preference, val showDivider: Boolean) : Entry
 
-  data class Row(override val preference: Preference) : Entry
+  data class Row(override val preference: Preference, val signature: String) : Entry
 }
 
 /**
@@ -114,34 +135,45 @@ private sealed interface Entry {
  */
 @Composable
 fun PreferenceList(preferences: List<Preference>, onClick: (Preference) -> Unit) {
-  val entries = remember(preferences) { flatten(preferences) }
+  // Not memoised: a tap changes a preference without changing the list of preference objects, and
+  // remember compares its key structurally, so a memo would keep drawing the old state.
+  val entries = flatten(preferences)
   val onSurface = themeAttrColor(com.google.android.material.R.attr.colorOnSurface)
   val summaryColor = themeAttrColor(android.R.attr.textColorSecondary)
   val accent = themeAttrColor(AppCompatR.attr.colorPrimary)
   LazyColumn(modifier = Modifier.fillMaxWidth()) {
-    entries.forEachIndexed { index, entry ->
+    entries.forEach { entry ->
       when (entry) {
-        is Entry.Divider ->
-          item(key = "divider:$index") {
-            Box(
-              modifier = Modifier.fillMaxWidth().height(dividerThickness).background(dividerColor)
-            )
-          }
         is Entry.Category ->
           item(key = "category:${entry.preference.key}") {
-            Text(
-              text = entry.preference.title?.toString().orEmpty(),
-              style = XmlText.labelLarge,
-              color = accent,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis,
-              modifier =
-                Modifier.fillMaxWidth()
-                  .padding(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 8.dp),
-            )
+            Column(modifier = Modifier.fillMaxWidth()) {
+              if (entry.showDivider) {
+                // The library draws the divider over the top of the category rather than above it,
+                // so it costs no height: the category's own top margin is that much shorter.
+                Box(
+                  modifier =
+                    Modifier.fillMaxWidth().height(dividerThickness).background(dividerColor)
+                )
+              }
+              Text(
+                text = entry.preference.title?.toString().orEmpty(),
+                style = XmlText.labelLarge,
+                color = accent,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier =
+                  Modifier.fillMaxWidth()
+                    .padding(
+                      start = 16.dp,
+                      top = if (entry.showDivider) 23.dp else 24.dp,
+                      end = 16.dp,
+                      bottom = 8.dp,
+                    ),
+              )
+            }
           }
         is Entry.Row ->
-          item(key = "item:${entry.preference.key}") {
+          item(key = "item:${entry.preference.key}:${entry.signature}") {
             PreferenceRow(
               preference = entry.preference,
               onClick = onClick,
@@ -159,13 +191,25 @@ private fun flatten(preferences: List<Preference>): List<Entry> {
   var seenCategory = false
   for (preference in preferences) {
     if (preference is PreferenceCategory) {
-      if (seenCategory) {
-        entries.add(Entry.Divider(preference))
-      }
+      entries.add(Entry.Category(preference, showDivider = seenCategory))
       seenCategory = true
-      entries.add(Entry.Category(preference, showDivider = !seenCategory))
     } else {
-      entries.add(Entry.Row(preference))
+      val twoState = preference as? TwoStatePreference
+      // The lazy list reuses an item that keeps its key, so the key has to change when the row it
+      // draws does, otherwise a toggled checkbox would keep drawing its old state.
+      entries.add(
+        Entry.Row(
+          preference,
+          listOf(
+              preference.title,
+              preference.summary,
+              preference.isEnabled,
+              twoState?.isChecked,
+              twoState?.isEnabled,
+            )
+            .joinToString("|"),
+        )
+      )
     }
   }
   return entries
@@ -241,8 +285,5 @@ private fun PreferenceCheckBox(preference: TwoStatePreference, enabled: Boolean)
       view.isChecked = preference.isChecked
       view.isEnabled = enabled
     },
-    // The library lays the checkbox out in a frame that does not take part in the height of the
-    // row, so it must not make the row taller either.
-    modifier = Modifier.heightIn(max = 24.dp),
   )
 }
