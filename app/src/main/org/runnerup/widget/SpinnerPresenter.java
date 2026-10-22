@@ -43,6 +43,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import org.runnerup.R;
+import org.runnerup.util.Formatter;
 import org.runnerup.util.SafeParse;
 
 /**
@@ -235,7 +236,7 @@ public class SpinnerPresenter {
   private void setupDatePicker(
       final Context context, AttributeSet attrs, CharSequence defaultValue) {
     if (defaultValue != null && "today".contentEquals(defaultValue)) {
-      DateFormat df = android.text.format.DateFormat.getDateFormat(context);
+      DateFormat df = Formatter.newDateFormat();
       defaultValue = df.format(new Date());
     }
     setValueWithoutSave(defaultValue);
@@ -267,7 +268,7 @@ public class SpinnerPresenter {
                     private String getValue(DatePicker dp) {
                       Calendar c = Calendar.getInstance();
                       c.set(dp.getYear(), dp.getMonth(), dp.getDayOfMonth());
-                      DateFormat df = android.text.format.DateFormat.getDateFormat(context);
+                      DateFormat df = Formatter.newDateFormat();
                       return df.format(c.getTime());
                     }
                   })

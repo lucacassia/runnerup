@@ -178,7 +178,7 @@ public class ManualActivity extends AppCompatActivity {
       save.put(DB.ACTIVITY.TIME, secs);
     }
     if (date.length() > 0 && time.length() > 0) { // todo deal with parse exceptions
-      DateFormat dfd = android.text.format.DateFormat.getDateFormat(ManualActivity.this);
+      DateFormat dfd = Formatter.newDateFormat();
       DateFormat dft = android.text.format.DateFormat.getTimeFormat(ManualActivity.this);
       try {
         Date d = dfd.parse(date.toString());

@@ -41,6 +41,12 @@ public class Formatter implements OnSharedPreferenceChangeListener {
   public static final double km_meters = 1000.0;
   public static final double mi_meters = 1609.34;
   private static final double meters_per_foot = 0.3048;
+  public static final String DATE_FORMAT_STRING = "dd/MM/yyyy";
+
+  public static java.text.DateFormat newDateFormat() {
+    return new SimpleDateFormat(DATE_FORMAT_STRING, Locale.getDefault());
+  }
+
   private final Resources resources;
   private final LocaleResources cueResources;
   private final SharedPreferences sharedPreferences;
@@ -62,7 +68,7 @@ public class Formatter implements OnSharedPreferenceChangeListener {
     sharedPreferences = PreferenceManager.getDefaultSharedPreferences(ctx);
     sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
-    dateFormat = android.text.format.DateFormat.getDateFormat(ctx);
+    dateFormat = newDateFormat();
     timeFormat = android.text.format.DateFormat.getTimeFormat(ctx);
     monthFormat = new SimpleDateFormat("LLL yyyy", cueResources.defaultLocale);
     monthShortFormat = new SimpleDateFormat("LLL", cueResources.defaultLocale);

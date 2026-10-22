@@ -32,7 +32,6 @@ import android.widget.TextView;
 import androidx.appcompat.app.AlertDialog;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import java.io.File;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,6 +47,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.runnerup.R;
 import org.runnerup.common.util.Constants;
+import org.runnerup.util.Formatter;
 import org.runnerup.util.M3ProgressDialog;
 
 /** Merges an imported RunnerUp database file into the current database. */
@@ -287,8 +287,11 @@ class DatabaseImporter implements Constants {
 
     TextView info = new TextView(ctx);
     String name = conflict.imported.values.getAsString(DB.ACTIVITY.NAME);
+    Date startTime = new Date(conflict.imported.startTime * 1000);
     String start =
-        DateFormat.getDateTimeInstance().format(new Date(conflict.imported.startTime * 1000));
+        Formatter.newDateFormat().format(startTime)
+            + " "
+            + android.text.format.DateFormat.getTimeFormat(ctx).format(startTime);
     info.setText(name != null ? name + "\n" + start : start);
     content.addView(info);
 
