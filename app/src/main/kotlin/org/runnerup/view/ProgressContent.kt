@@ -42,6 +42,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -145,6 +146,7 @@ private fun ProgressContent(
     RecordsSection(
       records = state.records,
       sport = state.sport,
+      dateFormat = state.dateFormat,
       onActivityClick = onActivityClick,
       modifier = Modifier.padding(top = 16.dp),
     )
@@ -373,6 +375,7 @@ private fun CalendarSection(
 private fun RecordsSection(
   records: List<ProgressRecord>,
   sport: Int?,
+  dateFormat: String,
   onActivityClick: (Long) -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -407,6 +410,7 @@ private fun RecordsSection(
                 RecordBadge(
                   record = record,
                   formatter = formatter,
+                  dateFormat = dateFormat,
                   onClick = { onActivityClick(record.activityId) },
                   modifier =
                     Modifier.weight(1f)
@@ -427,6 +431,7 @@ private fun RecordsSection(
 private fun RecordBadge(
   record: ProgressRecord,
   formatter: Formatter,
+  dateFormat: String,
   onClick: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
@@ -476,13 +481,15 @@ private fun RecordBadge(
           color = ringColor,
         )
       }
-      Text(
-        text = badgeMeta(record, formatter),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.padding(top = 4.dp),
-      )
+      key(dateFormat) {
+        Text(
+          text = badgeMeta(record, formatter),
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          textAlign = TextAlign.Center,
+          modifier = Modifier.padding(top = 4.dp),
+        )
+      }
       Box(
         modifier =
           Modifier.padding(top = 8.dp)

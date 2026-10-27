@@ -289,7 +289,7 @@ class DatabaseImporter implements Constants {
     String name = conflict.imported.values.getAsString(DB.ACTIVITY.NAME);
     Date startTime = new Date(conflict.imported.startTime * 1000);
     String start =
-        Formatter.newDateFormat().format(startTime)
+        Formatter.newDateFormat(ctx).format(startTime)
             + " "
             + android.text.format.DateFormat.getTimeFormat(ctx).format(startTime);
     info.setText(name != null ? name + "\n" + start : start);

@@ -21,6 +21,8 @@
     <string name="Theme_mode_system">Follow system</string>
     <string name="Theme_mode_light">Light</string>
     <string name="Theme_mode_dark">Dark</string>
+    <string name="Date_format">Date format</string>
+    <string name="Date_format_device">Device default</string>
     <string name="Appearance_category">Appearance</string>
     <string name="history_empty">No activities yet</string>
     <string name="history_empty_description">Your recorded workouts and manual entries will appear here.</string>

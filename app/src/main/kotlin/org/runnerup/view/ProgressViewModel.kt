@@ -51,6 +51,7 @@ data class ProgressUiState(
   val monthLabel: String = "",
   val calendarCells: List<Statistics.CalendarDay> = emptyList(),
   val records: List<ProgressRecord> = emptyList(),
+  val dateFormat: String = "",
 )
 
 class ProgressViewModel(application: Application) : AndroidViewModel(application) {
@@ -107,6 +108,10 @@ class ProgressViewModel(application: Application) : AndroidViewModel(application
     val visible = records.filter { sport == null || it.sport == sport }
     holderIds = visible.mapTo(LinkedHashSet()) { it.activityId }
     _state.update { it.copy(records = visible) }
+  }
+
+  fun setDateFormat(value: String) {
+    _state.update { it.copy(dateFormat = value) }
   }
 
   fun recordHolderIds(): Set<Long> = holderIds

@@ -10,4 +10,16 @@
         <item>light</item>
         <item>dark</item>
     </string-array>
+    <string-array name="dateFormatEntries">
+        <item>DD/MM/YYYY</item>
+        <item>MM/DD/YYYY</item>
+        <item>YYYY-MM-DD</item>
+        <item>@string/Date_format_device</item>
+    </string-array>
+    <string-array name="dateFormatValues" translatable="false">
+        <item>dmy</item>
+        <item>mdy</item>
+        <item>ymd</item>
+        <item>device</item>
+    </string-array>
 </resources>

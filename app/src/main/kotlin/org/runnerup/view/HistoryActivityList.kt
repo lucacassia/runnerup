@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -92,6 +93,7 @@ private fun HistoryActivityList(state: HistoryUiState, onActivityClick: (Long) -
             row = row,
             isRecordHolder = row.id in state.recordHolderIds,
             formatter = formatter,
+            dateFormat = state.dateFormat,
             onClick = { onActivityClick(row.id) },
           )
       }
@@ -115,6 +117,7 @@ private fun HistoryActivityCard(
   row: HistoryActivityRow,
   isRecordHolder: Boolean,
   formatter: Formatter,
+  dateFormat: String,
   onClick: () -> Unit,
 ) {
   val context = LocalContext.current
@@ -174,12 +177,14 @@ private fun HistoryActivityCard(
             modifier = Modifier.size(24.dp),
           )
         }
-        Text(
-          text = formatter.formatDateTime(row.startTime),
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          modifier = Modifier.padding(top = 2.dp),
-        )
+        key(dateFormat) {
+          Text(
+            text = formatter.formatDateTime(row.startTime),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp),
+          )
+        }
         Row(modifier = Modifier.padding(top = 2.dp)) {
           MetricText(
             text =

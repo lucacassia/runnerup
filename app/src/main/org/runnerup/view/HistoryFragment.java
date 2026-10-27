@@ -117,6 +117,13 @@ public class HistoryFragment extends Fragment implements Constants {
             }
           });
 
+  private final SharedPreferences.OnSharedPreferenceChangeListener dateFormatListener =
+      (preferences, key) -> {
+        if (key != null && getString(R.string.pref_date_format).contentEquals(key)) {
+          reloadForDateFormat();
+        }
+      };
+
   public HistoryFragment() {
     super(R.layout.history);
   }
@@ -193,6 +200,18 @@ public class HistoryFragment extends Fragment implements Constants {
         this::onTabSelected);
   }
 
+  private void reloadForDateFormat() {
+    String value =
+        PreferenceManager.getDefaultSharedPreferences(requireContext())
+            .getString(getString(R.string.pref_date_format), Formatter.DATE_FORMAT_DAY_FIRST);
+    if (historyViewModel != null) {
+      historyViewModel.setDateFormat(value);
+    }
+    if (progressViewModel != null) {
+      progressViewModel.setDateFormat(value);
+    }
+  }
+
   private void onTabSelected(int index) {
     if (index == currentTab) {
       if (index == TAB_STATISTICS_INDEX) {
@@ -203,6 +222,20 @@ public class HistoryFragment extends Fragment implements Constants {
     }
     chromeState.select(index);
     selectTab(index);
+  }
+
+  @Override
+  public void onStart() {
+    super.onStart();
+    PreferenceManager.getDefaultSharedPreferences(requireContext())
+        .registerOnSharedPreferenceChangeListener(dateFormatListener);
+  }
+
+  @Override
+  public void onStop() {
+    PreferenceManager.getDefaultSharedPreferences(requireContext())
+        .unregisterOnSharedPreferenceChangeListener(dateFormatListener);
+    super.onStop();
   }
 
   @Override

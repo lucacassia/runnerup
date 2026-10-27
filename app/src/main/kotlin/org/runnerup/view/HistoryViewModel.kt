@@ -38,6 +38,7 @@ data class HistoryUiState(
   val rows: List<HistoryListRow> = emptyList(),
   val recordHolderIds: Set<Long> = emptySet(),
   val loaded: Boolean = false,
+  val dateFormat: String = "",
 )
 
 class HistoryViewModel(application: Application) : AndroidViewModel(application) {
@@ -51,6 +52,10 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
     viewModelScope.launch(Dispatchers.IO) {
       _state.update { it.copy(rows = queryRows(sport), loaded = true) }
     }
+  }
+
+  fun setDateFormat(value: String) {
+    _state.update { it.copy(dateFormat = value) }
   }
 
   fun setRecordHolders(ids: Set<Long>) {

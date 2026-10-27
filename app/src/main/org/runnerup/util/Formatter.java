@@ -41,16 +41,39 @@ public class Formatter implements OnSharedPreferenceChangeListener {
   public static final double km_meters = 1000.0;
   public static final double mi_meters = 1609.34;
   private static final double meters_per_foot = 0.3048;
-  public static final String DATE_FORMAT_STRING = "dd/MM/yyyy";
+  public static final String DATE_FORMAT_DAY_FIRST = "dmy";
+  public static final String DATE_FORMAT_MONTH_FIRST = "mdy";
+  public static final String DATE_FORMAT_ISO = "ymd";
+  public static final String DATE_FORMAT_DEVICE = "device";
 
-  public static java.text.DateFormat newDateFormat() {
-    return new SimpleDateFormat(DATE_FORMAT_STRING, Locale.getDefault());
+  public static java.text.DateFormat newDateFormat(String value, Locale locale) {
+    if (DATE_FORMAT_MONTH_FIRST.equals(value)) {
+      return new SimpleDateFormat("MM/dd/yyyy", locale);
+    }
+    if (DATE_FORMAT_ISO.equals(value)) {
+      return new SimpleDateFormat("yyyy-MM-dd", locale);
+    }
+    if (DATE_FORMAT_DEVICE.equals(value)) {
+      return java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT, locale);
+    }
+    return new SimpleDateFormat("dd/MM/yyyy", locale);
   }
 
+  public static java.text.DateFormat newDateFormat(Context context) {
+    String value =
+        PreferenceManager.getDefaultSharedPreferences(context)
+            .getString(context.getString(R.string.pref_date_format), DATE_FORMAT_DAY_FIRST);
+    if (DATE_FORMAT_DEVICE.equals(value)) {
+      return android.text.format.DateFormat.getDateFormat(context);
+    }
+    return newDateFormat(value, Locale.getDefault());
+  }
+
+  private final Context appContext;
   private final Resources resources;
   private final LocaleResources cueResources;
   private final SharedPreferences sharedPreferences;
-  private final java.text.DateFormat dateFormat;
+  private java.text.DateFormat dateFormat;
   // private HRZones hrZones = null;
   private final java.text.DateFormat timeFormat;
   private final java.text.DateFormat monthFormat;
@@ -63,12 +86,13 @@ public class Formatter implements OnSharedPreferenceChangeListener {
   private double base_meters = km_meters;
 
   public Formatter(Context ctx) {
+    appContext = ctx.getApplicationContext();
     resources = ctx.getResources();
     cueResources = getCueLangResources(ctx);
     sharedPreferences = PreferenceManager.getDefaultSharedPreferences(ctx);
     sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
-    dateFormat = newDateFormat();
+    dateFormat = newDateFormat(appContext);
     timeFormat = android.text.format.DateFormat.getTimeFormat(ctx);
     monthFormat = new SimpleDateFormat("LLL yyyy", cueResources.defaultLocale);
     monthShortFormat = new SimpleDateFormat("LLL", cueResources.defaultLocale);
@@ -127,7 +151,14 @@ public class Formatter implements OnSharedPreferenceChangeListener {
 
   @Override
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-    if (key != null && resources.getString(R.string.pref_unit).contentEquals(key)) setUnit();
+    if (key == null) {
+      return;
+    }
+    if (resources.getString(R.string.pref_unit).contentEquals(key)) {
+      setUnit();
+    } else if (resources.getString(R.string.pref_date_format).contentEquals(key)) {
+      dateFormat = newDateFormat(appContext);
+    }
   }
 
   private void setUnit() {

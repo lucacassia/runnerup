@@ -32,15 +32,35 @@ public class FormatterTest {
   }
 
   @Test
-  public void datesAreDayFirstWithFourDigitYear() {
-    Locale original = Locale.getDefault();
-    Locale.setDefault(Locale.UK);
-    try {
-      assertEquals("24/09/2026", Formatter.newDateFormat().format(date(2026, 9, 24)));
-      assertEquals("05/01/2026", Formatter.newDateFormat().format(date(2026, 1, 5)));
-      assertEquals("31/12/1999", Formatter.newDateFormat().format(date(1999, 12, 31)));
-    } finally {
-      Locale.setDefault(original);
-    }
+  public void dayFirstFormat() {
+    assertEquals(
+        "24/09/2026",
+        Formatter.newDateFormat(Formatter.DATE_FORMAT_DAY_FIRST, Locale.UK)
+            .format(date(2026, 9, 24)));
+    assertEquals(
+        "05/01/2026",
+        Formatter.newDateFormat(Formatter.DATE_FORMAT_DAY_FIRST, Locale.UK)
+            .format(date(2026, 1, 5)));
+  }
+
+  @Test
+  public void monthFirstFormat() {
+    assertEquals(
+        "09/24/2026",
+        Formatter.newDateFormat(Formatter.DATE_FORMAT_MONTH_FIRST, Locale.UK)
+            .format(date(2026, 9, 24)));
+  }
+
+  @Test
+  public void isoFormat() {
+    assertEquals(
+        "2026-09-24",
+        Formatter.newDateFormat(Formatter.DATE_FORMAT_ISO, Locale.UK).format(date(2026, 9, 24)));
+  }
+
+  @Test
+  public void unknownFormatFallsBackToDayFirst() {
+    assertEquals(
+        "24/09/2026", Formatter.newDateFormat("unknown", Locale.UK).format(date(2026, 9, 24)));
   }
 }

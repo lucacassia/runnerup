@@ -236,7 +236,7 @@ public class SpinnerPresenter {
   private void setupDatePicker(
       final Context context, AttributeSet attrs, CharSequence defaultValue) {
     if (defaultValue != null && "today".contentEquals(defaultValue)) {
-      DateFormat df = Formatter.newDateFormat();
+      DateFormat df = Formatter.newDateFormat(context);
       defaultValue = df.format(new Date());
     }
     setValueWithoutSave(defaultValue);
@@ -268,7 +268,7 @@ public class SpinnerPresenter {
                     private String getValue(DatePicker dp) {
                       Calendar c = Calendar.getInstance();
                       c.set(dp.getYear(), dp.getMonth(), dp.getDayOfMonth());
-                      DateFormat df = Formatter.newDateFormat();
+                      DateFormat df = Formatter.newDateFormat(context);
                       return df.format(c.getTime());
                     }
                   })
